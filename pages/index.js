@@ -561,10 +561,22 @@ Generado con Pixan.ai 2.0`
                     target="_blank"
                     rel="noopener noreferrer"
                     className="bg-green-500 text-white p-3 rounded-lg no-underline flex items-center gap-2"
-                  >
+                >
                     <Globe size={20} />
                     Ver Sitio
                   </a>
+                  
+                  
+                    href={repoUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="bg-white/20 text-white p-3 rounded-lg no-underline flex items-center gap-2"
+                  >
+                    <Github size={20} />
+                    Ver Código
+                  </a>
+                </div>
+              </div>
                   
                   
                     href={repoUrl}
