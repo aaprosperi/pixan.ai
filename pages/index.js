@@ -1,5 +1,6 @@
 import React from 'react';
 import Head from 'next/head';
+import Link from 'next/link';
 
 export default function HomePage() {
   return (
@@ -18,6 +19,13 @@ export default function HomePage() {
           <h1 className="hello-world">
             Hello World Pixan
           </h1>
+          <div className="button-container">
+            <Link href="/create">
+              <button className="create-button">
+                Crear app web
+              </button>
+            </Link>
+          </div>
         </div>
       </div>
 
@@ -62,6 +70,35 @@ export default function HomePage() {
         .hello-world:hover {
           transform: translateY(-2px);
         }
+
+        .button-container {
+          margin-top: 60px;
+          animation: fadeInUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.3s both;
+        }
+
+        .create-button {
+          font-family: 'Inter', sans-serif;
+          font-size: 1.1rem;
+          font-weight: 400;
+          padding: 16px 32px;
+          background-color: #000000;
+          color: #ffffff;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          letter-spacing: -0.01em;
+        }
+
+        .create-button:hover {
+          background-color: #333333;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        .create-button:active {
+          transform: translateY(0px);
+        }
         
         @keyframes fadeInUp {
           from {
@@ -88,6 +125,11 @@ export default function HomePage() {
           .hello-world {
             font-size: 3rem;
           }
+          
+          .create-button {
+            font-size: 1rem;
+            padding: 14px 28px;
+          }
         }
         
         @media (max-width: 480px) {
@@ -98,6 +140,11 @@ export default function HomePage() {
           
           .hello-world::after {
             width: 40px;
+          }
+
+          .create-button {
+            font-size: 0.95rem;
+            padding: 12px 24px;
           }
         }
         
