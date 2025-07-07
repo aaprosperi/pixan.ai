@@ -6,7 +6,7 @@ export default function HomePage() {
     <>
       <Head>
         <title>Pixan.ai</title>
-        <meta name="description" content="Hello World - Pixan.ai" />
+        <meta name="description" content="Hello World Pixan - Pixan.ai" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
@@ -16,7 +16,7 @@ export default function HomePage() {
       <div className="min-h-screen flex items-center justify-center bg-white overflow-hidden">
         <div className="text-center px-8">
           <h1 className="hello-world">
-            Hello World
+            Hello World Pixan
           </h1>
         </div>
       </div>
