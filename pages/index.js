@@ -42,6 +42,11 @@ export default function HomePage() {
                   Crear app web
                 </button>
               </Link>
+              <Link href="/signup">
+                <button className="signup-button">
+                  Crear cuenta
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -152,6 +157,10 @@ export default function HomePage() {
         .button-container {
           margin-top: 60px;
           animation: fadeInUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s both;
+          display: flex;
+          gap: 20px;
+          justify-content: center;
+          flex-wrap: wrap;
         }
 
         .create-button {
@@ -175,6 +184,31 @@ export default function HomePage() {
         }
 
         .create-button:active {
+          transform: translateY(0px);
+        }
+
+        .signup-button {
+          font-family: 'Inter', sans-serif;
+          font-size: 1.1rem;
+          font-weight: 400;
+          padding: 16px 32px;
+          background-color: #ffffff;
+          color: #000000;
+          border: 1px solid #e5e5e5;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          letter-spacing: -0.01em;
+        }
+
+        .signup-button:hover {
+          background-color: #f8f9fa;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+          border-color: #d1d5db;
+        }
+
+        .signup-button:active {
           transform: translateY(0px);
         }
 
@@ -306,9 +340,15 @@ export default function HomePage() {
             font-size: 3rem;
           }
           
-          .create-button {
+          .create-button,
+          .signup-button {
             font-size: 1rem;
             padding: 14px 28px;
+          }
+
+          .button-container {
+            flex-direction: column;
+            align-items: center;
           }
 
           .about-container {
@@ -347,7 +387,8 @@ export default function HomePage() {
             width: 40px;
           }
 
-          .create-button {
+          .create-button,
+          .signup-button {
             font-size: 0.95rem;
             padding: 12px 24px;
           }
