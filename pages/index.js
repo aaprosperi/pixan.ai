@@ -52,6 +52,11 @@ export default function HomePage() {
                   Oscar
                 </button>
               </Link>
+              <Link href="/hola">
+                <button className="hola-button">
+                  HOLA
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -241,6 +246,30 @@ export default function HomePage() {
           transform: translateY(0px);
         }
 
+        .hola-button {
+          font-family: 'Inter', sans-serif;
+          font-size: 1.1rem;
+          font-weight: 500;
+          padding: 16px 32px;
+          background-color: #D34C54;
+          color: #ffffff;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          letter-spacing: -0.01em;
+        }
+
+        .hola-button:hover {
+          background-color: #b83a42;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(211, 76, 84, 0.3);
+        }
+
+        .hola-button:active {
+          transform: translateY(0px);
+        }
+
         /* About Section Styles */
         .about-section {
           min-height: 100vh;
@@ -371,7 +400,8 @@ export default function HomePage() {
           
           .create-button,
           .signup-button,
-          .oscar-button {
+          .oscar-button,
+          .hola-button {
             font-size: 1rem;
             padding: 14px 28px;
           }
@@ -419,7 +449,8 @@ export default function HomePage() {
 
           .create-button,
           .signup-button,
-          .oscar-button {
+          .oscar-button,
+          .hola-button {
             font-size: 0.95rem;
             padding: 12px 24px;
           }
