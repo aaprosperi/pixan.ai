@@ -62,6 +62,11 @@ export default function HomePage() {
                   Hi
                 </button>
               </Link>
+              <Link href="/generator">
+                <button className="generator-button">
+                  🚀 Generador de Apps
+                </button>
+              </Link>
             </div>
           </div>
         </div>
@@ -299,6 +304,31 @@ export default function HomePage() {
           transform: translateY(0px);
         }
 
+        .generator-button {
+          font-family: 'Inter', sans-serif;
+          font-size: 1.1rem;
+          font-weight: 600;
+          padding: 16px 32px;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+          color: #ffffff;
+          border: none;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+          letter-spacing: -0.01em;
+          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .generator-button:hover {
+          background: linear-gradient(135deg, #5a67d8 0%, #6b46a1 100%);
+          transform: translateY(-2px);
+          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .generator-button:active {
+          transform: translateY(0px);
+        }
+
         /* About Section Styles */
         .about-section {
           min-height: 100vh;
@@ -431,7 +461,8 @@ export default function HomePage() {
           .signup-button,
           .oscar-button,
           .hola-button,
-          .hi-button {
+          .hi-button,
+          .generator-button {
             font-size: 1rem;
             padding: 14px 28px;
           }
@@ -481,7 +512,8 @@ export default function HomePage() {
           .signup-button,
           .oscar-button,
           .hola-button,
-          .hi-button {
+          .hi-button,
+          .generator-button {
             font-size: 0.95rem;
             padding: 12px 24px;
           }
