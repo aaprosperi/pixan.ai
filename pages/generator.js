@@ -8,6 +8,55 @@ export default function Generator() {
   const [generatedApp, setGeneratedApp] = useState(null);
   const [error, setError] = useState(null);
   const [generatedApps, setGeneratedApps] = useState([]);
+  const [previewCode, setPreviewCode] = useState(null);
+
+  // Dynamic component renderer for preview
+  const DynamicPreview = ({ code }) => {
+    if (!code) return null;
+    
+    try {
+      // Create a safe preview HTML for the generated code
+      const previewHTML = `
+        <!DOCTYPE html>
+        <html>
+        <head>
+          <script src="https://unpkg.com/react@18/umd/react.development.js"></script>
+          <script src="https://unpkg.com/react-dom@18/umd/react-dom.development.js"></script>
+          <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+          <script src="https://cdn.tailwindcss.com"></script>
+          <style>
+            body { margin: 0; padding: 20px; font-family: Inter, sans-serif; }
+          </style>
+        </head>
+        <body>
+          <div id="root"></div>
+          <script type="text/babel">
+            const { useState, useEffect } = React;
+            
+            ${code.replace(/export default function/g, 'function GeneratedApp').replace(/export default/g, '')}
+            
+            ReactDOM.render(<GeneratedApp />, document.getElementById('root'));
+          </script>
+        </body>
+        </html>
+      `;
+      
+      return (
+        <iframe
+          srcDoc={previewHTML}
+          className="w-full h-full border-0 rounded-lg"
+          sandbox="allow-scripts"
+          title="App Preview"
+        />
+      );
+    } catch (error) {
+      return (
+        <div className="flex items-center justify-center h-full bg-red-50 rounded-lg">
+          <p className="text-red-600">Error en preview: {error.message}</p>
+        </div>
+      );
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -35,6 +84,7 @@ export default function Generator() {
       }
 
       setGeneratedApp(data);
+      setPreviewCode(data.code);
       setGeneratedApps(prev => [data, ...prev]);
       setPrompt('');
     } catch (err) {
@@ -149,14 +199,20 @@ export default function Generator() {
                   <h2 className="text-2xl font-semibold text-gray-900">
                     ✨ Tu aplicación está lista
                   </h2>
-                  <a
-                    href={`/generated/${generatedApp.id}`}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="bg-green-600 text-white px-6 py-2 rounded-lg hover:bg-green-700 transition-colors"
-                  >
-                    Ver App Completa
-                  </a>
+                  <div className="flex space-x-3">
+                    <button
+                      onClick={() => navigator.clipboard.writeText(previewCode)}
+                      className="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                    >
+                      📋 Copiar Código
+                    </button>
+                    <button
+                      onClick={() => setPreviewCode(null)}
+                      className="bg-gray-600 text-white px-4 py-2 rounded-lg hover:bg-gray-700 transition-colors text-sm"
+                    >
+                      🗑️ Limpiar
+                    </button>
+                  </div>
                 </div>
                 
                 <div className="grid md:grid-cols-2 gap-6">
@@ -165,23 +221,29 @@ export default function Generator() {
                     <div className="space-y-2 text-sm">
                       <p><span className="font-medium">Nombre:</span> {generatedApp.name}</p>
                       <p><span className="font-medium">Descripción:</span> {generatedApp.description}</p>
-                      <p><span className="font-medium">URL:</span> 
-                        <a href={`/generated/${generatedApp.id}`} className="text-blue-600 hover:underline ml-1">
-                          /generated/{generatedApp.id}
-                        </a>
-                      </p>
+                      <p><span className="font-medium">ID:</span> {generatedApp.id}</p>
                       <p><span className="font-medium">Creada:</span> {new Date(generatedApp.timestamp).toLocaleString()}</p>
+                      <p><span className="font-medium">Costo:</span> {generatedApp.cost}</p>
+                    </div>
+                    
+                    <div className="mt-4">
+                      <h4 className="font-medium text-gray-900 mb-2">Código Generado</h4>
+                      <div className="bg-gray-900 text-green-400 p-3 rounded-lg text-xs font-mono max-h-32 overflow-y-auto">
+                        <pre>{previewCode ? previewCode.slice(0, 300) + '...' : 'No code generated'}</pre>
+                      </div>
                     </div>
                   </div>
                   
                   <div>
-                    <h3 className="text-lg font-medium text-gray-900 mb-3">Vista Previa</h3>
-                    <div className="border border-gray-200 rounded-lg p-4 bg-gray-50 h-48 overflow-hidden">
-                      <iframe
-                        src={`/generated/${generatedApp.id}`}
-                        className="w-full h-full border-0 transform scale-75 origin-top-left"
-                        style={{ width: '133%', height: '133%' }}
-                      />
+                    <h3 className="text-lg font-medium text-gray-900 mb-3">Vista Previa Interactiva</h3>
+                    <div className="border border-gray-200 rounded-lg bg-white h-96 overflow-hidden">
+                      {previewCode ? (
+                        <DynamicPreview code={previewCode} />
+                      ) : (
+                        <div className="flex items-center justify-center h-full text-gray-500">
+                          No hay preview disponible
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -203,12 +265,15 @@ export default function Generator() {
                         <span className="text-xs text-gray-500">
                           {new Date(app.timestamp).toLocaleDateString()}
                         </span>
-                        <a
-                          href={`/generated/${app.id}`}
+                        <button
+                          onClick={() => {
+                            setGeneratedApp(app);
+                            setPreviewCode(app.code);
+                          }}
                           className="text-blue-600 hover:text-blue-700 text-sm font-medium"
                         >
-                          Ver App →
-                        </a>
+                          Ver Preview →
+                        </button>
                       </div>
                     </div>
                   ))}
@@ -224,8 +289,17 @@ export default function Generator() {
             <div className="text-center text-gray-600 text-sm">
               <p>Generador de Aplicaciones Web - Powered by Pixan.ai</p>
               <p className="mt-2">
-                Costo de desarrollo: <span className="font-mono">Calculando...</span> USD 
-                (basado en tokens utilizados del modelo Claude Sonnet 4 vía API de Anthropic)
+                {generatedApp ? (
+                  <>
+                    Costo de desarrollo: <span className="font-mono">{generatedApp.cost}</span> USD 
+                    (basado en {generatedApp.tokensUsed} tokens utilizados del modelo Claude Sonnet 4 vía API de Anthropic)
+                  </>
+                ) : (
+                  <>
+                    Costo estimado: <span className="font-mono">$0.006-$0.012</span> USD por app generada
+                    (basado en 2,000-4,000 tokens del modelo Claude Sonnet 4 vía API de Anthropic)
+                  </>
+                )}
               </p>
             </div>
           </div>

@@ -1,5 +1,4 @@
-import { writeFileSync, existsSync, mkdirSync } from 'fs';
-import { join } from 'path';
+// No filesystem imports needed - everything in memory
 
 // Obfuscated security layer
 const _0x1a2b = {
@@ -163,19 +162,12 @@ const _0x1e2f = (code) => {
   return cleanCode;
 };
 
-// File system operations
+// In-memory storage for generated apps
 const _0x3g4h = (id, code, metadata) => {
-  const generatedDir = join(process.cwd(), 'pages', 'generated');
-  
-  if (!existsSync(generatedDir)) {
-    mkdirSync(generatedDir, { recursive: true });
-  }
-  
-  const filePath = join(generatedDir, `${id}.js`);
   const cleanCode = _0x1e2f(code);
   
-  // Add metadata comments
-  const fileContent = `// Generated App: ${metadata.name}
+  // Format code with metadata (no file creation)
+  const formattedCode = `// Generated App: ${metadata.name}
 // Created: ${metadata.timestamp}
 // Description: ${metadata.description}
 
@@ -185,8 +177,12 @@ import Head from 'next/head';
 ${cleanCode}
 `;
   
-  writeFileSync(filePath, fileContent, 'utf8');
-  return filePath;
+  // Return code and metadata (no filesystem operations)
+  return {
+    code: formattedCode,
+    cleanCode: cleanCode,
+    success: true
+  };
 };
 
 export default async function handler(req, res) {
@@ -232,8 +228,8 @@ export default async function handler(req, res) {
     // Generate code using AI
     const { code, usage } = await _0x7a8b(sanitizedPrompt);
     
-    // Save to file system
-    const filePath = _0x3g4h(metadata.id, code, metadata);
+    // Process code in memory (no filesystem)
+    const processedCode = _0x3g4h(metadata.id, code, metadata);
     
     // Calculate cost
     const estimatedCost = (_0xTokenCount * _0xTokenRate).toFixed(4);
@@ -243,6 +239,8 @@ export default async function handler(req, res) {
     
     return res.status(200).json({
       ...metadata,
+      code: processedCode.cleanCode,
+      formattedCode: processedCode.code,
       cost: `$${estimatedCost}`,
       tokensUsed: _0xTokenCount,
       success: true
