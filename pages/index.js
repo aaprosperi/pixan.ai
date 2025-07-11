@@ -142,160 +142,6 @@ export default function HomePage() {
           transform: translateY(-2px);
         }
 
-        .button-container {
-          margin-top: 60px;
-          animation: fadeInUp 1.2s cubic-bezier(0.25, 0.46, 0.45, 0.94) 0.6s both;
-          display: flex;
-          gap: 20px;
-          justify-content: center;
-          flex-wrap: wrap;
-        }
-
-        .create-button {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 400;
-          padding: 16px 32px;
-          background-color: #000000;
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          letter-spacing: -0.01em;
-        }
-
-        .create-button:hover {
-          background-color: #333333;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
-        }
-
-        .create-button:active {
-          transform: translateY(0px);
-        }
-
-        .signup-button {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 400;
-          padding: 16px 32px;
-          background-color: #ffffff;
-          color: #000000;
-          border: 1px solid #e5e5e5;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          letter-spacing: -0.01em;
-        }
-
-        .signup-button:hover {
-          background-color: #f8f9fa;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
-          border-color: #d1d5db;
-        }
-
-        .signup-button:active {
-          transform: translateY(0px);
-        }
-
-        .oscar-button {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 500;
-          padding: 16px 32px;
-          background-color: #28106A;
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          letter-spacing: -0.01em;
-        }
-
-        .oscar-button:hover {
-          background-color: #1a0a4a;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(40, 16, 106, 0.3);
-        }
-
-        .oscar-button:active {
-          transform: translateY(0px);
-        }
-
-        .hola-button {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 500;
-          padding: 16px 32px;
-          background-color: #D34C54;
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          letter-spacing: -0.01em;
-        }
-
-        .hola-button:hover {
-          background-color: #b83a42;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(211, 76, 84, 0.3);
-        }
-
-        .hola-button:active {
-          transform: translateY(0px);
-        }
-
-        .hi-button {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 500;
-          padding: 16px 32px;
-          background-color: #4F46E5;
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          letter-spacing: -0.01em;
-        }
-
-        .hi-button:hover {
-          background-color: #3730A3;
-          transform: translateY(-2px);
-          box-shadow: 0 8px 24px rgba(79, 70, 229, 0.3);
-        }
-
-        .hi-button:active {
-          transform: translateY(0px);
-        }
-
-        .generator-button {
-          font-family: 'Inter', sans-serif;
-          font-size: 1.1rem;
-          font-weight: 600;
-          padding: 16px 32px;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          color: #ffffff;
-          border: none;
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-          letter-spacing: -0.01em;
-          box-shadow: 0 4px 15px rgba(102, 126, 234, 0.4);
-        }
-
-        .generator-button:hover {
-          background: linear-gradient(135deg, #5a67d8 0%, #6b46a1 100%);
-          transform: translateY(-2px);
-          box-shadow: 0 8px 25px rgba(102, 126, 234, 0.6);
-        }
-
-        .generator-button:active {
-          transform: translateY(0px);
-        }
 
         /* About Section Styles */
         .about-section {
@@ -425,20 +271,6 @@ export default function HomePage() {
             font-size: 3rem;
           }
           
-          .create-button,
-          .signup-button,
-          .oscar-button,
-          .hola-button,
-          .hi-button,
-          .generator-button {
-            font-size: 1rem;
-            padding: 14px 28px;
-          }
-
-          .button-container {
-            flex-direction: column;
-            align-items: center;
-          }
 
           .about-container {
             padding: 0 20px;
@@ -476,15 +308,6 @@ export default function HomePage() {
             width: 40px;
           }
 
-          .create-button,
-          .signup-button,
-          .oscar-button,
-          .hola-button,
-          .hi-button,
-          .generator-button {
-            font-size: 0.95rem;
-            padding: 12px 24px;
-          }
 
           .about-title {
             font-size: 2rem;
