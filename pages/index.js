@@ -7,7 +7,7 @@ export default function HomePage() {
     <>
       <Head>
         <title>Pixan.ai</title>
-        <meta name="description" content="Hello World Pixan - Pixan.ai" />
+        <meta name="description" content="pian.ai - Pixan.ai" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
@@ -34,40 +34,8 @@ export default function HomePage() {
             </div>
 
             <h1 className="hello-world">
-              Hello World Pixan
+              pian.ai
             </h1>
-            <div className="button-container">
-              <Link href="/create">
-                <button className="create-button">
-                  Crear app web
-                </button>
-              </Link>
-              <Link href="/signup">
-                <button className="signup-button">
-                  Crear cuenta
-                </button>
-              </Link>
-              <Link href="/oscar">
-                <button className="oscar-button">
-                  Oscar
-                </button>
-              </Link>
-              <Link href="/hola">
-                <button className="hola-button">
-                  HOLA
-                </button>
-              </Link>
-              <Link href="/hi">
-                <button className="hi-button">
-                  Hi
-                </button>
-              </Link>
-              <Link href="/generator">
-                <button className="generator-button">
-                  🚀 Generador de Apps
-                </button>
-              </Link>
-            </div>
           </div>
         </div>
 
