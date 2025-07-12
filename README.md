@@ -1,32 +1,23 @@
-# Pixan.ai - Generador Automático Web
+# Pixan.ai
 
-## 🚀 Deploy Automático GitHub + Vercel
+Plataforma de inteligencia artificial desarrollada con Next.js y desplegada en Vercel.
 
-Plataforma de IA que convierte ideas en aplicaciones web completas con deploy automático.
+## Tecnologías
 
-### Características
-
-- ✅ Generación inteligente de preguntas técnicas
-- ✅ Código Next.js + Tailwind CSS completo
-- ✅ Integración GitHub automática
-- ✅ Deploy Vercel con un click
-- ✅ URLs en vivo automáticas
-
-### Tecnologías
-
-- Next.js 14
-- React 18
+- Next.js
+- React
 - Tailwind CSS
-- Lucide React Icons
+- Vercel
 
-### Desarrollo Local
+## Desarrollo
 
 ```bash
-# Instalar dependencias
 npm install
-
-# Ejecutar en desarrollo
 npm run dev
+```
 
-# Build para producción
-npm run build
+Abrir [http://localhost:3000](http://localhost:3000) en el navegador.
+
+## Despliegue
+
+Desplegado automáticamente en Vercel mediante GitHub.
