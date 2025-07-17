@@ -129,13 +129,13 @@ const Parallax3D = ({ children, speed = 0.5 }) => {
   );
 };
 
-// AI Text Animation Component
-const AITextAnimation = ({ text, delay = 0 }) => {
+// Simplified Text Animation Component
+const SimpleTextAnimation = ({ text, delay = 0, showCursor = false }) => {
   const [displayText, setDisplayText] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
-  const [showCursor, setShowCursor] = useState(true);
   const [isClient, setIsClient] = useState(false);
+  const [isComplete, setIsComplete] = useState(false);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -143,7 +143,7 @@ const AITextAnimation = ({ text, delay = 0 }) => {
     
     const observer = new IntersectionObserver(
       ([entry]) => {
-        if (entry.isIntersecting) {
+        if (entry.isIntersecting && !isVisible) {
           setIsVisible(true);
         }
       },
@@ -159,37 +159,29 @@ const AITextAnimation = ({ text, delay = 0 }) => {
         observer.unobserve(ref.current);
       }
     };
-  }, []);
+  }, [isVisible]);
 
   useEffect(() => {
-    if (!isVisible || !isClient) return;
+    if (!isVisible || !isClient || isComplete) return;
 
     const timer = setTimeout(() => {
       if (currentIndex < text.length) {
         setDisplayText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
+      } else {
+        setIsComplete(true);
       }
-    }, delay + (currentIndex * 50));
+    }, delay + (currentIndex * 30));
 
     return () => clearTimeout(timer);
-  }, [isVisible, currentIndex, text, delay, isClient]);
-
-  useEffect(() => {
-    if (!isClient) return;
-    
-    const cursorTimer = setInterval(() => {
-      setShowCursor(prev => !prev);
-    }, 500);
-
-    return () => clearInterval(cursorTimer);
-  }, [isClient]);
+  }, [isVisible, currentIndex, text, delay, isClient, isComplete]);
 
   if (!isClient) return <span>{text}</span>;
 
   return (
-    <span ref={ref} className="ai-text">
+    <span ref={ref} className="simple-text">
       {displayText}
-      {showCursor && currentIndex <= text.length && (
+      {showCursor && !isComplete && isVisible && (
         <span className="typing-cursor">|</span>
       )}
     </span>
@@ -317,237 +309,217 @@ export default function HomePage() {
 
         {/* Hero Section */}
         <section className="hero">
-          <Parallax3D speed={0.2}>
-            <div className="hero-content">
-              <div className="hero-badge interactive">
-                <Sparkles className="icon" />
-                <span>Powered by AI</span>
-              </div>
-              
-              <h1 className="hero-title">
-                <AITextAnimation text="Transformamos" delay={0} />
-                <span className="gradient-text">
-                  <AITextAnimation text=" ideas " delay={500} />
-                </span>
-                <AITextAnimation text="en" delay={1000} />
-                <span className="gradient-text">
-                  <AITextAnimation text=" realidad digital" delay={1200} />
-                </span>
-              </h1>
-              
-              <p className="hero-subtitle">
-                <AITextAnimation 
-                  text="Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales."
-                  delay={2000}
-                />
-              </p>
-              
-              <div className="hero-buttons">
-                <button className="btn-primary interactive">
-                  Comenzar Proyecto
-                  <ArrowRight className="icon" />
-                </button>
-                <button className="btn-secondary interactive">
-                  Ver Demos
-                </button>
-              </div>
+          <div className="hero-content">
+            <div className="hero-badge interactive">
+              <Sparkles className="icon" />
+              <span>Powered by AI</span>
             </div>
-          </Parallax3D>
+            
+            <h1 className="hero-title">
+              <SimpleTextAnimation text="Transformamos" delay={0} showCursor={true} />
+              <span className="gradient-text">
+                <SimpleTextAnimation text=" ideas " delay={800} />
+              </span>
+              <SimpleTextAnimation text="en" delay={1400} />
+              <span className="gradient-text">
+                <SimpleTextAnimation text=" realidad digital" delay={1600} />
+              </span>
+            </h1>
+            
+            <p className="hero-subtitle">
+              <SimpleTextAnimation 
+                text="Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales."
+                delay={2500}
+              />
+            </p>
+            
+            <div className="hero-buttons">
+              <button className="btn-primary interactive">
+                Comenzar Proyecto
+                <ArrowRight className="icon" />
+              </button>
+              <button className="btn-secondary interactive">
+                Ver Demos
+              </button>
+            </div>
+          </div>
           
-          <Parallax3D speed={0.8}>
-            <div className="hero-visual">
-              <Interactive3DCard className="floating-card card-1">
-                <Brain className="card-icon" />
-                <div className="card-content">
-                  <h3>IA Avanzada</h3>
-                  <p>Algoritmos inteligentes</p>
-                </div>
-              </Interactive3DCard>
-              <Interactive3DCard className="floating-card card-2">
-                <Code className="card-icon" />
-                <div className="card-content">
-                  <h3>Código Limpio</h3>
-                  <p>Desarrollo moderno</p>
-                </div>
-              </Interactive3DCard>
-              <Interactive3DCard className="floating-card card-3">
-                <Zap className="card-icon" />
-                <div className="card-content">
-                  <h3>Alto Rendimiento</h3>
-                  <p>Velocidad optimizada</p>
-                </div>
-              </Interactive3DCard>
+          <div className="hero-visual">
+            <div className="floating-card card-1">
+              <Brain className="card-icon" />
+              <div className="card-content">
+                <h3>IA Avanzada</h3>
+                <p>Algoritmos inteligentes</p>
+              </div>
             </div>
-          </Parallax3D>
+            <div className="floating-card card-2">
+              <Code className="card-icon" />
+              <div className="card-content">
+                <h3>Código Limpio</h3>
+                <p>Desarrollo moderno</p>
+              </div>
+            </div>
+            <div className="floating-card card-3">
+              <Zap className="card-icon" />
+              <div className="card-content">
+                <h3>Alto Rendimiento</h3>
+                <p>Velocidad optimizada</p>
+              </div>
+            </div>
+          </div>
         </section>
 
         {/* Services Section */}
-        <Parallax3D speed={0.3}>
-          <section id="services" className="services">
-            <div className="container">
-              <div className="section-header">
-                <h2 className="section-title">
-                  <AITextAnimation text="Nuestros Servicios" delay={0} />
-                </h2>
-                <p className="section-subtitle">
-                  <AITextAnimation text="Soluciones tecnológicas innovadoras para impulsar tu negocio" delay={300} />
-                </p>
+        <section id="services" className="services">
+          <div className="container">
+            <div className="section-header">
+              <h2 className="section-title">Nuestros Servicios</h2>
+              <p className="section-subtitle">
+                Soluciones tecnológicas innovadoras para impulsar tu negocio
+              </p>
+            </div>
+            
+            <div className="services-grid">
+              <div className="service-card">
+                <div className="service-icon">
+                  <Brain />
+                </div>
+                <h3>Desarrollo con IA</h3>
+                <p>Aplicaciones inteligentes que aprenden y se adaptan a las necesidades de tus usuarios</p>
+                <div className="service-features">
+                  <span>Machine Learning</span>
+                  <span>NLP</span>
+                  <span>Computer Vision</span>
+                </div>
               </div>
               
-              <div className="services-grid">
-                <Interactive3DCard className="service-card">
-                  <div className="service-icon">
-                    <Brain />
-                  </div>
-                  <h3>Desarrollo con IA</h3>
-                  <p>Aplicaciones inteligentes que aprenden y se adaptan a las necesidades de tus usuarios</p>
-                  <div className="service-features">
-                    <span>Machine Learning</span>
-                    <span>NLP</span>
-                    <span>Computer Vision</span>
-                  </div>
-                </Interactive3DCard>
-                
-                <Interactive3DCard className="service-card">
-                  <div className="service-icon">
-                    <Code />
-                  </div>
-                  <h3>Desarrollo Web</h3>
-                  <p>Aplicaciones web modernas y escalables usando las últimas tecnologías</p>
-                  <div className="service-features">
-                    <span>React/Next.js</span>
-                    <span>Node.js</span>
-                    <span>GraphQL</span>
-                  </div>
-                </Interactive3DCard>
-                
-                <Interactive3DCard className="service-card">
-                  <div className="service-icon">
-                    <Zap />
-                  </div>
-                  <h3>Optimización</h3>
-                  <p>Mejoramos el rendimiento y la experiencia de usuario de tus aplicaciones</p>
-                  <div className="service-features">
-                    <span>Performance</span>
-                    <span>SEO</span>
-                    <span>Analytics</span>
-                  </div>
-                </Interactive3DCard>
+              <div className="service-card">
+                <div className="service-icon">
+                  <Code />
+                </div>
+                <h3>Desarrollo Web</h3>
+                <p>Aplicaciones web modernas y escalables usando las últimas tecnologías</p>
+                <div className="service-features">
+                  <span>React/Next.js</span>
+                  <span>Node.js</span>
+                  <span>GraphQL</span>
+                </div>
+              </div>
+              
+              <div className="service-card">
+                <div className="service-icon">
+                  <Zap />
+                </div>
+                <h3>Optimización</h3>
+                <p>Mejoramos el rendimiento y la experiencia de usuario de tus aplicaciones</p>
+                <div className="service-features">
+                  <span>Performance</span>
+                  <span>SEO</span>
+                  <span>Analytics</span>
+                </div>
               </div>
             </div>
-          </section>
-        </Parallax3D>
+          </div>
+        </section>
 
         {/* About Section */}
-        <Parallax3D speed={0.4}>
-          <section id="about" className="about">
-            <div className="container">
-              <div className="about-content">
-                <div className="about-text">
-                  <h2>
-                    <AITextAnimation text="Acerca de Pixan.ai" delay={0} />
-                  </h2>
-                  <p>
-                    <AITextAnimation 
-                      text="Somos un equipo apasionado por la tecnología y la innovación. Combinamos años de experiencia en desarrollo web con las últimas innovaciones en inteligencia artificial para crear soluciones que transforman negocios."
-                      delay={300}
-                    />
-                  </p>
-                  <p>
-                    <AITextAnimation 
-                      text="Cada proyecto es único y merece un enfoque personalizado. Trabajamos estrechamente con nuestros clientes para entender sus necesidades y crear soluciones que superen sus expectativas."
-                      delay={600}
-                    />
-                  </p>
-                  <div className="stats">
-                    <Interactive3DCard className="stat">
-                      <span className="stat-number">50+</span>
-                      <span className="stat-label">Proyectos Completados</span>
-                    </Interactive3DCard>
-                    <Interactive3DCard className="stat">
-                      <span className="stat-number">98%</span>
-                      <span className="stat-label">Satisfacción del Cliente</span>
-                    </Interactive3DCard>
-                    <Interactive3DCard className="stat">
-                      <span className="stat-number">24/7</span>
-                      <span className="stat-label">Soporte Técnico</span>
-                    </Interactive3DCard>
+        <section id="about" className="about">
+          <div className="container">
+            <div className="about-content">
+              <div className="about-text">
+                <h2>Acerca de Pixan.ai</h2>
+                <p>
+                  Somos un equipo apasionado por la tecnología y la innovación. Combinamos 
+                  años de experiencia en desarrollo web con las últimas innovaciones en 
+                  inteligencia artificial para crear soluciones que transforman negocios.
+                </p>
+                <p>
+                  Cada proyecto es único y merece un enfoque personalizado. Trabajamos 
+                  estrechamente con nuestros clientes para entender sus necesidades y 
+                  crear soluciones que superen sus expectativas.
+                </p>
+                <div className="stats">
+                  <div className="stat">
+                    <span className="stat-number">50+</span>
+                    <span className="stat-label">Proyectos Completados</span>
                   </div>
-                </div>
-                <div className="about-visual">
-                  <div className="tech-stack">
-                    <Interactive3DCard className="tech-item">React</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">Next.js</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">TypeScript</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">Node.js</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">Python</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">TensorFlow</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">OpenAI</Interactive3DCard>
-                    <Interactive3DCard className="tech-item">AWS</Interactive3DCard>
+                  <div className="stat">
+                    <span className="stat-number">98%</span>
+                    <span className="stat-label">Satisfacción del Cliente</span>
+                  </div>
+                  <div className="stat">
+                    <span className="stat-number">24/7</span>
+                    <span className="stat-label">Soporte Técnico</span>
                   </div>
                 </div>
               </div>
+              <div className="about-visual">
+                <div className="tech-stack">
+                  <div className="tech-item">React</div>
+                  <div className="tech-item">Next.js</div>
+                  <div className="tech-item">TypeScript</div>
+                  <div className="tech-item">Node.js</div>
+                  <div className="tech-item">Python</div>
+                  <div className="tech-item">TensorFlow</div>
+                  <div className="tech-item">OpenAI</div>
+                  <div className="tech-item">AWS</div>
+                </div>
+              </div>
             </div>
-          </section>
-        </Parallax3D>
+          </div>
+        </section>
 
         {/* Contact Section */}
-        <Parallax3D speed={0.5}>
-          <section id="contact" className="contact">
-            <div className="container">
-              <div className="contact-content">
-                <div className="contact-info">
-                  <h2>
-                    <AITextAnimation text="¿Listo para comenzar?" delay={0} />
-                  </h2>
-                  <p>
-                    <AITextAnimation 
-                      text="Convierte tu idea en realidad. Contáctanos y descubre cómo podemos ayudarte a construir el futuro digital de tu negocio."
-                      delay={300}
-                    />
-                  </p>
-                  <div className="contact-methods">
-                    <Interactive3DCard className="contact-method">
-                      <a href="mailto:contact@pixan.ai" className="contact-link">
-                        <Mail className="icon" />
-                        <span>contact@pixan.ai</span>
-                      </a>
-                    </Interactive3DCard>
-                    <Interactive3DCard className="contact-method">
-                      <a href="#" className="contact-link">
-                        <Github className="icon" />
-                        <span>github.com/pixan-ai</span>
-                      </a>
-                    </Interactive3DCard>
-                    <Interactive3DCard className="contact-method">
-                      <a href="#" className="contact-link">
-                        <Linkedin className="icon" />
-                        <span>linkedin.com/company/pixan-ai</span>
-                      </a>
-                    </Interactive3DCard>
+        <section id="contact" className="contact">
+          <div className="container">
+            <div className="contact-content">
+              <div className="contact-info">
+                <h2>¿Listo para comenzar?</h2>
+                <p>
+                  Convierte tu idea en realidad. Contáctanos y descubre cómo podemos 
+                  ayudarte a construir el futuro digital de tu negocio.
+                </p>
+                <div className="contact-methods">
+                  <div className="contact-method">
+                    <a href="mailto:contact@pixan.ai" className="contact-link">
+                      <Mail className="icon" />
+                      <span>contact@pixan.ai</span>
+                    </a>
+                  </div>
+                  <div className="contact-method">
+                    <a href="#" className="contact-link">
+                      <Github className="icon" />
+                      <span>github.com/pixan-ai</span>
+                    </a>
+                  </div>
+                  <div className="contact-method">
+                    <a href="#" className="contact-link">
+                      <Linkedin className="icon" />
+                      <span>linkedin.com/company/pixan-ai</span>
+                    </a>
                   </div>
                 </div>
-                <Interactive3DCard className="contact-form">
-                  <form>
-                    <div className="form-group">
-                      <input type="text" placeholder="Tu nombre" className="interactive" />
-                    </div>
-                    <div className="form-group">
-                      <input type="email" placeholder="Tu email" className="interactive" />
-                    </div>
-                    <div className="form-group">
-                      <textarea placeholder="Cuéntanos sobre tu proyecto" rows={4} className="interactive"></textarea>
-                    </div>
-                    <button type="submit" className="btn-primary interactive">
-                      Enviar Mensaje
-                      <ArrowRight className="icon" />
-                    </button>
-                  </form>
-                </Interactive3DCard>
+              </div>
+              <div className="contact-form">
+                <form>
+                  <div className="form-group">
+                    <input type="text" placeholder="Tu nombre" className="interactive" />
+                  </div>
+                  <div className="form-group">
+                    <input type="email" placeholder="Tu email" className="interactive" />
+                  </div>
+                  <div className="form-group">
+                    <textarea placeholder="Cuéntanos sobre tu proyecto" rows={4} className="interactive"></textarea>
+                  </div>
+                  <button type="submit" className="btn-primary interactive">
+                    Enviar Mensaje
+                    <ArrowRight className="icon" />
+                  </button>
+                </form>
               </div>
             </div>
-          </section>
-        </Parallax3D>
+          </div>
+        </section>
 
         {/* Footer */}
         <footer className="footer">
@@ -653,13 +625,13 @@ export default function HomePage() {
           position: absolute;
           border-radius: 50%;
           filter: blur(60px);
-          opacity: 0.3;
-          animation: morphingAnimation 20s ease-in-out infinite;
+          opacity: 0.15;
+          animation: morphingAnimation 25s ease-in-out infinite;
         }
 
         .shape-1 {
-          width: 400px;
-          height: 400px;
+          width: 300px;
+          height: 300px;
           background: linear-gradient(45deg, #667eea, #764ba2);
           top: 10%;
           left: 10%;
@@ -667,8 +639,8 @@ export default function HomePage() {
         }
 
         .shape-2 {
-          width: 300px;
-          height: 300px;
+          width: 250px;
+          height: 250px;
           background: linear-gradient(45deg, #f093fb, #f5576c);
           top: 60%;
           right: 20%;
@@ -676,8 +648,8 @@ export default function HomePage() {
         }
 
         .shape-3 {
-          width: 350px;
-          height: 350px;
+          width: 280px;
+          height: 280px;
           background: linear-gradient(45deg, #4facfe, #00f2fe);
           bottom: 20%;
           left: 60%;
@@ -685,8 +657,8 @@ export default function HomePage() {
         }
 
         .shape-4 {
-          width: 200px;
-          height: 200px;
+          width: 180px;
+          height: 180px;
           background: linear-gradient(45deg, #667eea, #00f2fe);
           top: 30%;
           right: 10%;
@@ -698,8 +670,8 @@ export default function HomePage() {
           position: absolute;
           background: linear-gradient(45deg, #667eea, #f093fb, #4facfe);
           border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-          opacity: 0.2;
-          animation: liquidMorph 15s ease-in-out infinite;
+          opacity: 0.08;
+          animation: liquidMorph 20s ease-in-out infinite;
         }
 
         .blob-1 {
@@ -732,14 +704,16 @@ export default function HomePage() {
           will-change: transform;
         }
 
-        /* AI TEXT ANIMATION STYLES */
-        .ai-text {
+        /* SIMPLE TEXT ANIMATION STYLES */
+        .simple-text {
           display: inline-block;
+          position: relative;
+          z-index: 1;
         }
 
         .typing-cursor {
           color: #667eea;
-          animation: blink 1s infinite;
+          animation: blink 1.5s infinite;
         }
 
         /* INTERACTIVE 3D CARD STYLES */
@@ -886,6 +860,7 @@ export default function HomePage() {
           max-width: 800px;
           text-align: center;
           z-index: 2;
+          position: relative;
         }
 
         .hero-badge {
@@ -913,6 +888,8 @@ export default function HomePage() {
           line-height: 1.2;
           margin-bottom: 1.5rem;
           animation: fadeInUp 0.8s ease-out 0.2s both;
+          position: relative;
+          z-index: 2;
         }
 
         .gradient-text {
@@ -928,6 +905,8 @@ export default function HomePage() {
           margin-bottom: 2rem;
           line-height: 1.6;
           animation: fadeInUp 0.8s ease-out 0.4s both;
+          position: relative;
+          z-index: 2;
         }
 
         .hero-buttons {
@@ -1641,7 +1620,7 @@ export default function HomePage() {
           
           .morphing-shape,
           .liquid-blob {
-            opacity: 0.1;
+            opacity: 0.05;
           }
           
           .nav-links {
