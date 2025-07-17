@@ -188,12 +188,12 @@ const EnhancedTextAnimation = ({ text, delay = 0, showCursor = false, effect = '
       } else {
         setIsComplete(true);
       }
-    }, delay + (currentIndex * (effect === 'fast' ? 15 : effect === 'slow' ? 60 : 30)));
+    }, delay + (currentIndex * (effect === 'fast' ? 15 : effect === 'slow' ? 60 : 25)));
 
     return () => clearTimeout(timer);
   }, [isVisible, currentIndex, text, delay, isClient, isComplete, effect]);
 
-  if (!isClient) return <span>{text}</span>;
+  if (!isClient) return <span className="fallback-text">{text}</span>;
 
   const getEffectClass = () => {
     switch (effect) {
@@ -208,7 +208,11 @@ const EnhancedTextAnimation = ({ text, delay = 0, showCursor = false, effect = '
 
   return (
     <span ref={ref} className={`enhanced-text ${getEffectClass()}`}>
-      {displayText.split('').map((char, index) => (
+      {/* Show complete text immediately, then enhance with animations */}
+      {!isVisible && (
+        <span className="static-text">{text}</span>
+      )}
+      {isVisible && displayText.split('').map((char, index) => (
         <span 
           key={index} 
           className="char" 
@@ -373,20 +377,22 @@ export default function HomePage() {
             </div>
             
             <h1 className="hero-title">
-              <EnhancedTextAnimation text="Transformamos" delay={0} showCursor={true} effect="cyber" />
+              <noscript>Transformamos ideas en realidad digital</noscript>
+              <EnhancedTextAnimation text="Transformamos" delay={100} showCursor={true} effect="cyber" />
               <span className="gradient-text">
-                <EnhancedTextAnimation text=" ideas " delay={800} effect="hologram" />
+                <EnhancedTextAnimation text=" ideas " delay={500} effect="hologram" />
               </span>
-              <EnhancedTextAnimation text="en" delay={1400} effect="neon" />
+              <EnhancedTextAnimation text="en" delay={800} effect="neon" />
               <span className="gradient-text">
-                <EnhancedTextAnimation text=" realidad digital" delay={1600} effect="matrix" />
+                <EnhancedTextAnimation text=" realidad digital" delay={1000} effect="matrix" />
               </span>
             </h1>
             
             <p className="hero-subtitle">
+              <noscript>Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales.</noscript>
               <EnhancedTextAnimation 
                 text="Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales."
-                delay={2500}
+                delay={1500}
                 effect="particles"
               />
             </p>
@@ -767,6 +773,13 @@ export default function HomePage() {
           display: inline-block;
           position: relative;
           z-index: 1;
+        }
+
+        .fallback-text, .static-text {
+          display: inline-block;
+          position: relative;
+          z-index: 1;
+          opacity: 1;
         }
 
         .enhanced-cursor {
