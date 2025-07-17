@@ -614,19 +614,19 @@ export default function HomePage() {
         }
         
         :root {
-          --primary-gradient: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          --secondary-gradient: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
-          --accent-gradient: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
-          --dark-bg: #0a0a0a;
-          --card-bg: rgba(255, 255, 255, 0.1);
-          --text-primary: #ffffff;
-          --text-secondary: #a0a0a0;
-          --border-color: rgba(255, 255, 255, 0.1);
+          --primary-gradient: linear-gradient(135deg, #4c63d2 0%, #5b3a9e 100%);
+          --secondary-gradient: linear-gradient(135deg, #d946ef 0%, #ec4899 100%);
+          --accent-gradient: linear-gradient(135deg, #0ea5e9 0%, #06b6d4 100%);
+          --light-bg: #ffffff;
+          --card-bg: rgba(0, 0, 0, 0.02);
+          --text-primary: #1a1a1a;
+          --text-secondary: #6b7280;
+          --border-color: rgba(0, 0, 0, 0.08);
         }
         
         body {
           font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-          background: var(--dark-bg);
+          background: var(--light-bg);
           color: var(--text-primary);
           overflow-x: hidden;
           line-height: 1.6;
@@ -638,11 +638,11 @@ export default function HomePage() {
           position: fixed;
           width: 20px;
           height: 20px;
-          background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+          background: linear-gradient(45deg, #4c63d2, #5b3a9e, #d946ef, #ec4899);
           border-radius: 50%;
           pointer-events: none;
           z-index: 9999;
-          mix-blend-mode: difference;
+          mix-blend-mode: multiply;
           transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
           animation: cursorPulse 2s infinite;
         }
@@ -661,7 +661,7 @@ export default function HomePage() {
           position: absolute;
           width: 4px;
           height: 4px;
-          background: linear-gradient(45deg, #667eea, #f093fb);
+          background: linear-gradient(45deg, #4c63d2, #d946ef);
           border-radius: 50%;
           transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
           animation: particleGlow 1s ease-out;
@@ -683,14 +683,14 @@ export default function HomePage() {
           position: absolute;
           border-radius: 50%;
           filter: blur(60px);
-          opacity: 0.15;
+          opacity: 0.03;
           animation: morphingAnimation 25s ease-in-out infinite;
         }
 
         .shape-1 {
           width: 300px;
           height: 300px;
-          background: linear-gradient(45deg, #667eea, #764ba2);
+          background: linear-gradient(45deg, #4c63d2, #5b3a9e);
           top: 10%;
           left: 10%;
           animation-delay: 0s;
@@ -699,7 +699,7 @@ export default function HomePage() {
         .shape-2 {
           width: 250px;
           height: 250px;
-          background: linear-gradient(45deg, #f093fb, #f5576c);
+          background: linear-gradient(45deg, #d946ef, #ec4899);
           top: 60%;
           right: 20%;
           animation-delay: 5s;
@@ -708,7 +708,7 @@ export default function HomePage() {
         .shape-3 {
           width: 280px;
           height: 280px;
-          background: linear-gradient(45deg, #4facfe, #00f2fe);
+          background: linear-gradient(45deg, #0ea5e9, #06b6d4);
           bottom: 20%;
           left: 60%;
           animation-delay: 10s;
@@ -717,7 +717,7 @@ export default function HomePage() {
         .shape-4 {
           width: 180px;
           height: 180px;
-          background: linear-gradient(45deg, #667eea, #00f2fe);
+          background: linear-gradient(45deg, #4c63d2, #06b6d4);
           top: 30%;
           right: 10%;
           animation-delay: 15s;
@@ -726,9 +726,9 @@ export default function HomePage() {
         /* LIQUID BLOBS */
         .liquid-blob {
           position: absolute;
-          background: linear-gradient(45deg, #667eea, #f093fb, #4facfe);
+          background: linear-gradient(45deg, #4c63d2, #d946ef, #0ea5e9);
           border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-          opacity: 0.08;
+          opacity: 0.02;
           animation: liquidMorph 20s ease-in-out infinite;
         }
 
@@ -777,9 +777,9 @@ export default function HomePage() {
         }
 
         .enhanced-cursor {
-          color: #667eea;
+          color: #4c63d2;
           animation: blink 1.5s infinite;
-          text-shadow: 0 0 10px #667eea;
+          text-shadow: 0 0 10px #4c63d2;
         }
 
         .char {
@@ -835,7 +835,7 @@ export default function HomePage() {
           position: fixed;
           width: 4px;
           height: 4px;
-          background: linear-gradient(45deg, #667eea, #f093fb);
+          background: linear-gradient(45deg, #4c63d2, #d946ef);
           border-radius: 50%;
           pointer-events: none;
           z-index: 9999;
@@ -918,7 +918,7 @@ export default function HomePage() {
           position: absolute;
           width: 2px;
           height: 2px;
-          background: rgba(255, 255, 255, 0.5);
+          background: rgba(76, 99, 210, 0.3);
           border-radius: 50%;
           animation: particleFloat 8s linear infinite;
         }
@@ -1016,7 +1016,7 @@ export default function HomePage() {
           animation: fadeInUp 0.8s ease-out 0.2s both;
           position: relative;
           z-index: 2;
-          text-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+          text-shadow: 0 0 20px rgba(76, 99, 210, 0.2);
         }
 
         .hero-title:hover {
@@ -1040,7 +1040,7 @@ export default function HomePage() {
           animation: fadeInUp 0.8s ease-out 0.4s both;
           position: relative;
           z-index: 2;
-          text-shadow: 0 0 10px rgba(160, 160, 160, 0.2);
+          text-shadow: 0 0 10px rgba(107, 114, 128, 0.1);
         }
 
         .hero-subtitle:hover {
@@ -1075,7 +1075,7 @@ export default function HomePage() {
 
         .btn-primary:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.4);
+          box-shadow: 0 10px 30px rgba(76, 99, 210, 0.3);
         }
 
         .btn-secondary {
@@ -1145,7 +1145,7 @@ export default function HomePage() {
         .card-icon {
           width: 24px;
           height: 24px;
-          color: #667eea;
+          color: #4c63d2;
         }
 
         .card-content h3 {
@@ -1204,7 +1204,7 @@ export default function HomePage() {
 
         .service-card:hover {
           transform: translateY(-5px);
-          border-color: rgba(102, 126, 234, 0.5);
+          border-color: rgba(76, 99, 210, 0.3);
         }
 
         .service-icon {
@@ -1238,8 +1238,8 @@ export default function HomePage() {
         }
 
         .service-features span {
-          background: rgba(102, 126, 234, 0.1);
-          color: #667eea;
+          background: rgba(76, 99, 210, 0.1);
+          color: #4c63d2;
           padding: 0.25rem 0.75rem;
           border-radius: 1rem;
           font-size: 0.875rem;
@@ -1319,7 +1319,7 @@ export default function HomePage() {
 
         .tech-item:hover {
           transform: translateY(-2px);
-          border-color: rgba(102, 126, 234, 0.5);
+          border-color: rgba(76, 99, 210, 0.3);
         }
 
         .contact {
@@ -1385,7 +1385,7 @@ export default function HomePage() {
         .form-group textarea {
           width: 100%;
           padding: 1rem;
-          background: rgba(255, 255, 255, 0.05);
+          background: rgba(0, 0, 0, 0.02);
           border: 1px solid var(--border-color);
           border-radius: 0.5rem;
           color: var(--text-primary);
@@ -1396,7 +1396,7 @@ export default function HomePage() {
         .form-group input:focus,
         .form-group textarea:focus {
           outline: none;
-          border-color: #667eea;
+          border-color: #4c63d2;
         }
 
         .form-group input::placeholder,
@@ -1790,7 +1790,7 @@ export default function HomePage() {
           left: 0;
           width: 100%;
           height: 100%;
-          background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+          background: linear-gradient(45deg, transparent, rgba(76, 99, 210, 0.03), transparent);
           opacity: 0;
           transition: opacity 0.3s ease;
         }
@@ -1823,7 +1823,7 @@ export default function HomePage() {
 
         .contact-method:hover {
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+          box-shadow: 0 10px 30px rgba(76, 99, 210, 0.1);
         }
 
         /* ENHANCED BUTTONS */
@@ -1859,7 +1859,7 @@ export default function HomePage() {
           left: -100%;
           width: 100%;
           height: 100%;
-          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+          background: linear-gradient(90deg, transparent, rgba(76, 99, 210, 0.1), transparent);
           transition: left 0.5s;
         }
 
@@ -1891,7 +1891,7 @@ export default function HomePage() {
 
         /* HOLOGRAPHIC SHIMMER EFFECT */
         .gradient-text {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
+          background: linear-gradient(135deg, #4c63d2 0%, #5b3a9e 50%, #d946ef 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
@@ -1925,28 +1925,28 @@ export default function HomePage() {
         .wave-1 {
           width: 200px;
           height: 200px;
-          border-color: rgba(102, 126, 234, 0.3);
+          border-color: rgba(76, 99, 210, 0.1);
           animation-delay: 0s;
         }
 
         .wave-2 {
           width: 400px;
           height: 400px;
-          border-color: rgba(240, 147, 251, 0.3);
+          border-color: rgba(217, 70, 239, 0.1);
           animation-delay: 1s;
         }
 
         .wave-3 {
           width: 600px;
           height: 600px;
-          border-color: rgba(79, 172, 254, 0.3);
+          border-color: rgba(14, 165, 233, 0.1);
           animation-delay: 2s;
         }
 
         .wave-4 {
           width: 800px;
           height: 800px;
-          border-color: rgba(0, 242, 254, 0.3);
+          border-color: rgba(6, 182, 212, 0.1);
           animation-delay: 3s;
         }
 
@@ -1982,7 +1982,7 @@ export default function HomePage() {
           
           .morphing-shape,
           .liquid-blob {
-            opacity: 0.05;
+            opacity: 0.01;
           }
           
           .nav-links {
