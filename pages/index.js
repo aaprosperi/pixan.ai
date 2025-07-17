@@ -202,6 +202,7 @@ const EnhancedTextAnimation = ({ text, delay = 0, showCursor = false, effect = '
       case 'matrix': return 'text-matrix';
       case 'hologram': return 'text-hologram';
       case 'cyber': return 'text-cyber';
+      case 'typewriter': return 'text-typewriter';
       default: return 'simple-text';
     }
   };
@@ -378,16 +379,15 @@ export default function HomePage() {
             
             <h1 className="hero-title">
               <span className="gradient-text">
-                <EnhancedTextAnimation text="Transformamos ideas en realidad digital" delay={100} showCursor={true} effect="hologram" />
+                Transformamos ideas en realidad digital
               </span>
             </h1>
             
             <p className="hero-subtitle">
-              <noscript>Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales.</noscript>
               <EnhancedTextAnimation 
                 text="Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales."
-                delay={1500}
-                effect="particles"
+                delay={500}
+                effect="typewriter"
               />
             </p>
             
@@ -822,6 +822,12 @@ export default function HomePage() {
         .text-glitch .char {
           animation: glitchReveal 0.5s ease-out forwards;
           text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+        }
+
+        /* TYPEWRITER EFFECT */
+        .text-typewriter .char {
+          animation: typewriterReveal 0.3s ease-out forwards;
+          opacity: 0;
         }
 
         /* PARTICLE EFFECTS */
@@ -1671,6 +1677,15 @@ export default function HomePage() {
           }
         }
 
+        @keyframes typewriterReveal {
+          0% {
+            opacity: 0;
+          }
+          100% {
+            opacity: 1;
+          }
+        }
+
         @keyframes particleExplode {
           0% {
             opacity: 1;
@@ -1876,12 +1891,12 @@ export default function HomePage() {
 
         /* HOLOGRAPHIC SHIMMER EFFECT */
         .gradient-text {
-          background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
-          background-size: 400% 400%;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 50%, #f093fb 100%);
           -webkit-background-clip: text;
           -webkit-text-fill-color: transparent;
           background-clip: text;
-          animation: hologramShimmer 3s ease-in-out infinite;
+          text-shadow: none;
+          filter: none;
         }
 
         /* ENERGY WAVES */
