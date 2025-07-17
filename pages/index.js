@@ -317,7 +317,7 @@ export default function HomePage() {
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link rel="preconnect" href="https://fonts.googleapis.com" />
         <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="true" />
-        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&family=Space+Grotesk:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@100;200;300;400;500;600;700;800;900&display=swap" rel="stylesheet" />
       </Head>
 
       <div className="app-container">
@@ -377,14 +377,8 @@ export default function HomePage() {
             </div>
             
             <h1 className="hero-title">
-              <noscript>Transformamos ideas en realidad digital</noscript>
-              <EnhancedTextAnimation text="Transformamos" delay={100} showCursor={true} effect="cyber" />
               <span className="gradient-text">
-                <EnhancedTextAnimation text=" ideas " delay={500} effect="hologram" />
-              </span>
-              <EnhancedTextAnimation text="en" delay={800} effect="neon" />
-              <span className="gradient-text">
-                <EnhancedTextAnimation text=" realidad digital" delay={1000} effect="matrix" />
+                <EnhancedTextAnimation text="Transformamos ideas en realidad digital" delay={100} showCursor={true} effect="hologram" />
               </span>
             </h1>
             
@@ -1008,7 +1002,7 @@ export default function HomePage() {
         }
 
         .hero-title {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: clamp(2.5rem, 5vw, 4rem);
           font-weight: 700;
           line-height: 1.2;
@@ -1174,7 +1168,7 @@ export default function HomePage() {
         }
 
         .section-title {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: 2.5rem;
           font-weight: 700;
           margin-bottom: 1rem;
@@ -1258,7 +1252,7 @@ export default function HomePage() {
         }
 
         .about-text h2 {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: 2.5rem;
           font-weight: 700;
           margin-bottom: 1.5rem;
@@ -1333,7 +1327,7 @@ export default function HomePage() {
         }
 
         .contact-info h2 {
-          font-family: 'Space Grotesk', sans-serif;
+          font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           font-size: 2.5rem;
           font-weight: 700;
           margin-bottom: 1.5rem;
@@ -2029,10 +2023,12 @@ export default function HomePage() {
 
           .section-title {
             font-size: 2rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           }
 
           .hero-title {
             font-size: 2rem;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
           }
         }
       `}</style>
