@@ -129,13 +129,14 @@ const Parallax3D = ({ children, speed = 0.5 }) => {
   );
 };
 
-// Simplified Text Animation Component
-const SimpleTextAnimation = ({ text, delay = 0, showCursor = false }) => {
+// Enhanced Text Animation Component with WOW Effects
+const EnhancedTextAnimation = ({ text, delay = 0, showCursor = false, effect = 'typewriter' }) => {
   const [displayText, setDisplayText] = useState('');
   const [isVisible, setIsVisible] = useState(false);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [isClient, setIsClient] = useState(false);
   const [isComplete, setIsComplete] = useState(false);
+  const [particles, setParticles] = useState([]);
   const ref = useRef(null);
 
   useEffect(() => {
@@ -168,22 +169,71 @@ const SimpleTextAnimation = ({ text, delay = 0, showCursor = false }) => {
       if (currentIndex < text.length) {
         setDisplayText(prev => prev + text[currentIndex]);
         setCurrentIndex(prev => prev + 1);
+        
+        // Add particle effect when typing
+        if (effect === 'particles' && ref.current) {
+          const rect = ref.current.getBoundingClientRect();
+          const newParticle = {
+            id: Date.now() + Math.random(),
+            x: rect.right,
+            y: rect.top + rect.height / 2,
+          };
+          setParticles(prev => [...prev, newParticle]);
+          
+          // Remove particle after animation
+          setTimeout(() => {
+            setParticles(prev => prev.filter(p => p.id !== newParticle.id));
+          }, 1000);
+        }
       } else {
         setIsComplete(true);
       }
-    }, delay + (currentIndex * 30));
+    }, delay + (currentIndex * (effect === 'fast' ? 15 : effect === 'slow' ? 60 : 30)));
 
     return () => clearTimeout(timer);
-  }, [isVisible, currentIndex, text, delay, isClient, isComplete]);
+  }, [isVisible, currentIndex, text, delay, isClient, isComplete, effect]);
 
   if (!isClient) return <span>{text}</span>;
 
+  const getEffectClass = () => {
+    switch (effect) {
+      case 'glitch': return 'text-glitch';
+      case 'neon': return 'text-neon';
+      case 'matrix': return 'text-matrix';
+      case 'hologram': return 'text-hologram';
+      case 'cyber': return 'text-cyber';
+      default: return 'simple-text';
+    }
+  };
+
   return (
-    <span ref={ref} className="simple-text">
-      {displayText}
+    <span ref={ref} className={`enhanced-text ${getEffectClass()}`}>
+      {displayText.split('').map((char, index) => (
+        <span 
+          key={index} 
+          className="char" 
+          style={{
+            animationDelay: `${index * 0.1}s`,
+            '--char-index': index
+          }}
+        >
+          {char === ' ' ? '\u00A0' : char}
+        </span>
+      ))}
       {showCursor && !isComplete && isVisible && (
-        <span className="typing-cursor">|</span>
+        <span className="enhanced-cursor">|</span>
       )}
+      {/* Particle effects */}
+      {particles.map(particle => (
+        <div
+          key={particle.id}
+          className="text-particle"
+          style={{
+            left: particle.x,
+            top: particle.y,
+          }}
+        />
+      ))}
     </span>
   );
 };
@@ -309,6 +359,13 @@ export default function HomePage() {
 
         {/* Hero Section */}
         <section className="hero">
+          {/* Energy Waves */}
+          <div className="energy-waves">
+            <div className="wave wave-1"></div>
+            <div className="wave wave-2"></div>
+            <div className="wave wave-3"></div>
+            <div className="wave wave-4"></div>
+          </div>
           <div className="hero-content">
             <div className="hero-badge interactive">
               <Sparkles className="icon" />
@@ -316,20 +373,21 @@ export default function HomePage() {
             </div>
             
             <h1 className="hero-title">
-              <SimpleTextAnimation text="Transformamos" delay={0} showCursor={true} />
+              <EnhancedTextAnimation text="Transformamos" delay={0} showCursor={true} effect="cyber" />
               <span className="gradient-text">
-                <SimpleTextAnimation text=" ideas " delay={800} />
+                <EnhancedTextAnimation text=" ideas " delay={800} effect="hologram" />
               </span>
-              <SimpleTextAnimation text="en" delay={1400} />
+              <EnhancedTextAnimation text="en" delay={1400} effect="neon" />
               <span className="gradient-text">
-                <SimpleTextAnimation text=" realidad digital" delay={1600} />
+                <EnhancedTextAnimation text=" realidad digital" delay={1600} effect="matrix" />
               </span>
             </h1>
             
             <p className="hero-subtitle">
-              <SimpleTextAnimation 
+              <EnhancedTextAnimation 
                 text="Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales."
                 delay={2500}
+                effect="particles"
               />
             </p>
             
@@ -704,16 +762,71 @@ export default function HomePage() {
           will-change: transform;
         }
 
-        /* SIMPLE TEXT ANIMATION STYLES */
-        .simple-text {
+        /* ENHANCED TEXT ANIMATION STYLES */
+        .enhanced-text {
           display: inline-block;
           position: relative;
           z-index: 1;
         }
 
-        .typing-cursor {
+        .enhanced-cursor {
           color: #667eea;
           animation: blink 1.5s infinite;
+          text-shadow: 0 0 10px #667eea;
+        }
+
+        .char {
+          display: inline-block;
+          animation: charReveal 0.5s ease-out forwards;
+          opacity: 0;
+          transform: translateY(20px);
+        }
+
+        /* CYBER EFFECT */
+        .text-cyber .char {
+          animation: cyberGlitch 0.5s ease-out forwards;
+          text-shadow: 0 0 5px #00ffff, 0 0 10px #00ffff, 0 0 15px #00ffff;
+        }
+
+        /* NEON EFFECT */
+        .text-neon .char {
+          animation: neonGlow 0.5s ease-out forwards;
+          text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff, 0 0 20px #ff00ff;
+        }
+
+        /* MATRIX EFFECT */
+        .text-matrix .char {
+          animation: matrixRain 0.5s ease-out forwards;
+          color: #00ff00;
+          text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00;
+        }
+
+        /* HOLOGRAM EFFECT */
+        .text-hologram .char {
+          animation: hologramFlicker 0.5s ease-out forwards;
+          background: linear-gradient(45deg, #00ffff, #ff00ff, #ffff00, #00ffff);
+          background-size: 400% 400%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+        }
+
+        /* GLITCH EFFECT */
+        .text-glitch .char {
+          animation: glitchReveal 0.5s ease-out forwards;
+          text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+        }
+
+        /* PARTICLE EFFECTS */
+        .text-particle {
+          position: fixed;
+          width: 4px;
+          height: 4px;
+          background: linear-gradient(45deg, #667eea, #f093fb);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 9999;
+          animation: particleExplode 1s ease-out forwards;
         }
 
         /* INTERACTIVE 3D CARD STYLES */
@@ -890,6 +1003,13 @@ export default function HomePage() {
           animation: fadeInUp 0.8s ease-out 0.2s both;
           position: relative;
           z-index: 2;
+          text-shadow: 0 0 20px rgba(102, 126, 234, 0.3);
+        }
+
+        .hero-title:hover {
+          transform: scale(1.02);
+          text-shadow: 0 0 30px rgba(102, 126, 234, 0.5);
+          transition: all 0.3s ease;
         }
 
         .gradient-text {
@@ -907,6 +1027,13 @@ export default function HomePage() {
           animation: fadeInUp 0.8s ease-out 0.4s both;
           position: relative;
           z-index: 2;
+          text-shadow: 0 0 10px rgba(160, 160, 160, 0.2);
+        }
+
+        .hero-subtitle:hover {
+          color: var(--text-primary);
+          text-shadow: 0 0 15px rgba(160, 160, 160, 0.4);
+          transition: all 0.3s ease;
         }
 
         .hero-buttons {
@@ -1409,6 +1536,149 @@ export default function HomePage() {
           51%, 100% { opacity: 0; }
         }
 
+        @keyframes charReveal {
+          0% {
+            opacity: 0;
+            transform: translateY(20px) scale(0.8);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) scale(1);
+          }
+        }
+
+        @keyframes cyberGlitch {
+          0% {
+            opacity: 0;
+            transform: translateY(20px) skewX(-20deg);
+            filter: hue-rotate(0deg);
+          }
+          50% {
+            opacity: 0.8;
+            transform: translateY(-5px) skewX(10deg);
+            filter: hue-rotate(180deg);
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0) skewX(0deg);
+            filter: hue-rotate(360deg);
+          }
+        }
+
+        @keyframes neonGlow {
+          0% {
+            opacity: 0;
+            transform: scale(0.5);
+            text-shadow: 0 0 5px #ff00ff;
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.2);
+            text-shadow: 0 0 10px #ff00ff, 0 0 20px #ff00ff, 0 0 30px #ff00ff;
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            text-shadow: 0 0 5px #ff00ff, 0 0 10px #ff00ff, 0 0 15px #ff00ff, 0 0 20px #ff00ff;
+          }
+        }
+
+        @keyframes matrixRain {
+          0% {
+            opacity: 0;
+            transform: translateY(-50px);
+            color: #ffffff;
+          }
+          50% {
+            opacity: 0.8;
+            transform: translateY(10px);
+            color: #00ff00;
+            text-shadow: 0 0 10px #00ff00;
+          }
+          100% {
+            opacity: 1;
+            transform: translateY(0);
+            color: #00ff00;
+            text-shadow: 0 0 5px #00ff00, 0 0 10px #00ff00;
+          }
+        }
+
+        @keyframes hologramFlicker {
+          0% {
+            opacity: 0;
+            transform: scale(0.8);
+            background-position: 0% 50%;
+          }
+          25% {
+            opacity: 0.3;
+            transform: scale(1.1);
+            background-position: 25% 50%;
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(0.9);
+            background-position: 50% 50%;
+          }
+          75% {
+            opacity: 0.6;
+            transform: scale(1.05);
+            background-position: 75% 50%;
+          }
+          100% {
+            opacity: 1;
+            transform: scale(1);
+            background-position: 100% 50%;
+          }
+        }
+
+        @keyframes glitchReveal {
+          0% {
+            opacity: 0;
+            transform: translateX(-10px);
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+          }
+          20% {
+            opacity: 0.8;
+            transform: translateX(5px);
+            text-shadow: 5px 0 #ff0000, -5px 0 #00ffff;
+          }
+          40% {
+            opacity: 0.6;
+            transform: translateX(-3px);
+            text-shadow: -3px 0 #ff0000, 3px 0 #00ffff;
+          }
+          60% {
+            opacity: 0.9;
+            transform: translateX(2px);
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+          }
+          80% {
+            opacity: 0.7;
+            transform: translateX(-1px);
+            text-shadow: -1px 0 #ff0000, 1px 0 #00ffff;
+          }
+          100% {
+            opacity: 1;
+            transform: translateX(0);
+            text-shadow: 2px 0 #ff0000, -2px 0 #00ffff;
+          }
+        }
+
+        @keyframes particleExplode {
+          0% {
+            opacity: 1;
+            transform: scale(1) translate(0, 0);
+          }
+          50% {
+            opacity: 0.8;
+            transform: scale(1.5) translate(var(--random-x, 20px), var(--random-y, -20px));
+          }
+          100% {
+            opacity: 0;
+            transform: scale(0.5) translate(var(--random-x, 40px), var(--random-y, -40px));
+          }
+        }
+
         @keyframes cinematicFade {
           0% { 
             opacity: 0; 
@@ -1607,6 +1877,76 @@ export default function HomePage() {
           animation: hologramShimmer 3s ease-in-out infinite;
         }
 
+        /* ENERGY WAVES */
+        .energy-waves {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 1;
+        }
+
+        .wave {
+          position: absolute;
+          top: 50%;
+          left: 50%;
+          transform: translate(-50%, -50%);
+          border: 2px solid transparent;
+          border-radius: 50%;
+          opacity: 0;
+          animation: energyWave 4s ease-out infinite;
+        }
+
+        .wave-1 {
+          width: 200px;
+          height: 200px;
+          border-color: rgba(102, 126, 234, 0.3);
+          animation-delay: 0s;
+        }
+
+        .wave-2 {
+          width: 400px;
+          height: 400px;
+          border-color: rgba(240, 147, 251, 0.3);
+          animation-delay: 1s;
+        }
+
+        .wave-3 {
+          width: 600px;
+          height: 600px;
+          border-color: rgba(79, 172, 254, 0.3);
+          animation-delay: 2s;
+        }
+
+        .wave-4 {
+          width: 800px;
+          height: 800px;
+          border-color: rgba(0, 242, 254, 0.3);
+          animation-delay: 3s;
+        }
+
+        @keyframes energyWave {
+          0% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(0.1);
+          }
+          30% {
+            opacity: 1;
+            transform: translate(-50%, -50%) scale(0.5);
+          }
+          70% {
+            opacity: 0.5;
+            transform: translate(-50%, -50%) scale(0.8);
+          }
+          100% {
+            opacity: 0;
+            transform: translate(-50%, -50%) scale(1);
+          }
+        }
+
         /* MOBILE OPTIMIZATIONS */
         @media (max-width: 768px) {
           body {
@@ -1657,6 +1997,10 @@ export default function HomePage() {
           }
 
           .floating-card {
+            display: none;
+          }
+
+          .energy-waves {
             display: none;
           }
         }
