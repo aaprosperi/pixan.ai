@@ -1,18 +1,257 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import Head from 'next/head';
 import { Sparkles, Brain, Code, Zap, ArrowRight, Github, Linkedin, Mail } from 'lucide-react';
+
+// Magnetic Cursor Component
+const MagneticCursor = () => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [cursorVariant, setCursorVariant] = useState('default');
+  const [trail, setTrail] = useState([]);
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+    
+    const handleMouseMove = (e) => {
+      setMousePosition({ x: e.clientX, y: e.clientY });
+      
+      // Create particle trail
+      setTrail(prev => [
+        { x: e.clientX, y: e.clientY, id: Date.now() },
+        ...prev.slice(0, 8)
+      ]);
+    };
+
+    const handleMouseEnter = () => setCursorVariant('hover');
+    const handleMouseLeave = () => setCursorVariant('default');
+
+    window.addEventListener('mousemove', handleMouseMove);
+    
+    // Add hover effects to interactive elements
+    const interactiveElements = document.querySelectorAll('button, a, .interactive');
+    interactiveElements.forEach(el => {
+      el.addEventListener('mouseenter', handleMouseEnter);
+      el.addEventListener('mouseleave', handleMouseLeave);
+    });
+
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      interactiveElements.forEach(el => {
+        el.removeEventListener('mouseenter', handleMouseEnter);
+        el.removeEventListener('mouseleave', handleMouseLeave);
+      });
+    };
+  }, []);
+
+  if (!isClient) return null;
+
+  return (
+    <>
+      {/* Custom Cursor */}
+      <div
+        className="cursor"
+        style={{
+          left: mousePosition.x - 10,
+          top: mousePosition.y - 10,
+          transform: cursorVariant === 'hover' ? 'scale(2)' : 'scale(1)',
+        }}
+      />
+      
+      {/* Particle Trail */}
+      <div className="cursor-trail">
+        {trail.map((particle, index) => (
+          <div
+            key={particle.id}
+            className="trail-particle"
+            style={{
+              left: particle.x - 2,
+              top: particle.y - 2,
+              opacity: 1 - (index * 0.15),
+              transform: `scale(${1 - (index * 0.1)})`,
+            }}
+          />
+        ))}
+      </div>
+    </>
+  );
+};
+
+// Morphing Shapes Component
+const MorphingShapes = () => {
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
+
+  if (!isClient) return null;
+
+  return (
+    <div className="morphing-container">
+      <div className="morphing-shape shape-1" />
+      <div className="morphing-shape shape-2" />
+      <div className="morphing-shape shape-3" />
+      <div className="morphing-shape shape-4" />
+      <div className="liquid-blob blob-1" />
+      <div className="liquid-blob blob-2" />
+      <div className="liquid-blob blob-3" />
+    </div>
+  );
+};
+
+// Parallax 3D Component
+const Parallax3D = ({ children, speed = 0.5 }) => {
+  const [scrollY, setScrollY] = useState(0);
+  const [isClient, setIsClient] = useState(false);
+  
+  useEffect(() => {
+    setIsClient(true);
+    
+    const handleScroll = () => {
+      setScrollY(window.scrollY);
+    };
+
+    window.addEventListener('scroll', handleScroll);
+    return () => window.removeEventListener('scroll', handleScroll);
+  }, []);
+
+  if (!isClient) return <div>{children}</div>;
+
+  return (
+    <div
+      className="parallax-layer"
+      style={{
+        transform: `translateY(${scrollY * speed}px) rotateX(${scrollY * 0.01}deg)`,
+      }}
+    >
+      {children}
+    </div>
+  );
+};
+
+// AI Text Animation Component
+const AITextAnimation = ({ text, delay = 0 }) => {
+  const [displayText, setDisplayText] = useState('');
+  const [isVisible, setIsVisible] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [showCursor, setShowCursor] = useState(true);
+  const [isClient, setIsClient] = useState(false);
+  const ref = useRef(null);
+
+  useEffect(() => {
+    setIsClient(true);
+    
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        if (entry.isIntersecting) {
+          setIsVisible(true);
+        }
+      },
+      { threshold: 0.1 }
+    );
+
+    if (ref.current) {
+      observer.observe(ref.current);
+    }
+
+    return () => {
+      if (ref.current) {
+        observer.unobserve(ref.current);
+      }
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!isVisible || !isClient) return;
+
+    const timer = setTimeout(() => {
+      if (currentIndex < text.length) {
+        setDisplayText(prev => prev + text[currentIndex]);
+        setCurrentIndex(prev => prev + 1);
+      }
+    }, delay + (currentIndex * 50));
+
+    return () => clearTimeout(timer);
+  }, [isVisible, currentIndex, text, delay, isClient]);
+
+  useEffect(() => {
+    if (!isClient) return;
+    
+    const cursorTimer = setInterval(() => {
+      setShowCursor(prev => !prev);
+    }, 500);
+
+    return () => clearInterval(cursorTimer);
+  }, [isClient]);
+
+  if (!isClient) return <span>{text}</span>;
+
+  return (
+    <span ref={ref} className="ai-text">
+      {displayText}
+      {showCursor && currentIndex <= text.length && (
+        <span className="typing-cursor">|</span>
+      )}
+    </span>
+  );
+};
+
+// Interactive 3D Card Component
+const Interactive3DCard = ({ children, className = '' }) => {
+  const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
+  const [isHovered, setIsHovered] = useState(false);
+  const cardRef = useRef(null);
+
+  const handleMouseMove = useCallback((e) => {
+    if (!cardRef.current) return;
+    
+    const rect = cardRef.current.getBoundingClientRect();
+    const centerX = rect.left + rect.width / 2;
+    const centerY = rect.top + rect.height / 2;
+    
+    const rotateX = (e.clientY - centerY) / 10;
+    const rotateY = (centerX - e.clientX) / 10;
+    
+    setMousePosition({ x: rotateY, y: rotateX });
+  }, []);
+
+  return (
+    <div
+      ref={cardRef}
+      className={`interactive-3d-card ${className}`}
+      style={{
+        transform: isHovered 
+          ? `perspective(1000px) rotateX(${mousePosition.y}deg) rotateY(${mousePosition.x}deg) scale(1.05)` 
+          : 'perspective(1000px) rotateX(0deg) rotateY(0deg) scale(1)',
+      }}
+      onMouseMove={handleMouseMove}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => {
+        setIsHovered(false);
+        setMousePosition({ x: 0, y: 0 });
+      }}
+    >
+      {children}
+    </div>
+  );
+};
 
 export default function HomePage() {
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 });
   const [isScrolled, setIsScrolled] = useState(false);
+  const [scrollY, setScrollY] = useState(0);
+  const [isClient, setIsClient] = useState(false);
 
   useEffect(() => {
+    setIsClient(true);
+    
     const handleMouseMove = (e) => {
       setMousePosition({ x: e.clientX, y: e.clientY });
     };
 
     const handleScroll = () => {
       setIsScrolled(window.scrollY > 50);
+      setScrollY(window.scrollY);
     };
 
     window.addEventListener('mousemove', handleMouseMove);
@@ -36,6 +275,12 @@ export default function HomePage() {
       </Head>
 
       <div className="app-container">
+        {/* Magnetic Cursor */}
+        <MagneticCursor />
+
+        {/* Morphing Shapes */}
+        <MorphingShapes />
+
         {/* Animated Background */}
         <div className="animated-bg">
           <div className="gradient-orb orb-1"></div>
@@ -72,205 +317,237 @@ export default function HomePage() {
 
         {/* Hero Section */}
         <section className="hero">
-          <div className="hero-content">
-            <div className="hero-badge">
-              <Sparkles className="icon" />
-              <span>Powered by AI</span>
+          <Parallax3D speed={0.2}>
+            <div className="hero-content">
+              <div className="hero-badge interactive">
+                <Sparkles className="icon" />
+                <span>Powered by AI</span>
+              </div>
+              
+              <h1 className="hero-title">
+                <AITextAnimation text="Transformamos" delay={0} />
+                <span className="gradient-text">
+                  <AITextAnimation text=" ideas " delay={500} />
+                </span>
+                <AITextAnimation text="en" delay={1000} />
+                <span className="gradient-text">
+                  <AITextAnimation text=" realidad digital" delay={1200} />
+                </span>
+              </h1>
+              
+              <p className="hero-subtitle">
+                <AITextAnimation 
+                  text="Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial con tecnologías modernas para crear experiencias excepcionales."
+                  delay={2000}
+                />
+              </p>
+              
+              <div className="hero-buttons">
+                <button className="btn-primary interactive">
+                  Comenzar Proyecto
+                  <ArrowRight className="icon" />
+                </button>
+                <button className="btn-secondary interactive">
+                  Ver Demos
+                </button>
+              </div>
             </div>
-            
-            <h1 className="hero-title">
-              Transformamos
-              <span className="gradient-text"> ideas </span>
-              en
-              <span className="gradient-text"> realidad digital</span>
-            </h1>
-            
-            <p className="hero-subtitle">
-              Desarrollamos aplicaciones web personalizadas combinando la potencia de la inteligencia artificial 
-              con tecnologías modernas para crear experiencias excepcionales.
-            </p>
-            
-            <div className="hero-buttons">
-              <button className="btn-primary">
-                Comenzar Proyecto
-                <ArrowRight className="icon" />
-              </button>
-              <button className="btn-secondary">
-                Ver Demos
-              </button>
-            </div>
-          </div>
+          </Parallax3D>
           
-          <div className="hero-visual">
-            <div className="floating-card card-1">
-              <Brain className="card-icon" />
-              <div className="card-content">
-                <h3>IA Avanzada</h3>
-                <p>Algoritmos inteligentes</p>
-              </div>
+          <Parallax3D speed={0.8}>
+            <div className="hero-visual">
+              <Interactive3DCard className="floating-card card-1">
+                <Brain className="card-icon" />
+                <div className="card-content">
+                  <h3>IA Avanzada</h3>
+                  <p>Algoritmos inteligentes</p>
+                </div>
+              </Interactive3DCard>
+              <Interactive3DCard className="floating-card card-2">
+                <Code className="card-icon" />
+                <div className="card-content">
+                  <h3>Código Limpio</h3>
+                  <p>Desarrollo moderno</p>
+                </div>
+              </Interactive3DCard>
+              <Interactive3DCard className="floating-card card-3">
+                <Zap className="card-icon" />
+                <div className="card-content">
+                  <h3>Alto Rendimiento</h3>
+                  <p>Velocidad optimizada</p>
+                </div>
+              </Interactive3DCard>
             </div>
-            <div className="floating-card card-2">
-              <Code className="card-icon" />
-              <div className="card-content">
-                <h3>Código Limpio</h3>
-                <p>Desarrollo moderno</p>
-              </div>
-            </div>
-            <div className="floating-card card-3">
-              <Zap className="card-icon" />
-              <div className="card-content">
-                <h3>Alto Rendimiento</h3>
-                <p>Velocidad optimizada</p>
-              </div>
-            </div>
-          </div>
+          </Parallax3D>
         </section>
 
         {/* Services Section */}
-        <section id="services" className="services">
-          <div className="container">
-            <div className="section-header">
-              <h2 className="section-title">Nuestros Servicios</h2>
-              <p className="section-subtitle">
-                Soluciones tecnológicas innovadoras para impulsar tu negocio
-              </p>
-            </div>
-            
-            <div className="services-grid">
-              <div className="service-card">
-                <div className="service-icon">
-                  <Brain />
-                </div>
-                <h3>Desarrollo con IA</h3>
-                <p>Aplicaciones inteligentes que aprenden y se adaptan a las necesidades de tus usuarios</p>
-                <div className="service-features">
-                  <span>Machine Learning</span>
-                  <span>NLP</span>
-                  <span>Computer Vision</span>
-                </div>
+        <Parallax3D speed={0.3}>
+          <section id="services" className="services">
+            <div className="container">
+              <div className="section-header">
+                <h2 className="section-title">
+                  <AITextAnimation text="Nuestros Servicios" delay={0} />
+                </h2>
+                <p className="section-subtitle">
+                  <AITextAnimation text="Soluciones tecnológicas innovadoras para impulsar tu negocio" delay={300} />
+                </p>
               </div>
               
-              <div className="service-card">
-                <div className="service-icon">
-                  <Code />
-                </div>
-                <h3>Desarrollo Web</h3>
-                <p>Aplicaciones web modernas y escalables usando las últimas tecnologías</p>
-                <div className="service-features">
-                  <span>React/Next.js</span>
-                  <span>Node.js</span>
-                  <span>GraphQL</span>
-                </div>
-              </div>
-              
-              <div className="service-card">
-                <div className="service-icon">
-                  <Zap />
-                </div>
-                <h3>Optimización</h3>
-                <p>Mejoramos el rendimiento y la experiencia de usuario de tus aplicaciones</p>
-                <div className="service-features">
-                  <span>Performance</span>
-                  <span>SEO</span>
-                  <span>Analytics</span>
-                </div>
+              <div className="services-grid">
+                <Interactive3DCard className="service-card">
+                  <div className="service-icon">
+                    <Brain />
+                  </div>
+                  <h3>Desarrollo con IA</h3>
+                  <p>Aplicaciones inteligentes que aprenden y se adaptan a las necesidades de tus usuarios</p>
+                  <div className="service-features">
+                    <span>Machine Learning</span>
+                    <span>NLP</span>
+                    <span>Computer Vision</span>
+                  </div>
+                </Interactive3DCard>
+                
+                <Interactive3DCard className="service-card">
+                  <div className="service-icon">
+                    <Code />
+                  </div>
+                  <h3>Desarrollo Web</h3>
+                  <p>Aplicaciones web modernas y escalables usando las últimas tecnologías</p>
+                  <div className="service-features">
+                    <span>React/Next.js</span>
+                    <span>Node.js</span>
+                    <span>GraphQL</span>
+                  </div>
+                </Interactive3DCard>
+                
+                <Interactive3DCard className="service-card">
+                  <div className="service-icon">
+                    <Zap />
+                  </div>
+                  <h3>Optimización</h3>
+                  <p>Mejoramos el rendimiento y la experiencia de usuario de tus aplicaciones</p>
+                  <div className="service-features">
+                    <span>Performance</span>
+                    <span>SEO</span>
+                    <span>Analytics</span>
+                  </div>
+                </Interactive3DCard>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </Parallax3D>
 
         {/* About Section */}
-        <section id="about" className="about">
-          <div className="container">
-            <div className="about-content">
-              <div className="about-text">
-                <h2>Acerca de Pixan.ai</h2>
-                <p>
-                  Somos un equipo apasionado por la tecnología y la innovación. Combinamos 
-                  años de experiencia en desarrollo web con las últimas innovaciones en 
-                  inteligencia artificial para crear soluciones que transforman negocios.
-                </p>
-                <p>
-                  Cada proyecto es único y merece un enfoque personalizado. Trabajamos 
-                  estrechamente con nuestros clientes para entender sus necesidades y 
-                  crear soluciones que superen sus expectativas.
-                </p>
-                <div className="stats">
-                  <div className="stat">
-                    <span className="stat-number">50+</span>
-                    <span className="stat-label">Proyectos Completados</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-number">98%</span>
-                    <span className="stat-label">Satisfacción del Cliente</span>
-                  </div>
-                  <div className="stat">
-                    <span className="stat-number">24/7</span>
-                    <span className="stat-label">Soporte Técnico</span>
+        <Parallax3D speed={0.4}>
+          <section id="about" className="about">
+            <div className="container">
+              <div className="about-content">
+                <div className="about-text">
+                  <h2>
+                    <AITextAnimation text="Acerca de Pixan.ai" delay={0} />
+                  </h2>
+                  <p>
+                    <AITextAnimation 
+                      text="Somos un equipo apasionado por la tecnología y la innovación. Combinamos años de experiencia en desarrollo web con las últimas innovaciones en inteligencia artificial para crear soluciones que transforman negocios."
+                      delay={300}
+                    />
+                  </p>
+                  <p>
+                    <AITextAnimation 
+                      text="Cada proyecto es único y merece un enfoque personalizado. Trabajamos estrechamente con nuestros clientes para entender sus necesidades y crear soluciones que superen sus expectativas."
+                      delay={600}
+                    />
+                  </p>
+                  <div className="stats">
+                    <Interactive3DCard className="stat">
+                      <span className="stat-number">50+</span>
+                      <span className="stat-label">Proyectos Completados</span>
+                    </Interactive3DCard>
+                    <Interactive3DCard className="stat">
+                      <span className="stat-number">98%</span>
+                      <span className="stat-label">Satisfacción del Cliente</span>
+                    </Interactive3DCard>
+                    <Interactive3DCard className="stat">
+                      <span className="stat-number">24/7</span>
+                      <span className="stat-label">Soporte Técnico</span>
+                    </Interactive3DCard>
                   </div>
                 </div>
-              </div>
-              <div className="about-visual">
-                <div className="tech-stack">
-                  <div className="tech-item">React</div>
-                  <div className="tech-item">Next.js</div>
-                  <div className="tech-item">TypeScript</div>
-                  <div className="tech-item">Node.js</div>
-                  <div className="tech-item">Python</div>
-                  <div className="tech-item">TensorFlow</div>
-                  <div className="tech-item">OpenAI</div>
-                  <div className="tech-item">AWS</div>
+                <div className="about-visual">
+                  <div className="tech-stack">
+                    <Interactive3DCard className="tech-item">React</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">Next.js</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">TypeScript</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">Node.js</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">Python</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">TensorFlow</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">OpenAI</Interactive3DCard>
+                    <Interactive3DCard className="tech-item">AWS</Interactive3DCard>
+                  </div>
                 </div>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </Parallax3D>
 
         {/* Contact Section */}
-        <section id="contact" className="contact">
-          <div className="container">
-            <div className="contact-content">
-              <div className="contact-info">
-                <h2>¿Listo para comenzar?</h2>
-                <p>
-                  Convierte tu idea en realidad. Contáctanos y descubre cómo podemos 
-                  ayudarte a construir el futuro digital de tu negocio.
-                </p>
-                <div className="contact-methods">
-                  <a href="mailto:contact@pixan.ai" className="contact-method">
-                    <Mail className="icon" />
-                    <span>contact@pixan.ai</span>
-                  </a>
-                  <a href="#" className="contact-method">
-                    <Github className="icon" />
-                    <span>github.com/pixan-ai</span>
-                  </a>
-                  <a href="#" className="contact-method">
-                    <Linkedin className="icon" />
-                    <span>linkedin.com/company/pixan-ai</span>
-                  </a>
+        <Parallax3D speed={0.5}>
+          <section id="contact" className="contact">
+            <div className="container">
+              <div className="contact-content">
+                <div className="contact-info">
+                  <h2>
+                    <AITextAnimation text="¿Listo para comenzar?" delay={0} />
+                  </h2>
+                  <p>
+                    <AITextAnimation 
+                      text="Convierte tu idea en realidad. Contáctanos y descubre cómo podemos ayudarte a construir el futuro digital de tu negocio."
+                      delay={300}
+                    />
+                  </p>
+                  <div className="contact-methods">
+                    <Interactive3DCard className="contact-method">
+                      <a href="mailto:contact@pixan.ai" className="contact-link">
+                        <Mail className="icon" />
+                        <span>contact@pixan.ai</span>
+                      </a>
+                    </Interactive3DCard>
+                    <Interactive3DCard className="contact-method">
+                      <a href="#" className="contact-link">
+                        <Github className="icon" />
+                        <span>github.com/pixan-ai</span>
+                      </a>
+                    </Interactive3DCard>
+                    <Interactive3DCard className="contact-method">
+                      <a href="#" className="contact-link">
+                        <Linkedin className="icon" />
+                        <span>linkedin.com/company/pixan-ai</span>
+                      </a>
+                    </Interactive3DCard>
+                  </div>
                 </div>
-              </div>
-              <div className="contact-form">
-                <form>
-                  <div className="form-group">
-                    <input type="text" placeholder="Tu nombre" />
-                  </div>
-                  <div className="form-group">
-                    <input type="email" placeholder="Tu email" />
-                  </div>
-                  <div className="form-group">
-                    <textarea placeholder="Cuéntanos sobre tu proyecto" rows={4}></textarea>
-                  </div>
-                  <button type="submit" className="btn-primary">
-                    Enviar Mensaje
-                    <ArrowRight className="icon" />
-                  </button>
-                </form>
+                <Interactive3DCard className="contact-form">
+                  <form>
+                    <div className="form-group">
+                      <input type="text" placeholder="Tu nombre" className="interactive" />
+                    </div>
+                    <div className="form-group">
+                      <input type="email" placeholder="Tu email" className="interactive" />
+                    </div>
+                    <div className="form-group">
+                      <textarea placeholder="Cuéntanos sobre tu proyecto" rows={4} className="interactive"></textarea>
+                    </div>
+                    <button type="submit" className="btn-primary interactive">
+                      Enviar Mensaje
+                      <ArrowRight className="icon" />
+                    </button>
+                  </form>
+                </Interactive3DCard>
               </div>
             </div>
-          </div>
-        </section>
+          </section>
+        </Parallax3D>
 
         {/* Footer */}
         <footer className="footer">
@@ -323,6 +600,157 @@ export default function HomePage() {
           color: var(--text-primary);
           overflow-x: hidden;
           line-height: 1.6;
+          cursor: none;
+        }
+
+        /* MAGNETIC CURSOR STYLES */
+        .cursor {
+          position: fixed;
+          width: 20px;
+          height: 20px;
+          background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c);
+          border-radius: 50%;
+          pointer-events: none;
+          z-index: 9999;
+          mix-blend-mode: difference;
+          transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+          animation: cursorPulse 2s infinite;
+        }
+
+        .cursor-trail {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: 9998;
+        }
+
+        .trail-particle {
+          position: absolute;
+          width: 4px;
+          height: 4px;
+          background: linear-gradient(45deg, #667eea, #f093fb);
+          border-radius: 50%;
+          transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+          animation: particleGlow 1s ease-out;
+        }
+
+        /* MORPHING SHAPES STYLES */
+        .morphing-container {
+          position: fixed;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          pointer-events: none;
+          z-index: -1;
+          overflow: hidden;
+        }
+
+        .morphing-shape {
+          position: absolute;
+          border-radius: 50%;
+          filter: blur(60px);
+          opacity: 0.3;
+          animation: morphingAnimation 20s ease-in-out infinite;
+        }
+
+        .shape-1 {
+          width: 400px;
+          height: 400px;
+          background: linear-gradient(45deg, #667eea, #764ba2);
+          top: 10%;
+          left: 10%;
+          animation-delay: 0s;
+        }
+
+        .shape-2 {
+          width: 300px;
+          height: 300px;
+          background: linear-gradient(45deg, #f093fb, #f5576c);
+          top: 60%;
+          right: 20%;
+          animation-delay: 5s;
+        }
+
+        .shape-3 {
+          width: 350px;
+          height: 350px;
+          background: linear-gradient(45deg, #4facfe, #00f2fe);
+          bottom: 20%;
+          left: 60%;
+          animation-delay: 10s;
+        }
+
+        .shape-4 {
+          width: 200px;
+          height: 200px;
+          background: linear-gradient(45deg, #667eea, #00f2fe);
+          top: 30%;
+          right: 10%;
+          animation-delay: 15s;
+        }
+
+        /* LIQUID BLOBS */
+        .liquid-blob {
+          position: absolute;
+          background: linear-gradient(45deg, #667eea, #f093fb, #4facfe);
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          opacity: 0.2;
+          animation: liquidMorph 15s ease-in-out infinite;
+        }
+
+        .blob-1 {
+          width: 500px;
+          height: 500px;
+          top: 20%;
+          left: 70%;
+          animation-delay: 0s;
+        }
+
+        .blob-2 {
+          width: 300px;
+          height: 300px;
+          bottom: 30%;
+          left: 20%;
+          animation-delay: 5s;
+        }
+
+        .blob-3 {
+          width: 250px;
+          height: 250px;
+          top: 70%;
+          right: 30%;
+          animation-delay: 10s;
+        }
+
+        /* PARALLAX 3D STYLES */
+        .parallax-layer {
+          transform-style: preserve-3d;
+          will-change: transform;
+        }
+
+        /* AI TEXT ANIMATION STYLES */
+        .ai-text {
+          display: inline-block;
+        }
+
+        .typing-cursor {
+          color: #667eea;
+          animation: blink 1s infinite;
+        }
+
+        /* INTERACTIVE 3D CARD STYLES */
+        .interactive-3d-card {
+          transform-style: preserve-3d;
+          transition: all 0.3s cubic-bezier(0.23, 1, 0.320, 1);
+          will-change: transform;
+        }
+
+        .interactive-3d-card:hover {
+          z-index: 10;
         }
 
         .app-container {
@@ -936,7 +1364,286 @@ export default function HomePage() {
           100% { transform: translateY(-100vh) rotate(360deg); opacity: 0; }
         }
 
+        /* EPIC ANIMATION KEYFRAMES */
+        @keyframes cursorPulse {
+          0%, 100% { transform: scale(1); }
+          50% { transform: scale(1.5); }
+        }
+
+        @keyframes particleGlow {
+          0% { 
+            opacity: 1; 
+            transform: scale(1); 
+            box-shadow: 0 0 20px #667eea; 
+          }
+          100% { 
+            opacity: 0; 
+            transform: scale(0.5); 
+            box-shadow: 0 0 40px #667eea; 
+          }
+        }
+
+        @keyframes morphingAnimation {
+          0%, 100% {
+            transform: translateX(0px) translateY(0px) rotate(0deg) scale(1);
+            border-radius: 50%;
+          }
+          25% {
+            transform: translateX(50px) translateY(-30px) rotate(90deg) scale(1.1);
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+          }
+          50% {
+            transform: translateX(-20px) translateY(40px) rotate(180deg) scale(0.9);
+            border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+          }
+          75% {
+            transform: translateX(-40px) translateY(-20px) rotate(270deg) scale(1.2);
+            border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%;
+          }
+        }
+
+        @keyframes liquidMorph {
+          0%, 100% {
+            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            transform: translateX(0px) translateY(0px) rotate(0deg) scale(1);
+          }
+          20% {
+            border-radius: 58% 42% 75% 25% / 76% 46% 54% 24%;
+            transform: translateX(20px) translateY(-10px) rotate(45deg) scale(1.05);
+          }
+          40% {
+            border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
+            transform: translateX(-15px) translateY(25px) rotate(90deg) scale(0.95);
+          }
+          60% {
+            border-radius: 33% 67% 58% 42% / 63% 68% 32% 37%;
+            transform: translateX(10px) translateY(-20px) rotate(135deg) scale(1.1);
+          }
+          80% {
+            border-radius: 45% 55% 40% 60% / 38% 52% 48% 62%;
+            transform: translateX(-25px) translateY(15px) rotate(180deg) scale(0.9);
+          }
+        }
+
+        @keyframes blink {
+          0%, 50% { opacity: 1; }
+          51%, 100% { opacity: 0; }
+        }
+
+        @keyframes cinematicFade {
+          0% { 
+            opacity: 0; 
+            transform: translateY(50px) scale(0.8); 
+            filter: blur(10px); 
+          }
+          100% { 
+            opacity: 1; 
+            transform: translateY(0px) scale(1); 
+            filter: blur(0px); 
+          }
+        }
+
+        @keyframes magneticFloat {
+          0%, 100% { transform: translateY(0px) rotate(0deg); }
+          50% { transform: translateY(-15px) rotate(5deg); }
+        }
+
+        @keyframes glitchEffect {
+          0%, 100% { 
+            transform: translateX(0); 
+            filter: hue-rotate(0deg); 
+          }
+          10% { 
+            transform: translateX(-2px); 
+            filter: hue-rotate(90deg); 
+          }
+          20% { 
+            transform: translateX(2px); 
+            filter: hue-rotate(180deg); 
+          }
+          30% { 
+            transform: translateX(-1px); 
+            filter: hue-rotate(270deg); 
+          }
+          40% { 
+            transform: translateX(1px); 
+            filter: hue-rotate(360deg); 
+          }
+          50% { 
+            transform: translateX(-0.5px); 
+            filter: hue-rotate(45deg); 
+          }
+        }
+
+        @keyframes hologramShimmer {
+          0%, 100% {
+            background-position: 0% 50%;
+            opacity: 1;
+          }
+          50% {
+            background-position: 100% 50%;
+            opacity: 0.8;
+          }
+        }
+
+        /* ADDITIONAL EPIC EFFECTS */
+        .interactive {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .interactive::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+          transition: left 0.5s;
+        }
+
+        .interactive:hover::before {
+          left: 100%;
+        }
+
+        .service-card {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .service-card::after {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(45deg, transparent, rgba(102, 126, 234, 0.05), transparent);
+          opacity: 0;
+          transition: opacity 0.3s ease;
+        }
+
+        .service-card:hover::after {
+          opacity: 1;
+        }
+
+        .contact-link {
+          display: flex;
+          align-items: center;
+          gap: 1rem;
+          color: var(--text-secondary);
+          text-decoration: none;
+          transition: color 0.3s ease;
+        }
+
+        .contact-link:hover {
+          color: var(--text-primary);
+        }
+
+        .contact-method {
+          padding: 1rem;
+          border-radius: 1rem;
+          background: var(--card-bg);
+          border: 1px solid var(--border-color);
+          backdrop-filter: blur(10px);
+          transition: all 0.3s ease;
+        }
+
+        .contact-method:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(102, 126, 234, 0.2);
+        }
+
+        /* ENHANCED BUTTONS */
+        .btn-primary {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .btn-primary::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+          transition: left 0.5s;
+        }
+
+        .btn-primary:hover::before {
+          left: 100%;
+        }
+
+        .btn-secondary {
+          position: relative;
+          overflow: hidden;
+        }
+
+        .btn-secondary::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: -100%;
+          width: 100%;
+          height: 100%;
+          background: linear-gradient(90deg, transparent, rgba(102, 126, 234, 0.1), transparent);
+          transition: left 0.5s;
+        }
+
+        .btn-secondary:hover::before {
+          left: 100%;
+        }
+
+        /* CINEMATIC SECTION TRANSITIONS */
+        .services {
+          animation: cinematicFade 1s ease-out;
+        }
+
+        .about {
+          animation: cinematicFade 1s ease-out 0.2s both;
+        }
+
+        .contact {
+          animation: cinematicFade 1s ease-out 0.4s both;
+        }
+
+        /* GLITCH EFFECT ON HOVER */
+        .hero-title:hover {
+          animation: glitchEffect 0.5s ease-in-out;
+        }
+
+        .section-title:hover {
+          animation: glitchEffect 0.3s ease-in-out;
+        }
+
+        /* HOLOGRAPHIC SHIMMER EFFECT */
+        .gradient-text {
+          background: linear-gradient(45deg, #667eea, #764ba2, #f093fb, #f5576c, #4facfe, #00f2fe);
+          background-size: 400% 400%;
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+          background-clip: text;
+          animation: hologramShimmer 3s ease-in-out infinite;
+        }
+
+        /* MOBILE OPTIMIZATIONS */
         @media (max-width: 768px) {
+          body {
+            cursor: auto;
+          }
+          
+          .cursor,
+          .cursor-trail {
+            display: none;
+          }
+          
+          .morphing-shape,
+          .liquid-blob {
+            opacity: 0.1;
+          }
+          
           .nav-links {
             display: none;
           }
