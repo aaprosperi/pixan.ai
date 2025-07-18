@@ -911,7 +911,7 @@ export default function HomePage() {
         }
 
         .nav-logo {
-          color: var(--text-primary);
+          color: #dc2626;
           font-weight: 700;
           font-size: 1.5rem;
         }
@@ -1376,7 +1376,7 @@ export default function HomePage() {
         }
 
         .footer-brand {
-          color: var(--text-primary);
+          color: #dc2626;
         }
 
         .footer-brand p {
