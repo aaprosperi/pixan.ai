@@ -683,18 +683,18 @@ export default function HomePage() {
         }
 
         .shape-1 {
-          width: 300px;
-          height: 300px;
+          width: 150px;
+          height: 150px;
           border-color: rgba(76, 99, 210, 0.15);
           top: 10%;
-          left: 10%;
+          left: 25%;
           animation-delay: 0s;
           border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
         }
 
         .shape-2 {
-          width: 250px;
-          height: 250px;
+          width: 125px;
+          height: 125px;
           border-color: rgba(217, 70, 239, 0.15);
           top: 60%;
           right: 20%;
@@ -703,8 +703,8 @@ export default function HomePage() {
         }
 
         .shape-3 {
-          width: 280px;
-          height: 280px;
+          width: 140px;
+          height: 140px;
           border-color: rgba(14, 165, 233, 0.15);
           bottom: 20%;
           left: 60%;
@@ -713,8 +713,8 @@ export default function HomePage() {
         }
 
         .shape-4 {
-          width: 180px;
-          height: 180px;
+          width: 90px;
+          height: 90px;
           border-color: rgba(236, 72, 153, 0.15);
           top: 30%;
           right: 10%;
@@ -733,8 +733,8 @@ export default function HomePage() {
         }
 
         .blob-1 {
-          width: 500px;
-          height: 500px;
+          width: 250px;
+          height: 250px;
           top: 20%;
           left: 70%;
           animation-delay: 0s;
@@ -742,8 +742,8 @@ export default function HomePage() {
         }
 
         .blob-2 {
-          width: 300px;
-          height: 300px;
+          width: 150px;
+          height: 150px;
           bottom: 30%;
           left: 20%;
           animation-delay: 5s;
@@ -751,8 +751,8 @@ export default function HomePage() {
         }
 
         .blob-3 {
-          width: 250px;
-          height: 250px;
+          width: 125px;
+          height: 125px;
           top: 70%;
           right: 30%;
           animation-delay: 10s;
