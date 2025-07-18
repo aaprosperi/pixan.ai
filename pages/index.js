@@ -328,12 +328,7 @@ export default function HomePage() {
         {/* Morphing Shapes */}
         <MorphingShapes />
 
-        {/* Animated Background */}
-        <div className="animated-bg">
-          <div className="gradient-orb orb-1"></div>
-          <div className="gradient-orb orb-2"></div>
-          <div className="gradient-orb orb-3"></div>
-        </div>
+        {/* Animated Background - Removed for cleaner look */}
 
         {/* Floating Particles */}
         <div className="particles">
@@ -866,51 +861,7 @@ export default function HomePage() {
           min-height: 100vh;
         }
 
-        .animated-bg {
-          position: fixed;
-          top: 0;
-          left: 0;
-          width: 100%;
-          height: 100%;
-          z-index: -2;
-          background: radial-gradient(circle at 20% 50%, rgba(120, 119, 198, 0.3) 0%, transparent 50%),
-                      radial-gradient(circle at 80% 20%, rgba(255, 119, 198, 0.3) 0%, transparent 50%),
-                      radial-gradient(circle at 40% 80%, rgba(120, 219, 255, 0.3) 0%, transparent 50%);
-        }
-
-        .gradient-orb {
-          position: absolute;
-          border-radius: 50%;
-          filter: blur(40px);
-          animation: float 6s ease-in-out infinite;
-        }
-
-        .orb-1 {
-          width: 300px;
-          height: 300px;
-          background: var(--primary-gradient);
-          top: 10%;
-          left: 10%;
-          animation-delay: 0s;
-        }
-
-        .orb-2 {
-          width: 200px;
-          height: 200px;
-          background: var(--secondary-gradient);
-          top: 60%;
-          right: 20%;
-          animation-delay: 2s;
-        }
-
-        .orb-3 {
-          width: 150px;
-          height: 150px;
-          background: var(--accent-gradient);
-          bottom: 20%;
-          left: 60%;
-          animation-delay: 4s;
-        }
+        /* Removed animated-bg and gradient-orbs for cleaner aesthetic */
 
         .particles {
           position: fixed;
