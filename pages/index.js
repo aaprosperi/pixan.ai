@@ -681,54 +681,59 @@ export default function HomePage() {
 
         .morphing-shape {
           position: absolute;
-          border-radius: 50%;
-          filter: blur(60px);
-          opacity: 0.03;
+          border: 2px solid rgba(76, 99, 210, 0.1);
+          background: transparent;
+          opacity: 1;
           animation: morphingAnimation 25s ease-in-out infinite;
         }
 
         .shape-1 {
           width: 300px;
           height: 300px;
-          background: linear-gradient(45deg, #4c63d2, #5b3a9e);
+          border-color: rgba(76, 99, 210, 0.15);
           top: 10%;
           left: 10%;
           animation-delay: 0s;
+          border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
         }
 
         .shape-2 {
           width: 250px;
           height: 250px;
-          background: linear-gradient(45deg, #d946ef, #ec4899);
+          border-color: rgba(217, 70, 239, 0.15);
           top: 60%;
           right: 20%;
           animation-delay: 5s;
+          border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
         }
 
         .shape-3 {
           width: 280px;
           height: 280px;
-          background: linear-gradient(45deg, #0ea5e9, #06b6d4);
+          border-color: rgba(14, 165, 233, 0.15);
           bottom: 20%;
           left: 60%;
           animation-delay: 10s;
+          border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%;
         }
 
         .shape-4 {
           width: 180px;
           height: 180px;
-          background: linear-gradient(45deg, #4c63d2, #06b6d4);
+          border-color: rgba(236, 72, 153, 0.15);
           top: 30%;
           right: 10%;
           animation-delay: 15s;
+          border-radius: 50% 50% 33% 67% / 55% 27% 73% 45%;
         }
 
         /* LIQUID BLOBS */
         .liquid-blob {
           position: absolute;
-          background: linear-gradient(45deg, #4c63d2, #d946ef, #0ea5e9);
+          border: 1.5px solid rgba(107, 114, 128, 0.08);
+          background: transparent;
           border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
-          opacity: 0.02;
+          opacity: 1;
           animation: liquidMorph 20s ease-in-out infinite;
         }
 
@@ -738,6 +743,7 @@ export default function HomePage() {
           top: 20%;
           left: 70%;
           animation-delay: 0s;
+          border-color: rgba(76, 99, 210, 0.08);
         }
 
         .blob-2 {
@@ -746,6 +752,7 @@ export default function HomePage() {
           bottom: 30%;
           left: 20%;
           animation-delay: 5s;
+          border-color: rgba(217, 70, 239, 0.08);
         }
 
         .blob-3 {
@@ -754,6 +761,7 @@ export default function HomePage() {
           top: 70%;
           right: 30%;
           animation-delay: 10s;
+          border-color: rgba(14, 165, 233, 0.08);
         }
 
         /* PARALLAX 3D STYLES */
@@ -1505,19 +1513,15 @@ export default function HomePage() {
         @keyframes morphingAnimation {
           0%, 100% {
             transform: translateX(0px) translateY(0px) rotate(0deg) scale(1);
-            border-radius: 50%;
           }
           25% {
-            transform: translateX(50px) translateY(-30px) rotate(90deg) scale(1.1);
-            border-radius: 30% 70% 70% 30% / 30% 30% 70% 70%;
+            transform: translateX(30px) translateY(-20px) rotate(45deg) scale(1.05);
           }
           50% {
-            transform: translateX(-20px) translateY(40px) rotate(180deg) scale(0.9);
-            border-radius: 70% 30% 30% 70% / 70% 70% 30% 30%;
+            transform: translateX(-15px) translateY(25px) rotate(90deg) scale(0.95);
           }
           75% {
-            transform: translateX(-40px) translateY(-20px) rotate(270deg) scale(1.2);
-            border-radius: 40% 60% 60% 40% / 60% 40% 60% 40%;
+            transform: translateX(-25px) translateY(-15px) rotate(135deg) scale(1.1);
           }
         }
 
@@ -1908,7 +1912,7 @@ export default function HomePage() {
           width: 100%;
           height: 100%;
           pointer-events: none;
-          z-index: 1;
+          z-index: 0;
         }
 
         .wave {
@@ -1982,7 +1986,8 @@ export default function HomePage() {
           
           .morphing-shape,
           .liquid-blob {
-            opacity: 0.01;
+            opacity: 0.5;
+            border-width: 1px;
           }
           
           .nav-links {
