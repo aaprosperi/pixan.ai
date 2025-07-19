@@ -2,43 +2,56 @@ import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function HomePage() {
-  const [changingWordIndex, setChangingWordIndex] = useState(0);
-  const [currentCharIndex, setCurrentCharIndex] = useState(0);
-  const [isDeleting, setIsDeleting] = useState(false);
   const [displayText, setDisplayText] = useState('');
   
-  const words = ['AI', 'pixan.ai'];
+  const words = ['AI', 'pixan'];
   
   useEffect(() => {
-    const currentWord = words[changingWordIndex];
+    let currentWordIndex = 0;
+    let currentCharIndex = 0;
+    let isDeleting = false;
+    let timeout;
     
     const typeWriter = () => {
-      if (isDeleting) {
-        setDisplayText(currentWord.substring(0, currentCharIndex - 1));
-        setCurrentCharIndex(prev => prev - 1);
-      } else {
+      const currentWord = words[currentWordIndex];
+      
+      if (!isDeleting) {
+        // Typing
         setDisplayText(currentWord.substring(0, currentCharIndex + 1));
-        setCurrentCharIndex(prev => prev + 1);
+        currentCharIndex++;
+        
+        if (currentCharIndex === currentWord.length) {
+          // Finished typing, wait then start deleting
+          isDeleting = true;
+          timeout = setTimeout(typeWriter, 2000);
+        } else {
+          // Continue typing
+          timeout = setTimeout(typeWriter, 150);
+        }
+      } else {
+        // Deleting
+        setDisplayText(currentWord.substring(0, currentCharIndex - 1));
+        currentCharIndex--;
+        
+        if (currentCharIndex === 0) {
+          // Finished deleting, switch word
+          isDeleting = false;
+          currentWordIndex = (currentWordIndex + 1) % words.length;
+          timeout = setTimeout(typeWriter, 500);
+        } else {
+          // Continue deleting
+          timeout = setTimeout(typeWriter, 100);
+        }
       }
-
-      let speed = isDeleting ? 100 : 150;
-
-      if (!isDeleting && currentCharIndex === currentWord.length) {
-        speed = 2000;
-        setIsDeleting(true);
-      } else if (isDeleting && currentCharIndex === 0) {
-        setIsDeleting(false);
-        setChangingWordIndex((prev) => (prev + 1) % words.length);
-        speed = 500;
-      }
-
-      setTimeout(typeWriter, speed);
     };
-
-    const timer = setTimeout(typeWriter, 100);
     
-    return () => clearTimeout(timer);
-  }, [currentCharIndex, isDeleting, changingWordIndex]);
+    // Start the animation
+    typeWriter();
+    
+    return () => {
+      if (timeout) clearTimeout(timeout);
+    };
+  }, []);
 
   return (
     <>
@@ -225,7 +238,7 @@ export default function HomePage() {
 
         .changing-word {
           color: #000000;
-          font-weight: 500;
+          font-weight: 700;
         }
 
         .tech-stack {
