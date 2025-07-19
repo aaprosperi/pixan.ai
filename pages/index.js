@@ -3,6 +3,8 @@ import Head from 'next/head';
 
 export default function HomePage() {
   const [displayText, setDisplayText] = useState('');
+  const [videoLoopCount, setVideoLoopCount] = useState(0);
+  const [showVideo, setShowVideo] = useState(true);
   
   const words = ['AI', 'pixan'];
   
@@ -52,6 +54,15 @@ export default function HomePage() {
       if (timeout) clearTimeout(timeout);
     };
   }, []);
+
+  const handleVideoEnded = () => {
+    const newCount = videoLoopCount + 1;
+    setVideoLoopCount(newCount);
+    
+    if (newCount >= 2) {
+      setShowVideo(false);
+    }
+  };
 
   return (
     <>
@@ -109,12 +120,20 @@ export default function HomePage() {
             </div>
           </section>
 
-          <div className="video-container">
-            <video className="video" autoPlay muted loop playsInline>
-              <source src="/videos/Pixan summit video 2.mp4" type="video/mp4" />
-              Su navegador no soporta el elemento de video.
-            </video>
-          </div>
+          {showVideo && (
+            <div className="video-container">
+              <video 
+                className="video" 
+                autoPlay 
+                muted 
+                playsInline
+                onEnded={handleVideoEnded}
+              >
+                <source src="/videos/Pixan summit video 2.mp4" type="video/mp4" />
+                Su navegador no soporta el elemento de video.
+              </video>
+            </div>
+          )}
 
           <div className="service-buttons">
             <a href="#" className="service-button">
@@ -266,6 +285,7 @@ export default function HomePage() {
           border-radius: 12px;
           overflow: hidden;
           box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+          transition: opacity 0.5s ease-out, transform 0.5s ease-out;
         }
 
         .video {
