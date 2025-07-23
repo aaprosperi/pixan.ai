@@ -136,7 +136,7 @@ export default function HomePage() {
           )}
 
           <div className="service-buttons">
-            <a href="/prompt-boost-v2" className="service-button">
+            <a href="/pb" className="service-button">
               <div className="service-title">Prompt Boost</div>
               <div className="service-description">Optimiza tu prompt con Claude para cualquier LLM y maximiza resultados.</div>
             </a>
