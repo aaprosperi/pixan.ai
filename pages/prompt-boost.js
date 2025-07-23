@@ -430,7 +430,7 @@ export default function PromptBoost() {
       addMessage('system', '🚀 Iniciando proceso de optimización por Pixan.ai...');
       
       updateStep(2);
-      addMessage('system', '📤 Enviando prompt original a Gemini AI...');
+      addMessage('system', '📤 Enviando prompt original a Gemini 2.5 Flash...');
       
       const geminiResponse1 = await callGeminiAPI(
         originalPrompt,
@@ -489,7 +489,19 @@ export default function PromptBoost() {
       if (error.name === 'AbortError') {
         addMessage('system', '❌ Proceso cancelado por el usuario.');
       } else {
-        addMessage('error', `Error: ${error.message}`);
+        // Enhanced error messages for common issues
+        let errorMsg = error.message;
+        if (errorMsg.includes('Gemini API Error')) {
+          addMessage('error', `🔴 ${errorMsg}`);
+        } else if (errorMsg.includes('API key')) {
+          addMessage('error', '🔑 Error de clave API - verifica tus credenciales de Gemini o Claude');
+        } else if (errorMsg.includes('Rate limit')) {
+          addMessage('error', '⏱️ Límite de tasa excedido - espera un momento y vuelve a intentar');
+        } else if (errorMsg.includes('safety filters')) {
+          addMessage('error', '🛡️ Contenido bloqueado por filtros de seguridad - reformula tu prompt');
+        } else {
+          addMessage('error', `❌ Error: ${errorMsg}`);
+        }
       }
       
       setProcessingStatus('error');
@@ -687,7 +699,7 @@ export default function PromptBoost() {
                     <div>
                       <h4 className="font-semibold text-gray-900 mb-2">🧠 Gemini da el primer paso</h4>
                       <p className="text-gray-700">
-                        Tu prompt se envía primero a Gemini AI. Gemini analiza la estructura, identifica brechas de especificidad, 
+                        Tu prompt se envía primero a Gemini 2.5 Flash. Gemini analiza la estructura, identifica brechas de especificidad, 
                         y propone la primera iteración de optimización usando su massive training dataset.
                       </p>
                     </div>
