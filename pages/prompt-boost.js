@@ -50,6 +50,7 @@ export default function PromptBoost() {
       }
     };
 
+
     const validateForm = () => {
       const newErrors = {};
       
@@ -84,7 +85,11 @@ export default function PromptBoost() {
           </label>
           <textarea
             value={appState.form.originalPrompt}
-            onChange={(e) => handleInputChange('originalPrompt', e.target.value)}
+            onChange={(e) => {
+              e.preventDefault();
+              e.stopPropagation();
+              handleInputChange('originalPrompt', e.target.value);
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             rows={4}
             placeholder="Escribe aquí el prompt que quieres optimizar..."
@@ -168,8 +173,11 @@ export default function PromptBoost() {
             <input
               type="password"
               value={appState.form.claudeApiKey}
-              onChange={(e) => handleInputChange('claudeApiKey', e.target.value)}
-              onInput={(e) => handleInputChange('claudeApiKey', e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleInputChange('claudeApiKey', e.target.value);
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="sk-ant-..."
               disabled={appState.processing.isActive}
@@ -186,8 +194,11 @@ export default function PromptBoost() {
             <input
               type="password"
               value={appState.form.geminiApiKey}
-              onChange={(e) => handleInputChange('geminiApiKey', e.target.value)}
-              onInput={(e) => handleInputChange('geminiApiKey', e.target.value)}
+              onChange={(e) => {
+                e.preventDefault();
+                e.stopPropagation();
+                handleInputChange('geminiApiKey', e.target.value);
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="AIza..."
               disabled={appState.processing.isActive}
