@@ -3,65 +3,44 @@ import Head from 'next/head';
 import { AlertCircle, Copy, Check, Loader2, Terminal } from 'lucide-react';
 
 export default function PromptBoost() {
-  const [appState, setAppState] = useState({
-    form: {
-      originalPrompt: '',
-      targetLLM: 'Universal',
-      industry: 'General',
-      temperature: 5,
-      claudeApiKey: '',
-      geminiApiKey: ''
-    },
-    processing: {
-      isActive: false,
-      currentStep: 0,
-      status: 'ready',
-      startTime: null,
-      messages: []
-    },
-    results: {
-      finalPrompt: '',
-      metrics: null,
-      visible: false
-    }
-  });
+  // Form fields as separate state variables
+  const [originalPrompt, setOriginalPrompt] = useState('');
+  const [targetLLM, setTargetLLM] = useState('Universal');
+  const [industry, setIndustry] = useState('General');
+  const [temperature, setTemperature] = useState(5);
+  const [claudeApiKey, setClaudeApiKey] = useState('');
+  const [geminiApiKey, setGeminiApiKey] = useState('');
+
+  // Processing state
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentStep, setCurrentStep] = useState(0);
+  const [processingStatus, setProcessingStatus] = useState('ready');
+  const [startTime, setStartTime] = useState(null);
+  const [messages, setMessages] = useState([]);
+
+  // Results state
+  const [finalPrompt, setFinalPrompt] = useState('');
+  const [metrics, setMetrics] = useState(null);
+  const [resultsVisible, setResultsVisible] = useState(false);
 
   const [errors, setErrors] = useState({});
   const [copied, setCopied] = useState(false);
   const terminalRef = useRef(null);
   const abortControllerRef = useRef(null);
 
-  const handleInputChange = useCallback((field, value) => {
-    setAppState(prev => ({
-      ...prev,
-      form: {
-        ...prev.form,
-        [field]: value
-      }
-    }));
-    
-    if (errors[field]) {
-      setErrors(prev => {
-        const newErrors = { ...prev };
-        delete newErrors[field];
-        return newErrors;
-      });
-    }
-  }, [errors]);
-
   const InputForm = () => {
     const validateForm = () => {
       const newErrors = {};
       
-      if (appState.form.originalPrompt.length < 10) {
+      if (originalPrompt.length < 10) {
         newErrors.originalPrompt = 'El prompt debe tener al menos 10 caracteres';
       }
       
-      if (!appState.form.claudeApiKey) {
+      if (!claudeApiKey) {
         newErrors.claudeApiKey = 'Se requiere la clave API de Claude';
       }
       
-      if (!appState.form.geminiApiKey) {
+      if (!geminiApiKey) {
         newErrors.geminiApiKey = 'Se requiere la clave API de Gemini';
       }
       
@@ -83,16 +62,25 @@ export default function PromptBoost() {
             Tu Prompt Original
           </label>
           <textarea
-            value={appState.form.originalPrompt}
-            onChange={(e) => handleInputChange('originalPrompt', e.target.value)}
+            value={originalPrompt}
+            onChange={(e) => {
+              setOriginalPrompt(e.target.value);
+              if (errors.originalPrompt) {
+                setErrors(prev => {
+                  const newErrors = { ...prev };
+                  delete newErrors.originalPrompt;
+                  return newErrors;
+                });
+              }
+            }}
             className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
             rows={4}
             placeholder="Escribe aquí el prompt que quieres optimizar..."
-            disabled={appState.processing.isActive}
+            disabled={isProcessing}
           />
           <div className="mt-1 flex justify-between">
             <span className="text-sm text-gray-500">
-              {appState.form.originalPrompt.length} caracteres
+              {originalPrompt.length} caracteres
             </span>
             {errors.originalPrompt && (
               <span className="text-sm text-red-500">{errors.originalPrompt}</span>
@@ -106,10 +94,10 @@ export default function PromptBoost() {
               LLM Objetivo
             </label>
             <select
-              value={appState.form.targetLLM}
-              onChange={(e) => handleInputChange('targetLLM', e.target.value)}
+              value={targetLLM}
+              onChange={(e) => setTargetLLM(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              disabled={appState.processing.isActive}
+              disabled={isProcessing}
             >
               <option value="Universal">Universal</option>
               <option value="Claude">Claude</option>
@@ -124,10 +112,10 @@ export default function PromptBoost() {
               Industria/Dominio
             </label>
             <select
-              value={appState.form.industry}
-              onChange={(e) => handleInputChange('industry', e.target.value)}
+              value={industry}
+              onChange={(e) => setIndustry(e.target.value)}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              disabled={appState.processing.isActive}
+              disabled={isProcessing}
             >
               <option value="General">General</option>
               <option value="Technology">Tecnología</option>
@@ -142,16 +130,16 @@ export default function PromptBoost() {
 
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nivel de Creatividad: {appState.form.temperature}
+            Nivel de Creatividad: {temperature}
           </label>
           <input
             type="range"
             min="0"
             max="10"
-            value={appState.form.temperature}
-            onChange={(e) => handleInputChange('temperature', Number(e.target.value))}
+            value={temperature}
+            onChange={(e) => setTemperature(Number(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
-            disabled={appState.processing.isActive}
+            disabled={isProcessing}
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
             <span>Preciso</span>
@@ -167,11 +155,20 @@ export default function PromptBoost() {
             </label>
             <input
               type="password"
-              value={appState.form.claudeApiKey}
-              onChange={(e) => handleInputChange('claudeApiKey', e.target.value)}
+              value={claudeApiKey}
+              onChange={(e) => {
+                setClaudeApiKey(e.target.value);
+                if (errors.claudeApiKey) {
+                  setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.claudeApiKey;
+                    return newErrors;
+                  });
+                }
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="sk-ant-..."
-              disabled={appState.processing.isActive}
+              disabled={isProcessing}
             />
             {errors.claudeApiKey && (
               <span className="text-sm text-red-500 mt-1">{errors.claudeApiKey}</span>
@@ -184,11 +181,20 @@ export default function PromptBoost() {
             </label>
             <input
               type="password"
-              value={appState.form.geminiApiKey}
-              onChange={(e) => handleInputChange('geminiApiKey', e.target.value)}
+              value={geminiApiKey}
+              onChange={(e) => {
+                setGeminiApiKey(e.target.value);
+                if (errors.geminiApiKey) {
+                  setErrors(prev => {
+                    const newErrors = { ...prev };
+                    delete newErrors.geminiApiKey;
+                    return newErrors;
+                  });
+                }
+              }}
               className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
               placeholder="AIza..."
-              disabled={appState.processing.isActive}
+              disabled={isProcessing}
             />
             {errors.geminiApiKey && (
               <span className="text-sm text-red-500 mt-1">{errors.geminiApiKey}</span>
@@ -198,20 +204,20 @@ export default function PromptBoost() {
 
         <button
           type="submit"
-          disabled={appState.processing.isActive}
+          disabled={isProcessing}
           className="w-full py-4 px-6 text-white font-medium rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600 disabled:opacity-50 disabled:cursor-not-allowed transition-all duration-200"
         >
-          {appState.processing.isActive ? (
+          {isProcessing ? (
             <span className="flex items-center justify-center">
               <Loader2 className="animate-spin mr-2" size={20} />
-              Procesando Paso {appState.processing.currentStep}/10
+              Procesando Paso {currentStep}/10
             </span>
           ) : (
             'Optimizar Prompt'
           )}
         </button>
 
-        {appState.processing.isActive && (
+        {isProcessing && (
           <button
             type="button"
             onClick={cancelProcessing}
@@ -229,7 +235,7 @@ export default function PromptBoost() {
       if (terminalRef.current) {
         terminalRef.current.scrollTop = terminalRef.current.scrollHeight;
       }
-    }, [appState.processing.messages]);
+    }, [messages]);
 
     const getMessageColor = (type) => {
       switch (type) {
@@ -259,7 +265,7 @@ export default function PromptBoost() {
           ref={terminalRef}
           className="h-96 overflow-y-auto p-4 font-mono text-sm"
         >
-          {appState.processing.messages.map((msg, idx) => (
+          {messages.map((msg, idx) => (
             <div key={idx} className="mb-3">
               <div className={`${getMessageColor(msg.type)} mb-1`}>
                 [{msg.type.toUpperCase()}]
@@ -270,7 +276,7 @@ export default function PromptBoost() {
             </div>
           ))}
           
-          {appState.processing.isActive && (
+          {isProcessing && (
             <div className="flex items-center text-gray-400">
               <div className="animate-pulse">▊</div>
             </div>
@@ -300,8 +306,8 @@ export default function PromptBoost() {
         <div className="space-y-2">
           {steps.map((step, idx) => {
             const stepNum = idx + 1;
-            const isActive = appState.processing.currentStep === stepNum;
-            const isComplete = appState.processing.currentStep > stepNum;
+            const isActive = currentStep === stepNum;
+            const isComplete = currentStep > stepNum;
             
             return (
               <div key={idx} className="flex items-center">
@@ -327,12 +333,12 @@ export default function PromptBoost() {
 
   const ResultsPanel = () => {
     const handleCopy = () => {
-      navigator.clipboard.writeText(appState.results.finalPrompt);
+      navigator.clipboard.writeText(finalPrompt);
       setCopied(true);
       setTimeout(() => setCopied(false), 2000);
     };
 
-    if (!appState.results.visible) return null;
+    if (!resultsVisible) return null;
 
     return (
       <div className="mt-8 space-y-6">
@@ -358,11 +364,11 @@ export default function PromptBoost() {
           </div>
           
           <div className="bg-white rounded-lg p-4">
-            <p className="text-gray-800 whitespace-pre-wrap">{appState.results.finalPrompt}</p>
+            <p className="text-gray-800 whitespace-pre-wrap">{finalPrompt}</p>
           </div>
           
           <div className="mt-4 text-sm text-gray-600">
-            <span className="font-medium">Conteo de caracteres:</span> {appState.results.metrics?.characterCount}
+            <span className="font-medium">Conteo de caracteres:</span> {metrics?.characterCount}
           </div>
         </div>
 
@@ -372,7 +378,7 @@ export default function PromptBoost() {
   };
 
   const MetricsCard = () => {
-    const { metrics } = appState.results;
+    // metrics is already available from state
     if (!metrics) return null;
 
     return (
@@ -401,43 +407,24 @@ export default function PromptBoost() {
   };
 
   const addMessage = useCallback((type, content) => {
-    setAppState(prev => ({
-      ...prev,
-      processing: {
-        ...prev.processing,
-        messages: [...prev.processing.messages, { type, content, timestamp: Date.now() }]
-      }
-    }));
+    setMessages(prev => [...prev, { type, content, timestamp: Date.now() }]);
   }, []);
 
   const updateStep = useCallback((step) => {
-    setAppState(prev => ({
-      ...prev,
-      processing: {
-        ...prev.processing,
-        currentStep: step
-      }
-    }));
+    setCurrentStep(step);
   }, []);
 
   const startProcessing = async () => {
     abortControllerRef.current = new AbortController();
     
-    setAppState(prev => ({
-      ...prev,
-      processing: {
-        isActive: true,
-        currentStep: 1,
-        status: 'processing',
-        startTime: Date.now(),
-        messages: []
-      },
-      results: {
-        finalPrompt: '',
-        metrics: null,
-        visible: false
-      }
-    }));
+    setIsProcessing(true);
+    setCurrentStep(1);
+    setProcessingStatus('processing');
+    setStartTime(Date.now());
+    setMessages([]);
+    setFinalPrompt('');
+    setMetrics(null);
+    setResultsVisible(false);
 
     try {
       addMessage('system', '🚀 Iniciando proceso de optimización por Pixan.ai...');
@@ -446,7 +433,7 @@ export default function PromptBoost() {
       addMessage('system', '📤 Enviando prompt original a Gemini AI...');
       
       const geminiResponse1 = await callGeminiAPI(
-        appState.form.originalPrompt,
+        originalPrompt,
         'Please optimize this prompt for better clarity and effectiveness. Consider the target LLM, industry context, and desired output format.'
       );
       
@@ -457,7 +444,7 @@ export default function PromptBoost() {
       addMessage('system', '🔄 Enviando sugerencia de Gemini a Claude para validación...');
       
       const claudeResponse1 = await callClaudeAPI(
-        `Please review and provide feedback on this prompt optimization:\n\nOriginal: ${appState.form.originalPrompt}\n\nGemini's Optimization: ${geminiResponse1}\n\nProvide specific feedback for improvement.`
+        `Please review and provide feedback on this prompt optimization:\n\nOriginal: ${originalPrompt}\n\nGemini's Optimization: ${geminiResponse1}\n\nProvide specific feedback for improvement.`
       );
       
       updateStep(5);
@@ -478,7 +465,7 @@ export default function PromptBoost() {
       addMessage('system', '✨ Enviando versión refinada a Claude para optimización final...');
       
       const claudeResponse2 = await callClaudeAPI(
-        `Please provide the final optimized version of this prompt:\n\nOriginal: ${appState.form.originalPrompt}\n\nCurrent version: ${geminiResponse2}\n\nTarget LLM: ${appState.form.targetLLM}\nIndustry: ${appState.form.industry}`
+        `Please provide the final optimized version of this prompt:\n\nOriginal: ${originalPrompt}\n\nCurrent version: ${geminiResponse2}\n\nTarget LLM: ${targetLLM}\nIndustry: ${industry}`
       );
       
       updateStep(9);
@@ -487,22 +474,14 @@ export default function PromptBoost() {
       updateStep(10);
       addMessage('system', '📊 Calculando métricas de optimización...');
       
-      const processingTime = Math.round((Date.now() - appState.processing.startTime) / 1000);
-      const metrics = calculateMetrics(appState.form.originalPrompt, claudeResponse2, processingTime);
+      const processingTime = Math.round((Date.now() - startTime) / 1000);
+      const calculatedMetrics = calculateMetrics(originalPrompt, claudeResponse2, processingTime);
       
-      setAppState(prev => ({
-        ...prev,
-        processing: {
-          ...prev.processing,
-          status: 'complete',
-          isActive: false
-        },
-        results: {
-          finalPrompt: claudeResponse2,
-          metrics: metrics,
-          visible: true
-        }
-      }));
+      setProcessingStatus('complete');
+      setIsProcessing(false);
+      setFinalPrompt(claudeResponse2);
+      setMetrics(calculatedMetrics);
+      setResultsVisible(true);
       
       addMessage('system', '✅ ¡Optimización completada por Pixan.ai! Desplázate hacia abajo para ver los resultados.');
       
@@ -513,14 +492,8 @@ export default function PromptBoost() {
         addMessage('error', `Error: ${error.message}`);
       }
       
-      setAppState(prev => ({
-        ...prev,
-        processing: {
-          ...prev.processing,
-          status: 'error',
-          isActive: false
-        }
-      }));
+      setProcessingStatus('error');
+      setIsProcessing(false);
     }
   };
 
@@ -529,12 +502,12 @@ export default function PromptBoost() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        apiKey: appState.form.geminiApiKey,
+        apiKey: geminiApiKey,
         prompt: `${context}\n\n${prompt}`,
         parameters: {
-          temperature: appState.form.temperature,
-          industry: appState.form.industry,
-          targetLLM: appState.form.targetLLM
+          temperature: temperature,
+          industry: industry,
+          targetLLM: targetLLM
         }
       }),
       signal: abortControllerRef.current.signal
@@ -554,7 +527,7 @@ export default function PromptBoost() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        apiKey: appState.form.claudeApiKey,
+        apiKey: claudeApiKey,
         message: message,
         context: 'prompt_optimization'
       }),
@@ -613,14 +586,8 @@ export default function PromptBoost() {
       abortControllerRef.current.abort();
     }
     
-    setAppState(prev => ({
-      ...prev,
-      processing: {
-        ...prev.processing,
-        isActive: false,
-        status: 'cancelled'
-      }
-    }));
+    setIsProcessing(false);
+    setProcessingStatus('cancelled');
   };
 
   return (
