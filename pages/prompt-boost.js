@@ -28,6 +28,111 @@ export default function PromptBoost() {
   const terminalRef = useRef(null);
   const abortControllerRef = useRef(null);
 
+  // Independent memoized input components to prevent re-render issues
+  const PromptTextarea = React.memo(() => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Tu Prompt Original
+      </label>
+      <textarea
+        value={originalPrompt}
+        onChange={(e) => {
+          setOriginalPrompt(e.target.value);
+          if (errors.originalPrompt) {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              delete newErrors.originalPrompt;
+              return newErrors;
+            });
+          }
+        }}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+        rows={4}
+        placeholder="Escribe aquí el prompt que quieres optimizar..."
+        disabled={isProcessing}
+      />
+      <div className="mt-1 flex justify-between">
+        <span className="text-sm text-gray-500">
+          {originalPrompt.length} caracteres
+        </span>
+        {errors.originalPrompt && (
+          <span className="text-sm text-red-500">{errors.originalPrompt}</span>
+        )}
+      </div>
+    </div>
+  ));
+
+  const TemperatureSlider = React.memo(() => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        Nivel de Creatividad: {temperature}
+      </label>
+      <input
+        type="range"
+        min="0"
+        max="10"
+        value={temperature}
+        onChange={(e) => setTemperature(Number(e.target.value))}
+        className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+        disabled={isProcessing}
+      />
+      <div className="flex justify-between text-xs text-gray-500 mt-1">
+        <span>Preciso</span>
+        <span>Balanceado</span>
+        <span>Creativo</span>
+      </div>
+    </div>
+  ));
+
+  const ApiKeyInput = React.memo(({ label, value, setValue, placeholder, error }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <input
+        type="password"
+        value={value}
+        onChange={(e) => {
+          setValue(e.target.value);
+          if (error) {
+            setErrors(prev => {
+              const newErrors = { ...prev };
+              const errorKey = label.includes('Claude') ? 'claudeApiKey' : 'geminiApiKey';
+              delete newErrors[errorKey];
+              return newErrors;
+            });
+          }
+        }}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        placeholder={placeholder}
+        disabled={isProcessing}
+      />
+      {error && (
+        <span className="text-sm text-red-500 mt-1">{error}</span>
+      )}
+    </div>
+  ));
+
+  const SelectInput = React.memo(({ label, value, setValue, options, disabled }) => (
+    <div>
+      <label className="block text-sm font-medium text-gray-700 mb-2">
+        {label}
+      </label>
+      <select
+        value={value}
+        onChange={(e) => setValue(e.target.value)}
+        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+        disabled={disabled}
+      >
+        {options.map(option => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </div>
+  ));
+
   const InputForm = () => {
     const validateForm = () => {
       const newErrors = {};
@@ -57,149 +162,56 @@ export default function PromptBoost() {
 
     return (
       <form onSubmit={handleSubmit} className="space-y-6">
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Tu Prompt Original
-          </label>
-          <textarea
-            value={originalPrompt}
-            onChange={(e) => {
-              setOriginalPrompt(e.target.value);
-              if (errors.originalPrompt) {
-                setErrors(prev => {
-                  const newErrors = { ...prev };
-                  delete newErrors.originalPrompt;
-                  return newErrors;
-                });
-              }
-            }}
-            className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
-            rows={4}
-            placeholder="Escribe aquí el prompt que quieres optimizar..."
-            disabled={isProcessing}
-          />
-          <div className="mt-1 flex justify-between">
-            <span className="text-sm text-gray-500">
-              {originalPrompt.length} caracteres
-            </span>
-            {errors.originalPrompt && (
-              <span className="text-sm text-red-500">{errors.originalPrompt}</span>
-            )}
-          </div>
-        </div>
+        <PromptTextarea />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              LLM Objetivo
-            </label>
-            <select
-              value={targetLLM}
-              onChange={(e) => setTargetLLM(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              disabled={isProcessing}
-            >
-              <option value="Universal">Universal</option>
-              <option value="Claude">Claude</option>
-              <option value="GPT-4">GPT-4</option>
-              <option value="Gemini">Gemini</option>
-              <option value="Perplexity">Perplexity</option>
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Industria/Dominio
-            </label>
-            <select
-              value={industry}
-              onChange={(e) => setIndustry(e.target.value)}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              disabled={isProcessing}
-            >
-              <option value="General">General</option>
-              <option value="Technology">Tecnología</option>
-              <option value="Marketing">Marketing</option>
-              <option value="Creative">Creativo</option>
-              <option value="Legal">Legal</option>
-              <option value="Medical">Médico</option>
-              <option value="Education">Educación</option>
-            </select>
-          </div>
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Nivel de Creatividad: {temperature}
-          </label>
-          <input
-            type="range"
-            min="0"
-            max="10"
-            value={temperature}
-            onChange={(e) => setTemperature(Number(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+          <SelectInput
+            label="LLM Objetivo"
+            value={targetLLM}
+            setValue={setTargetLLM}
             disabled={isProcessing}
+            options={[
+              { value: "Universal", label: "Universal" },
+              { value: "Claude", label: "Claude" },
+              { value: "GPT-4", label: "GPT-4" },
+              { value: "Gemini", label: "Gemini" },
+              { value: "Perplexity", label: "Perplexity" }
+            ]}
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
-            <span>Preciso</span>
-            <span>Balanceado</span>
-            <span>Creativo</span>
-          </div>
+          <SelectInput
+            label="Industria/Dominio"
+            value={industry}
+            setValue={setIndustry}
+            disabled={isProcessing}
+            options={[
+              { value: "General", label: "General" },
+              { value: "Technology", label: "Tecnología" },
+              { value: "Marketing", label: "Marketing" },
+              { value: "Creative", label: "Creativo" },
+              { value: "Legal", label: "Legal" },
+              { value: "Medical", label: "Médico" },
+              { value: "Education", label: "Educación" }
+            ]}
+          />
         </div>
+
+        <TemperatureSlider />
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Clave API de Claude
-            </label>
-            <input
-              type="password"
-              value={claudeApiKey}
-              onChange={(e) => {
-                setClaudeApiKey(e.target.value);
-                if (errors.claudeApiKey) {
-                  setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.claudeApiKey;
-                    return newErrors;
-                  });
-                }
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="sk-ant-..."
-              disabled={isProcessing}
-            />
-            {errors.claudeApiKey && (
-              <span className="text-sm text-red-500 mt-1">{errors.claudeApiKey}</span>
-            )}
-          </div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Clave API de Gemini
-            </label>
-            <input
-              type="password"
-              value={geminiApiKey}
-              onChange={(e) => {
-                setGeminiApiKey(e.target.value);
-                if (errors.geminiApiKey) {
-                  setErrors(prev => {
-                    const newErrors = { ...prev };
-                    delete newErrors.geminiApiKey;
-                    return newErrors;
-                  });
-                }
-              }}
-              className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-              placeholder="AIza..."
-              disabled={isProcessing}
-            />
-            {errors.geminiApiKey && (
-              <span className="text-sm text-red-500 mt-1">{errors.geminiApiKey}</span>
-            )}
-          </div>
+          <ApiKeyInput 
+            label="Clave API de Claude"
+            value={claudeApiKey}
+            setValue={setClaudeApiKey}
+            placeholder="sk-ant-..."
+            error={errors.claudeApiKey}
+          />
+          <ApiKeyInput 
+            label="Clave API de Gemini"
+            value={geminiApiKey}
+            setValue={setGeminiApiKey}
+            placeholder="AIza..."
+            error={errors.geminiApiKey}
+          />
         </div>
 
         <button
