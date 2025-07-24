@@ -3,8 +3,6 @@ import Head from 'next/head';
 
 export default function HomePage() {
   const [displayText, setDisplayText] = useState('');
-  const [videoLoopCount, setVideoLoopCount] = useState(0);
-  const [showVideo, setShowVideo] = useState(true);
   
   const words = ['AI', 'pixan'];
   
@@ -54,15 +52,6 @@ export default function HomePage() {
       if (timeout) clearTimeout(timeout);
     };
   }, []);
-
-  const handleVideoEnded = () => {
-    const newCount = videoLoopCount + 1;
-    setVideoLoopCount(newCount);
-    
-    if (newCount >= 2) {
-      setShowVideo(false);
-    }
-  };
 
   return (
     <>
@@ -120,20 +109,6 @@ export default function HomePage() {
             </div>
           </section>
 
-          {showVideo && (
-            <div className="video-container">
-              <video 
-                className="video" 
-                autoPlay 
-                muted 
-                playsInline
-                onEnded={handleVideoEnded}
-              >
-                <source src="/videos/Pixan summit video 2.mp4" type="video/mp4" />
-                Su navegador no soporta el elemento de video.
-              </video>
-            </div>
-          )}
 
           <div className="service-buttons">
             <a href="/pb" className="service-button">
@@ -278,21 +253,6 @@ export default function HomePage() {
           border: 1px solid #e9ecef;
         }
 
-        .video-container {
-          width: 100%;
-          max-width: 800px;
-          margin-bottom: 80px;
-          border-radius: 12px;
-          overflow: hidden;
-          box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
-          transition: opacity 0.5s ease-out, transform 0.5s ease-out;
-        }
-
-        .video {
-          width: 100%;
-          height: auto;
-          display: block;
-        }
 
         .service-buttons {
           display: grid;
