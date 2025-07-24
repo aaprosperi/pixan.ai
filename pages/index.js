@@ -115,7 +115,7 @@ export default function HomePage() {
               <div className="service-title">Prompt Boost</div>
               <div className="service-description">Optimiza tu prompt con Claude para cualquier LLM y maximiza resultados.</div>
             </a>
-            <a href="#" className="service-button">
+            <a href="/llmC" className="service-button">
               <div className="service-title">Prompt to Multi‑LLM</div>
               <div className="service-description">Lanza tu prompt a 4 LLMs simultáneamente. Claude supervisa e integra una respuesta consolidada.</div>
             </a>
