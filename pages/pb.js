@@ -78,7 +78,7 @@ export default function PB() {
       });
       
       setStep(3);
-      log('gemini', gemini1.content.substring(0, 100) + '...');
+      log('gemini', gemini1.content);
       
       // Paso 4 - Claude
       setStep(4);
@@ -91,7 +91,7 @@ export default function PB() {
       });
       
       setStep(5);
-      log('claude', claude1.content.substring(0, 100) + '...');
+      log('claude', claude1.content);
       
       // Paso 6 - Gemini refinamiento
       setStep(6);
@@ -104,7 +104,7 @@ export default function PB() {
       });
       
       setStep(7);
-      log('gemini', gemini2.content.substring(0, 100) + '...');
+      log('gemini', gemini2.content);
       
       // Paso 8 - Claude final
       setStep(8);
@@ -117,7 +117,7 @@ export default function PB() {
       });
       
       setStep(9);
-      log('claude', 'Optimización completada');
+      log('claude', claude2.content);
       
       setStep(10);
       log('system', '📊 Calculando métricas...');
@@ -394,48 +394,50 @@ export default function PB() {
                     </button>
                   )}
                 </div>
+
+                {/* Progress section moved here */}
+                <div className="bg-gray-50 rounded-lg p-6 mt-6">
+                  <h3 className="text-lg font-semibold text-gray-800 mb-4">Progreso</h3>
+                  <div className="space-y-2">
+                    {[
+                      'Validar entradas',
+                      'Enviar a Gemini',
+                      'Optimización de Gemini',
+                      'Enviar a Claude',
+                      'Retroalimentación de Claude',
+                      'Regresar a Gemini',
+                      'Refinamiento de Gemini',
+                      'Revisión final de Claude',
+                      'Optimización de Claude',
+                      'Calcular métricas'
+                    ].map((stepName, idx) => {
+                      const stepNum = idx + 1;
+                      const isActive = step === stepNum;
+                      const isComplete = step > stepNum;
+                      
+                      return (
+                        <div key={idx} className="flex items-center">
+                          <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 ${
+                            isComplete ? 'bg-green-500 text-white' :
+                            isActive ? 'bg-blue-500 text-white animate-pulse' :
+                            'bg-gray-300 text-gray-600'
+                          }`}>
+                            {isComplete ? '✓' : stepNum}
+                          </div>
+                          <span className={`text-sm ${
+                            isActive ? 'text-gray-900 font-medium' : 'text-gray-600'
+                          }`}>
+                            {stepName}
+                          </span>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
               </div>
             </div>
 
             <div className="space-y-6">
-              <div className="bg-gray-50 rounded-lg p-6">
-                <h3 className="text-lg font-semibold text-gray-800 mb-4">Progreso</h3>
-                <div className="space-y-2">
-                  {[
-                    'Validar entradas',
-                    'Enviar a Gemini',
-                    'Optimización de Gemini',
-                    'Enviar a Claude',
-                    'Retroalimentación de Claude',
-                    'Regresar a Gemini',
-                    'Refinamiento de Gemini',
-                    'Revisión final de Claude',
-                    'Optimización de Claude',
-                    'Calcular métricas'
-                  ].map((stepName, idx) => {
-                    const stepNum = idx + 1;
-                    const isActive = step === stepNum;
-                    const isComplete = step > stepNum;
-                    
-                    return (
-                      <div key={idx} className="flex items-center">
-                        <div className={`w-6 h-6 rounded-full flex items-center justify-center text-xs font-medium mr-3 ${
-                          isComplete ? 'bg-green-500 text-white' :
-                          isActive ? 'bg-blue-500 text-white animate-pulse' :
-                          'bg-gray-300 text-gray-600'
-                        }`}>
-                          {isComplete ? '✓' : stepNum}
-                        </div>
-                        <span className={`text-sm ${
-                          isActive ? 'text-gray-900 font-medium' : 'text-gray-600'
-                        }`}>
-                          {stepName}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
 
               <div className="bg-gray-900 rounded-lg overflow-hidden">
                 <div className="bg-gray-800 px-4 py-2 flex items-center justify-between">
@@ -449,7 +451,7 @@ export default function PB() {
                   </div>
                 </div>
                 
-                <div className="h-96 overflow-y-auto p-4 font-mono text-sm">
+                <div className="h-[600px] overflow-y-auto p-4 font-mono text-sm">
                   {terminal.map((log, idx) => (
                     <div key={idx} className="mb-3">
                       <div className={`${
