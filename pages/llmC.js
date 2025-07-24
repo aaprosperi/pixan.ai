@@ -11,7 +11,7 @@ export default function LLMColaborativa() {
   });
 
   // Estado para el proceso
-  const [prompt, setPrompt] = useState('');
+  const [query, setQuery] = useState('');
   const [processing, setProcessing] = useState(false);
   const [step, setStep] = useState(0);
   const [terminal, setTerminal] = useState([]);
@@ -69,8 +69,8 @@ export default function LLMColaborativa() {
   // Validación del formulario
   const validate = () => {
     const newErrors = {};
-    if (prompt.length < 10) {
-      newErrors.prompt = 'El prompt debe tener al menos 10 caracteres';
+    if (query.length < 10) {
+      newErrors.query = 'La consulta debe tener al menos 10 caracteres';
     }
     
     const availableLLMs = getAvailableLLMs();
@@ -92,7 +92,7 @@ export default function LLMColaborativa() {
     };
 
     const body = llmName === 'claude' 
-      ? { apiKey: apiKeys[llmName], message, context: 'llm_collaboration' }
+      ? { apiKey: apiKeys[llmName], message, context: 'general_query' }
       : llmName === 'gemini'
       ? { apiKey: apiKeys[llmName], prompt: message, parameters: { temperature: 0.7 } }
       : { apiKey: apiKeys[llmName], message, conversation };
@@ -132,21 +132,21 @@ export default function LLMColaborativa() {
 
       // Paso 2: Envío paralelo a todos los LLMs disponibles
       setStep(2);
-      log('system', '⚡ Enviando prompt a todos los LLMs simultáneamente...');
+      log('system', '⚡ Enviando consulta a todos los LLMs simultáneamente...');
       
       const llmPromises = availableLLMs.map(async (llmName) => {
         try {
           log('system', `📤 Consultando ${llmName.toUpperCase()}...`, llmName);
           
           const conversation = conversations[llmName] || [];
-          const response = await callLLM(llmName, prompt, conversation);
+          const response = await callLLM(llmName, query, conversation);
           
           // Actualizar memoria para LLMs que la soportan
           if (llmName !== 'claude') {
             setConversations(prev => ({
               ...prev,
               [llmName]: [...conversation, 
-                { role: 'user', content: prompt },
+                { role: 'user', content: query },
                 { role: 'assistant', content: response.content }
               ]
             }));
@@ -183,7 +183,7 @@ export default function LLMColaborativa() {
       if (apiKeys.claude && successfulResults.length > 1) {
         log('system', '🧠 Claude iniciando consolidación inteligente...');
         
-        const consolidationPrompt = `Como experto en análisis de IA, consolida estas ${successfulResults.length} respuestas de diferentes LLMs sobre la pregunta: "${prompt}"
+        const consolidationQuery = `Como experto en análisis de IA, consolida estas ${successfulResults.length} respuestas de diferentes LLMs sobre la consulta: "${query}"
 
 ${successfulResults.map((result, idx) => 
   `**${result.llm.toUpperCase()} (Respuesta ${idx + 1}):**\n${result.response}`
@@ -197,10 +197,11 @@ INSTRUCCIONES CRÍTICAS:
 5. Prioriza información que aparece en múltiples respuestas
 6. Mantén el tono y estilo más apropiado para la consulta
 7. Si hay contradicciones, explica brevemente por qué elegiste una versión
+8. Adapta el formato según el tipo de consulta (técnica, creativa, analítica, etc.)
 
 Genera UNA respuesta consolidada definitiva que represente la síntesis más precisa y completa.`;
 
-        const consolidationResponse = await callLLM('claude', consolidationPrompt);
+        const consolidationResponse = await callLLM('claude', consolidationQuery);
         
         setStep(5);
         log('claude', consolidationResponse.content, 'claude');
@@ -357,21 +358,21 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                 <h2 className="text-xl font-semibold text-gray-800 mb-4">Configuración Multi-LLM</h2>
                 
                 <div className="space-y-6">
-                  {/* Prompt */}
+                  {/* Consulta */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tu Consulta ({prompt.length} caracteres)
+                      Tu Consulta ({query.length} caracteres)
                     </label>
                     <textarea
-                      value={prompt}
-                      onChange={(e) => setPrompt(e.target.value)}
+                      value={query}
+                      onChange={(e) => setQuery(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                       rows={4}
-                      placeholder="Escribe tu consulta que será procesada por múltiples IAs..."
+                      placeholder="Pregunta, solicitud, análisis, investigación, creatividad... cualquier consulta que necesites resolver"
                       disabled={processing}
                     />
-                    {errors.prompt && (
-                      <span className="text-sm text-red-500 mt-1">{errors.prompt}</span>
+                    {errors.query && (
+                      <span className="text-sm text-red-500 mt-1">{errors.query}</span>
                     )}
                   </div>
 
