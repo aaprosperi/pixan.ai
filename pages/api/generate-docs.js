@@ -15,36 +15,68 @@ export default async function handler(req, res) {
 
   try {
     // Prompt especializado para que Gemini genere HTML estructurado para Google Docs
-    const documentPrompt = `Eres un experto en creación de documentos profesionales. Toma esta respuesta consolidada de múltiples IAs y genera un documento HTML estructurado que se pueda importar a Google Docs.
+    const documentPrompt = `Eres un experto en creación de documentos profesionales con diseño moderno y responsive. Toma esta respuesta consolidada de múltiples IAs y genera un documento HTML estructurado que se pueda importar a Google Docs.
 
 CONTENIDO A PROCESAR:
 ${content}
 
-INSTRUCCIONES CRÍTICAS:
-1. Crea un documento HTML completo y profesional
-2. Incluye un título principal atractivo
-3. Estructura el contenido con secciones claras usando encabezados H2, H3
-4. Crea tablas cuando sea apropiado para organizar información comparativa
-5. Usa listas con viñetas para puntos clave
-6. Incluye un resumen ejecutivo al inicio si el contenido es extenso
-7. Agrega una sección de conclusiones al final
-8. Usa estilos inline básicos (colores, negritas, cursivas)
-9. Adapta la estructura según el tipo de consulta: ${queryType}
+INSTRUCCIONES CRÍTICAS DE DISEÑO:
+
+1. ESTRUCTURA JERÁRQUICA:
+   - H1: Título principal (font-size: 2.5em, color: #1a1a1a, margin-bottom: 24px)
+   - H2: Secciones principales (font-size: 1.8em, color: #2c3e50, margin: 32px 0 16px)
+   - H3: Subsecciones (font-size: 1.4em, color: #34495e, margin: 24px 0 12px)
+   - P: Párrafos (font-size: 1.1em, line-height: 1.8, color: #333, margin-bottom: 16px)
+
+2. TABLAS RESPONSIVE:
+   - Usa <table style="width: 100%; border-collapse: collapse; margin: 24px 0; box-shadow: 0 2px 4px rgba(0,0,0,0.1);">
+   - Headers: background-color: #3498db; color: white; padding: 12px; text-align: left;
+   - Celdas: border: 1px solid #ddd; padding: 12px; alternate rows con background: #f9f9f9;
+   - Responsive: overflow-x: auto; min-width: 300px;
+
+3. INDICADORES VISUALES CON COLORES SEMÁNTICOS:
+   - ✅ Éxito/Positivo: background: #d4edda; color: #155724; border-left: 4px solid #28a745;
+   - ⚠️ Advertencia: background: #fff3cd; color: #856404; border-left: 4px solid #ffc107;
+   - ❌ Error/Negativo: background: #f8d7da; color: #721c24; border-left: 4px solid #dc3545;
+   - ℹ️ Información: background: #d1ecf1; color: #0c5460; border-left: 4px solid #17a2b8;
+   - 💡 Destacado: background: #e8daff; color: #3d1e6d; border-left: 4px solid #6f42c1;
+
+4. SEPARADORES HORIZONTALES:
+   - Entre secciones principales: <hr style="border: none; border-top: 2px solid #e9ecef; margin: 40px 0;">
+   - Entre subsecciones: <hr style="border: none; border-top: 1px solid #f1f3f5; margin: 24px 0;">
+
+5. TIPOGRAFÍA ESCALADA:
+   - Font family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+   - Escala modular: 2.5em → 1.8em → 1.4em → 1.1em → 1em
+   - Negrita para énfasis: font-weight: 600;
+   - Cursiva para citas o términos: font-style: italic; color: #666;
+
+6. LAYOUT ADAPTATIVO:
+   - Container principal: max-width: 1200px; margin: 0 auto; padding: 40px 20px;
+   - Media query simulado con max-width y padding adaptativo
+   - Imágenes y tablas: width: 100%; height: auto;
+   - Bloques de código: background: #f8f9fa; padding: 16px; border-radius: 8px; overflow-x: auto;
+
+7. ELEMENTOS ADICIONALES DE DISEÑO:
+   - Cajas destacadas: border-radius: 8px; padding: 20px; margin: 20px 0;
+   - Listas con iconos: list-style: none; padding-left: 0; con bullets personalizados
+   - Bloques de cita: border-left: 4px solid #6c757d; padding-left: 20px; margin: 20px 0;
+   - Badges/etiquetas: display: inline-block; padding: 4px 12px; border-radius: 20px;
 
 FORMATO DE SALIDA:
-- Documento HTML completo con <html>, <head>, <body>
+- Documento HTML5 completo con <!DOCTYPE html>
+- <head> con meta viewport para responsive
 - Título del documento: "${title}"
-- Meta descripción apropiada
-- Estilos CSS inline para un formato profesional
-- Tablas HTML para comparaciones o datos estructurados
-- Encabezados jerárquicos apropiados
-- Footer con "Generado por LLM Colaborativa - Pixan.ai"
+- Estilos CSS inline optimizados para impresión y pantalla
+- Estructura semántica con <main>, <section>, <article>
+- Footer estilizado: background: #2c3e50; color: white; padding: 24px; text-align: center;
 
-TIPOS DE ESTRUCTURA SEGÚN CONSULTA:
-- Técnica: Tablas de especificaciones, secciones de implementación
-- Creativa: Secciones de conceptos, tablas de ideas, cronogramas
-- Analítica: Tablas comparativas, gráficos de datos, conclusiones
-- Investigación: Referencias, tablas de hallazgos, metodología
+ADAPTACIÓN POR TIPO DE CONSULTA (${queryType}):
+- Técnica: Énfasis en tablas de especificaciones, código formateado, diagramas textuales
+- Creativa: Uso de colores vibrantes, espaciado generoso, bloques inspiracionales
+- Analítica: Tablas comparativas destacadas, gráficos de barras con CSS, métricas en badges
+- Investigación: Referencias numeradas, citas formateadas, tablas de datos estructurados
+- General: Balance entre todos los elementos, estructura clara y navegable
 
 Genera ÚNICAMENTE el código HTML completo, sin explicaciones adicionales.`;
 
