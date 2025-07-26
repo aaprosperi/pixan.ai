@@ -19,6 +19,8 @@ export default function LLMColaborativa() {
   const [metrics, setMetrics] = useState(null);
   const [copied, setCopied] = useState(false);
   const [errors, setErrors] = useState({});
+  const [generatingDocs, setGeneratingDocs] = useState(false);
+  const [docsGenerated, setDocsGenerated] = useState(false);
 
   // Estado para las respuestas individuales
   const [llmResponses, setLlmResponses] = useState({
@@ -265,6 +267,64 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
   const clearMemory = () => {
     setConversations({ openai: [], gemini: [], perplexity: [] });
     log('system', '🧹 Memoria de conversación limpiada');
+  };
+
+  // Función para generar Google Docs con Gemini
+  const generateGoogleDocs = async () => {
+    if (!finalResponse || !apiKeys.gemini) {
+      return;
+    }
+
+    setGeneratingDocs(true);
+    log('system', '📄 Gemini iniciando generación de Google Docs...');
+
+    try {
+      // Determinar el tipo de consulta para estructurar mejor el documento
+      const queryType = query.toLowerCase().includes('análisis') ? 'analítica' :
+                       query.toLowerCase().includes('crear') || query.toLowerCase().includes('diseñ') ? 'creativa' :
+                       query.toLowerCase().includes('investig') || query.toLowerCase().includes('estudi') ? 'investigación' :
+                       query.toLowerCase().includes('código') || query.toLowerCase().includes('técnic') ? 'técnica' : 'general';
+
+      const response = await fetch('/api/generate-docs', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          geminiApiKey: apiKeys.gemini,
+          content: finalResponse,
+          title: `Análisis Multi-IA: ${query.substring(0, 50)}...`,
+          queryType
+        })
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Error generando documento');
+      }
+
+      const data = await response.json();
+      
+      // Crear y descargar el archivo HTML
+      const blob = new Blob([data.htmlContent], { type: 'text/html' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = data.fileName;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+
+      setDocsGenerated(true);
+      log('gemini', `📄 Documento HTML generado: ${data.fileName}`, 'gemini');
+      log('system', '✅ Documento listo para importar a Google Docs');
+      
+      setTimeout(() => setDocsGenerated(false), 3000);
+
+    } catch (error) {
+      log('error', `❌ Error generando documento: ${error.message}`);
+    } finally {
+      setGeneratingDocs(false);
+    }
   };
 
   return (
@@ -554,22 +614,55 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
               <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-lg p-6">
                 <div className="flex justify-between items-start mb-4">
                   <h3 className="text-xl font-semibold text-gray-800">Respuesta Consolidada Multi-IA</h3>
-                  <button
-                    onClick={copyResponse}
-                    className="flex items-center px-4 py-2 text-sm bg-white rounded-lg shadow hover:shadow-md transition-shadow"
-                  >
-                    {copied ? (
-                      <>
-                        <span className="mr-2 text-green-500">✓</span>
-                        ¡Copiado!
-                      </>
-                    ) : (
-                      <>
-                        <span className="mr-2">📋</span>
-                        Copiar Respuesta
-                      </>
+                  <div className="flex gap-2">
+                    <button
+                      onClick={copyResponse}
+                      className="flex items-center px-4 py-2 text-sm bg-white rounded-lg shadow hover:shadow-md transition-shadow"
+                    >
+                      {copied ? (
+                        <>
+                          <span className="mr-2 text-green-500">✓</span>
+                          ¡Copiado!
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-2">📋</span>
+                          Copiar
+                        </>
+                      )}
+                    </button>
+                    
+                    {apiKeys.gemini && (
+                      <button
+                        onClick={generateGoogleDocs}
+                        disabled={generatingDocs}
+                        className={`flex items-center px-4 py-2 text-sm rounded-lg shadow hover:shadow-md transition-all ${
+                          generatingDocs 
+                            ? 'bg-gray-400 text-white cursor-not-allowed' 
+                            : docsGenerated
+                            ? 'bg-green-500 text-white'
+                            : 'bg-blue-500 text-white hover:bg-blue-600'
+                        }`}
+                      >
+                        {generatingDocs ? (
+                          <>
+                            <span className="mr-2 animate-spin">⚙️</span>
+                            Generando...
+                          </>
+                        ) : docsGenerated ? (
+                          <>
+                            <span className="mr-2">✅</span>
+                            ¡Descargado!
+                          </>
+                        ) : (
+                          <>
+                            <span className="mr-2">📄</span>
+                            Google Docs
+                          </>
+                        )}
+                      </button>
                     )}
-                  </button>
+                  </div>
                 </div>
                 
                 <div className="bg-white rounded-lg p-6 shadow-inner">
@@ -650,8 +743,8 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                     <div className="flex items-start space-x-4 p-4 bg-blue-50 rounded-lg">
                       <span className="gemini-badge">Gemini</span>
                       <div>
-                        <h4 className="font-semibold text-gray-900">Motor de Innovación</h4>
-                        <p className="text-sm text-gray-700">Perspectivas creativas y multimodales con contexto extendido</p>
+                        <h4 className="font-semibold text-gray-900">Motor de Innovación + Docs</h4>
+                        <p className="text-sm text-gray-700">Perspectivas creativas, contexto extendido y generación automática de Google Docs estructurados</p>
                       </div>
                     </div>
                     
@@ -672,7 +765,7 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                   🚀 Innovaciones Tecnológicas Exclusivas
                 </h3>
                 
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
                     <h4 className="font-semibold mb-2">🧠 Memoria Selectiva</h4>
                     <p className="text-sm">GPT-4, Gemini y Perplexity mantienen contexto conversacional. Claude permanece neutro para consolidación objetiva.</p>
@@ -684,6 +777,10 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
                     <h4 className="font-semibold mb-2">🎯 Anti-Alucinación</h4>
                     <p className="text-sm">Claude verifica consistencia entre respuestas y elimina información contradictoria.</p>
+                  </div>
+                  <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
+                    <h4 className="font-semibold mb-2">📄 Auto-Documentación</h4>
+                    <p className="text-sm">Gemini convierte la respuesta final en Google Docs estructurados con tablas y formato profesional.</p>
                   </div>
                 </div>
               </div>
