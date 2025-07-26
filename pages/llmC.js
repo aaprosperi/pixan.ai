@@ -140,34 +140,40 @@ export default function LLMColaborativa() {
         log('system', '🧠 Claude analizando consulta y asignando roles...');
         log('claude', '📊 Analizando tipo de consulta y capacidades de cada LLM...', 'claude');
         
-        const analysisPrompt = `Analiza esta consulta y asigna roles específicos a los LLMs disponibles:
+        const analysisPrompt = `Analiza esta consulta y asigna roles específicos a TODOS los LLMs disponibles, incluyéndote a ti mismo (Claude):
 
 CONSULTA DEL USUARIO: "${query}"
 
-LLMs DISPONIBLES: ${availableLLMs.filter(llm => llm !== 'claude').map(llm => llm.toUpperCase()).join(', ')}
+TODOS LOS LLMs DISPONIBLES: CLAUDE, ${availableLLMs.filter(llm => llm !== 'claude').map(llm => llm.toUpperCase()).join(', ')}
 
 CAPACIDADES DE CADA LLM:
-- GPT-4: Excelente en análisis profundo, razonamiento complejo, código, matemáticas
+- CLAUDE (TÚ): Razonamiento superior, análisis crítico, síntesis conceptual, arquitectura de soluciones, filosofía, ética
+- GPT-4: Análisis profundo, razonamiento complejo, código, matemáticas, ingeniería
 - GEMINI: Creatividad, síntesis multimodal, perspectivas innovadoras, generación de contenido
 - PERPLEXITY: Búsqueda en tiempo real, verificación de hechos, información actualizada, investigación
 
-INSTRUCCIONES:
+INSTRUCCIONES CRÍTICAS:
 1. Identifica el tipo de consulta (técnica, creativa, analítica, investigativa, mixta)
-2. Asigna a cada LLM un rol específico basado en sus fortalezas
-3. Crea una instrucción personalizada para cada LLM que maximice su contribución
-4. Devuelve la respuesta en formato JSON exactamente así:
+2. Asígna-TE A TI MISMO (Claude) un rol específico basado en tus fortalezas superiores
+3. Asigna a cada LLM restante un rol específico basado en sus fortalezas
+4. Crea una instrucción personalizada para cada LLM (incluyéndote) que maximice su contribución
+5. Devuelve la respuesta en formato JSON exactamente así:
 
 {
   "queryType": "tipo de consulta",
   "analysis": "breve análisis de la consulta",
   "roles": {
+    "claude": { "role": "título del rol para Claude", "instruction": "instrucción específica para Claude" },
     "openai": { "role": "título del rol", "instruction": "instrucción específica" },
     "gemini": { "role": "título del rol", "instruction": "instrucción específica" },
     "perplexity": { "role": "título del rol", "instruction": "instrucción específica" }
   }
 }
 
-IMPORTANTE: Adapta las instrucciones al contexto específico de la consulta.`;
+IMPORTANTE: 
+- Como Claude, asígna-te el rol más estratégico y de mayor valor para esta consulta específica
+- Tus fortalezas incluyen razonamiento superior, análisis crítico y síntesis conceptual
+- Adapta todas las instrucciones al contexto específico de la consulta`;
 
         try {
           const analysisResponse = await callLLM('claude', analysisPrompt);
@@ -177,24 +183,25 @@ IMPORTANTE: Adapta las instrucciones al contexto específico de la consulta.`;
           log('claude', `✅ Análisis completado: Consulta tipo "${analysis.queryType}"`, 'claude');
           log('system', '📋 ASIGNACIÓN DE ROLES:');
           
-          // Mostrar roles asignados en formato tabla
+          // Mostrar roles asignados en formato tabla (incluyendo Claude)
           Object.entries(roleAssignments).forEach(([llm, assignment]) => {
-            if (availableLLMs.includes(llm)) {
+            if (availableLLMs.includes(llm) || llm === 'claude') {
               log('system', `┃ ${llm.toUpperCase().padEnd(12)} ┃ ${assignment.role.padEnd(30)} ┃`);
             }
           });
           
         } catch (error) {
           log('error', '⚠️ Error en análisis de Claude, usando roles genéricos');
-          // Roles por defecto si falla el análisis
+          // Roles por defecto si falla el análisis (incluyendo Claude)
           roleAssignments = {
+            claude: { role: "Arquitecto de Soluciones", instruction: "Proporciona una perspectiva estratégica y análisis conceptual profundo" },
             openai: { role: "Analista Principal", instruction: "Proporciona un análisis detallado y estructurado" },
             gemini: { role: "Innovador Creativo", instruction: "Aporta perspectivas creativas y soluciones innovadoras" },
             perplexity: { role: "Investigador", instruction: "Busca información actualizada y verifica hechos" }
           };
         }
       } else {
-        // Si no hay Claude o solo un LLM, usar roles genéricos
+        // Si no hay Claude o solo un LLM, usar roles genéricos (sin Claude)
         roleAssignments = {
           openai: { role: "Analista Principal", instruction: "Responde de manera completa y detallada" },
           gemini: { role: "Asistente Creativo", instruction: "Proporciona una respuesta clara y útil" },
@@ -206,7 +213,10 @@ IMPORTANTE: Adapta las instrucciones al contexto específico de la consulta.`;
       setStep(3);
       log('system', '⚡ Enviando tareas especializadas a cada LLM...');
       
-      const llmPromises = availableLLMs.filter(llm => llm !== 'claude').map(async (llmName) => {
+      // Incluir Claude en la primera ronda si está disponible
+      const participatingLLMs = apiKeys.claude ? ['claude', ...availableLLMs.filter(llm => llm !== 'claude')] : availableLLMs.filter(llm => llm !== 'claude');
+      
+      const llmPromises = participatingLLMs.map(async (llmName) => {
         try {
           const role = roleAssignments[llmName];
           if (!role) return null;
@@ -269,12 +279,54 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
         throw new Error('Ningún LLM respondió exitosamente');
       }
 
-      // Paso 5: Consolidación con Claude (si está disponible)
+      // Paso 5: Consolidación con Claude (si está disponible y hay múltiples respuestas)
       setStep(5);
+      
+      // Separar la respuesta de Claude de las demás para consolidación
+      const claudeResponse = successfulResults.find(r => r.llm === 'claude');
+      const otherResponses = successfulResults.filter(r => r.llm !== 'claude');
+      
       if (apiKeys.claude && successfulResults.length > 1) {
-        log('system', '🧠 Claude iniciando consolidación inteligente...');
+        log('system', '🧠 Claude iniciando consolidación final...');
         
-        const consolidationQuery = `Como Director de Orquesta de IA, consolida estas respuestas especializadas en una síntesis magistral.
+        let consolidationQuery;
+        
+        if (claudeResponse && otherResponses.length > 0) {
+          // Claude participó y hay otras respuestas para consolidar
+          consolidationQuery = `Como Director de Orquesta de IA, ahora debes consolidar TODAS las respuestas (incluyendo tu propia respuesta inicial) en una síntesis magistral final.
+
+📋 **CONSULTA ORIGINAL:** "${query}"
+
+🎭 **TU PROPIA RESPUESTA INICIAL:**
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 **CLAUDE** - ${claudeResponse.role}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${claudeResponse.response}
+
+🎭 **RESPUESTAS DE OTROS LLMs:**
+${otherResponses.map((result, idx) => 
+  `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 **${result.llm.toUpperCase()}** - ${result.role}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${result.response}`
+).join('\n')}
+
+📊 **INSTRUCCIONES DE CONSOLIDACIÓN ESPECIAL:**
+
+Ahora debes actuar como un meta-analista que evalúa su propia contribución junto con las de otros expertos:
+
+1. **EVALUACIÓN CRÍTICA:**
+   - Analiza objetivamente tu propia respuesta inicial junto con las demás
+   - Identifica fortalezas y debilidades en todas las perspectivas (incluyendo la tuya)
+   - Busca complementariedades entre tu enfoque y los otros
+
+2. **SÍNTESIS MEJORADA:**
+   - Combina lo mejor de tu perspectiva inicial con los insights de otros LLMs
+   - Corrige cualquier sesgo o limitación identificada en tu respuesta inicial
+   - Aprovecha las fortalezas únicas de cada contribución`
+        } else {
+          // Consolidación estándar sin Claude participando
+          consolidationQuery = `Como Director de Orquesta de IA, consolida estas respuestas especializadas en una síntesis magistral.
 
 📋 **CONSULTA ORIGINAL:** "${query}"
 
@@ -284,14 +336,18 @@ ${successfulResults.map((result, idx) =>
 🤖 **${result.llm.toUpperCase()}** - ${result.role}
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
 ${result.response}`
-).join('\n')}
+).join('\n')}`
+        }
+        
+        // Agregar instrucciones comunes de formato visual
+        consolidationQuery += `
 
-📊 **INSTRUCCIONES DE CONSOLIDACIÓN:**
+📊 **INSTRUCCIONES DE FORMATO:**
 
-Tu respuesta DEBE incluir estos elementos gráficos y de formato:
+Tu respuesta DEBE incluir estos elementos gráficos:
 
 1. **ESTRUCTURA VISUAL:**
-   - Usa encabezados con emojis temáticos (📊, 🎯, 💡, 🔍, ⚡, etc.)
+   - Usa encabezados con emojis temáticos (📊, 🎯, 💡, 🔍, ⚡)
    - Separa secciones con líneas: ─────────────────
    - Destaca puntos clave con **negrita** y *cursiva*
 
@@ -306,26 +362,20 @@ Tu respuesta DEBE incluir estos elementos gráficos y de formato:
    • Punto principal
      ◦ Subpunto con detalle
        ▪ Detalle específico
-   
+
 4. **INDICADORES VISUALES:**
    ✅ Información verificada por múltiples fuentes
-   ⚠️  Puntos de atención o precaución
+   ⚠️ Puntos de atención o precaución
    💡 Insights únicos o innovadores
    🎯 Conclusiones clave
-   📈 Tendencias o patrones identificados
+   📈 Tendencias o patrones
 
 5. **BLOQUES DESTACADOS:**
    ╔════════════════════════════════════╗
    ║  PUNTO CLAVE: Texto importante     ║
    ╚════════════════════════════════════╝
 
-6. **SÍNTESIS FINAL:**
-   - Identifica consensos entre los LLMs (marca con ✅)
-   - Resalta contribuciones únicas de cada rol
-   - Elimina redundancias y contradicciones
-   - Presenta la información de forma visualmente atractiva
-
-IMPORTANTE: La respuesta debe ser rica en formato visual pero mantener claridad y precisión. Usa los elementos gráficos para mejorar la comprensión, no solo por decoración.`;
+IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de todas las perspectivas.`;
 
         const consolidationResponse = await callLLM('claude', consolidationQuery);
         
@@ -532,7 +582,7 @@ IMPORTANTE: La respuesta debe ser rica en formato visual pero mantener claridad 
               </span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              Claude dirige la orquesta: Asigna roles específicos a cada IA y consolida respuestas con formato visual
+              Claude dirige y participa: Se asigna un rol, coordina la orquesta de IAs y consolida respuestas con formato visual
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Tecnología revolucionaria de colaboración multi-IA por Pixan.ai 🧠
@@ -858,8 +908,8 @@ IMPORTANTE: La respuesta debe ser rica en formato visual pero mantener claridad 
                     <div className="flex items-start space-x-4 p-4 bg-purple-50 rounded-lg">
                       <span className="claude-badge">Claude</span>
                       <div>
-                        <h4 className="font-semibold text-gray-900">Director de Orquesta IA</h4>
-                        <p className="text-sm text-gray-700">Analiza consultas, asigna roles específicos, supervisa respuestas y consolida con formato visual enriquecido</p>
+                        <h4 className="font-semibold text-gray-900">Director y Participante Activo</h4>
+                        <p className="text-sm text-gray-700">Se asigna un rol estratégico, participa en la primera ronda de respuestas, supervisa y consolida con formato visual enriquecido</p>
                       </div>
                     </div>
                     
@@ -900,8 +950,8 @@ IMPORTANTE: La respuesta debe ser rica en formato visual pero mantener claridad 
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">🎭 Asignación Dinámica</h4>
-                    <p className="text-sm">Claude analiza cada consulta y asigna roles específicos a cada LLM según sus fortalezas y el tipo de tarea.</p>
+                    <h4 className="font-semibold mb-2">🎭 Auto-Asignación Inteligente</h4>
+                    <p className="text-sm">Claude se asigna un rol estratégico a sí mismo y distribuye roles específicos a cada LLM según fortalezas y tipo de consulta.</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
                     <h4 className="font-semibold mb-2">⚡ Procesamiento Paralelo</h4>
