@@ -1,15 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function LLMColaborativa() {
-  // Estado para las APIs
-  const [apiKeys, setApiKeys] = useState({
-    claude: '',
-    openai: '',
-    gemini: '',
-    perplexity: ''
-  });
-
+  // Estado para autenticación
+  const [password, setPassword] = useState('');
+  const [authenticated, setAuthenticated] = useState(false);
+  
   // Estado para el proceso
   const [query, setQuery] = useState('');
   const [processing, setProcessing] = useState(false);
@@ -22,26 +18,69 @@ export default function LLMColaborativa() {
   const [generatingDocs, setGeneratingDocs] = useState(false);
   const [docsGenerated, setDocsGenerated] = useState(false);
 
+  // Estado para estadísticas de tokens
+  const [tokenStats, setTokenStats] = useState({
+    claude: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    openai: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    gemini: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    perplexity: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    inflection: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    mistral: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 }
+  });
+
   // Estado para las respuestas individuales
   const [llmResponses, setLlmResponses] = useState({
     claude: null,
     openai: null,
     gemini: null,
-    perplexity: null
+    perplexity: null,
+    inflection: null,
+    mistral: null
   });
 
   // Estado para la memoria de conversación (excepto Claude)
   const [conversations, setConversations] = useState({
     openai: [],
     gemini: [],
-    perplexity: []
+    perplexity: [],
+    inflection: [],
+    mistral: []
   });
 
-  // Función para actualizar API keys
-  const updateApiKey = (llm, value) => {
-    setApiKeys(prev => ({ ...prev, [llm]: value }));
-    if (errors[llm]) {
-      setErrors(prev => ({ ...prev, [llm]: null }));
+  // Actualizar estadísticas de tokens cada 5 segundos
+  useEffect(() => {
+    const interval = setInterval(() => {
+      if (authenticated) {
+        fetchTokenStats();
+      }
+    }, 5000);
+    return () => clearInterval(interval);
+  }, [authenticated]);
+
+  // Función para obtener estadísticas de tokens
+  const fetchTokenStats = async () => {
+    try {
+      const response = await fetch('/api/token-stats', {
+        headers: {
+          'x-auth-password': password
+        }
+      });
+      if (response.ok) {
+        const data = await response.json();
+        setTokenStats(data);
+      }
+    } catch (error) {
+      console.error('Error fetching token stats:', error);
+    }
+  };
+
+  // Función de autenticación
+  const handleAuth = () => {
+    if (password === 'pixan') {
+      setAuthenticated(true);
+      fetchTokenStats();
+    } else {
+      setErrors({ auth: 'Password incorrecto' });
     }
   };
 
@@ -58,50 +97,29 @@ export default function LLMColaborativa() {
     setTerminal(prev => [...prev, entry]);
   };
 
-  // Validación de APIs disponibles
-  const getAvailableLLMs = () => {
-    const available = [];
-    if (apiKeys.claude) available.push('claude');
-    if (apiKeys.openai) available.push('openai');
-    if (apiKeys.gemini) available.push('gemini');
-    if (apiKeys.perplexity) available.push('perplexity');
-    return available;
-  };
-
-  // Validación del formulario
-  const validate = () => {
-    const newErrors = {};
-    if (query.length < 10) {
-      newErrors.query = 'La consulta debe tener al menos 10 caracteres';
-    }
-    
-    const availableLLMs = getAvailableLLMs();
-    if (availableLLMs.length === 0) {
-      newErrors.general = 'Debes proporcionar al menos una API key';
-    }
-    
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
-  };
-
   // Función para llamar a cada API
   const callLLM = async (llmName, message, conversation = []) => {
     const endpoints = {
       claude: '/api/claude-chat',
       openai: '/api/openai-chat',
       gemini: '/api/gemini-chat',
-      perplexity: '/api/perplexity-chat'
+      perplexity: '/api/perplexity-chat',
+      inflection: '/api/inflection-chat',
+      mistral: '/api/mistral-chat'
     };
 
     const body = llmName === 'claude' 
-      ? { apiKey: apiKeys[llmName], message, context: 'general_query' }
+      ? { message, context: 'general_query', password }
       : llmName === 'gemini'
-      ? { apiKey: apiKeys[llmName], prompt: message, parameters: { temperature: 0.7 } }
-      : { apiKey: apiKeys[llmName], message, conversation };
+      ? { prompt: message, parameters: { temperature: 0.7 }, password }
+      : { message, conversation, password };
 
     const response = await fetch(endpoints[llmName], {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-auth-password': password
+      },
       body: JSON.stringify(body)
     });
 
@@ -110,7 +128,36 @@ export default function LLMColaborativa() {
       throw new Error(error.error || `${llmName} API Error`);
     }
 
-    return response.json();
+    const data = await response.json();
+    
+    // Actualizar estadísticas de tokens localmente
+    if (data.usage) {
+      setTokenStats(prev => ({
+        ...prev,
+        [llmName]: {
+          ...prev[llmName],
+          usage: {
+            input: prev[llmName].usage.input + data.usage.inputTokens,
+            output: prev[llmName].usage.output + data.usage.outputTokens,
+            cost: prev[llmName].usage.cost + data.usage.cost
+          },
+          balance: data.usage.remainingBalance
+        }
+      }));
+    }
+
+    return data;
+  };
+
+  // Validación de consulta
+  const validate = () => {
+    const newErrors = {};
+    if (query.length < 10) {
+      newErrors.query = 'La consulta debe tener al menos 10 caracteres';
+    }
+    
+    setErrors(newErrors);
+    return Object.keys(newErrors).length === 0;
   };
 
   // Proceso principal de colaboración
@@ -123,28 +170,26 @@ export default function LLMColaborativa() {
     setLlmResponses({ claude: null, openai: null, gemini: null, perplexity: null });
     setMetrics(null);
 
-    const availableLLMs = getAvailableLLMs();
     const startTime = Date.now();
 
     try {
       // Paso 1: Inicialización
       setStep(1);
-      log('system', `🚀 Iniciando LLM Colaborativa con ${availableLLMs.length} modelos activos`);
-      log('system', `📋 Modelos: ${availableLLMs.map(llm => llm.toUpperCase()).join(', ')}`);
+      log('system', `🚀 Iniciando LLM Colaborativa con 4 modelos`);
+      log('system', `📋 Modelos: CLAUDE, OPENAI, GEMINI, PERPLEXITY`);
 
       // Paso 2: Claude analiza el prompt y asigna roles
       setStep(2);
       let roleAssignments = {};
       
-      if (apiKeys.claude && availableLLMs.length > 1) {
-        log('system', '🧠 Claude analizando consulta y asignando roles...');
-        log('claude', '📊 Analizando tipo de consulta y capacidades de cada LLM...', 'claude');
-        
-        const analysisPrompt = `Analiza esta consulta y asigna roles específicos a TODOS los LLMs disponibles, incluyéndote a ti mismo (Claude):
+      log('system', '🧠 Claude analizando consulta y asignando roles...');
+      log('claude', '📊 Analizando tipo de consulta y capacidades de cada LLM...', 'claude');
+      
+      const analysisPrompt = `Analiza esta consulta y asigna roles específicos a TODOS los LLMs disponibles, incluyéndote a ti mismo (Claude):
 
 CONSULTA DEL USUARIO: "${query}"
 
-TODOS LOS LLMs DISPONIBLES: CLAUDE, ${availableLLMs.filter(llm => llm !== 'claude').map(llm => llm.toUpperCase()).join(', ')}
+TODOS LOS LLMs DISPONIBLES: CLAUDE, OPENAI, GEMINI, PERPLEXITY
 
 CAPACIDADES DE CADA LLM:
 - CLAUDE (TÚ): Razonamiento superior, análisis crítico, síntesis conceptual, arquitectura de soluciones, filosofía, ética
@@ -166,7 +211,9 @@ INSTRUCCIONES CRÍTICAS:
     "claude": { "role": "título del rol para Claude", "instruction": "instrucción específica para Claude" },
     "openai": { "role": "título del rol", "instruction": "instrucción específica" },
     "gemini": { "role": "título del rol", "instruction": "instrucción específica" },
-    "perplexity": { "role": "título del rol", "instruction": "instrucción específica" }
+    "perplexity": { "role": "título del rol", "instruction": "instrucción específica" },
+    "inflection": { "role": "título del rol", "instruction": "instrucción específica" },
+    "mistral": { "role": "título del rol", "instruction": "instrucción específica" }
   }
 }
 
@@ -175,37 +222,29 @@ IMPORTANTE:
 - Tus fortalezas incluyen razonamiento superior, análisis crítico y síntesis conceptual
 - Adapta todas las instrucciones al contexto específico de la consulta`;
 
-        try {
-          const analysisResponse = await callLLM('claude', analysisPrompt);
-          const analysis = JSON.parse(analysisResponse.content);
-          roleAssignments = analysis.roles;
-          
-          log('claude', `✅ Análisis completado: Consulta tipo "${analysis.queryType}"`, 'claude');
-          log('system', '📋 ASIGNACIÓN DE ROLES:');
-          
-          // Mostrar roles asignados en formato tabla (incluyendo Claude)
-          Object.entries(roleAssignments).forEach(([llm, assignment]) => {
-            if (availableLLMs.includes(llm) || llm === 'claude') {
-              log('system', `┃ ${llm.toUpperCase().padEnd(12)} ┃ ${assignment.role.padEnd(30)} ┃`);
-            }
-          });
-          
-        } catch (error) {
-          log('error', '⚠️ Error en análisis de Claude, usando roles genéricos');
-          // Roles por defecto si falla el análisis (incluyendo Claude)
-          roleAssignments = {
-            claude: { role: "Arquitecto de Soluciones", instruction: "Proporciona una perspectiva estratégica y análisis conceptual profundo" },
-            openai: { role: "Analista Principal", instruction: "Proporciona un análisis detallado y estructurado" },
-            gemini: { role: "Innovador Creativo", instruction: "Aporta perspectivas creativas y soluciones innovadoras" },
-            perplexity: { role: "Investigador", instruction: "Busca información actualizada y verifica hechos" }
-          };
-        }
-      } else {
-        // Si no hay Claude o solo un LLM, usar roles genéricos (sin Claude)
+      try {
+        const analysisResponse = await callLLM('claude', analysisPrompt);
+        const analysis = JSON.parse(analysisResponse.content);
+        roleAssignments = analysis.roles;
+        
+        log('claude', `✅ Análisis completado: Consulta tipo "${analysis.queryType}"`, 'claude');
+        log('system', '📋 ASIGNACIÓN DE ROLES:');
+        
+        // Mostrar roles asignados en formato tabla
+        Object.entries(roleAssignments).forEach(([llm, assignment]) => {
+          log('system', `┃ ${llm.toUpperCase().padEnd(12)} ┃ ${assignment.role.padEnd(30)} ┃`);
+        });
+        
+      } catch (error) {
+        log('error', '⚠️ Error en análisis de Claude, usando roles genéricos');
+        // Roles por defecto si falla el análisis
         roleAssignments = {
-          openai: { role: "Analista Principal", instruction: "Responde de manera completa y detallada" },
-          gemini: { role: "Asistente Creativo", instruction: "Proporciona una respuesta clara y útil" },
-          perplexity: { role: "Investigador", instruction: "Proporciona información precisa y actualizada" }
+          claude: { role: "Arquitecto de Soluciones", instruction: "Proporciona una perspectiva estratégica y análisis conceptual profundo" },
+          openai: { role: "Analista Principal", instruction: "Proporciona un análisis detallado y estructurado" },
+          gemini: { role: "Innovador Creativo", instruction: "Aporta perspectivas creativas y soluciones innovadoras" },
+          perplexity: { role: "Investigador", instruction: "Busca información actualizada y verifica hechos" },
+          inflection: { role: "Sintetizador de Datos", instruction: "Sintetiza información y encuentra patrones en los datos" },
+          mistral: { role: "Especialista Técnico", instruction: "Proporciona análisis técnico especializado y recomendaciones" }
         };
       }
 
@@ -213,8 +252,8 @@ IMPORTANTE:
       setStep(3);
       log('system', '⚡ Enviando tareas especializadas a cada LLM...');
       
-      // Incluir Claude en la primera ronda si está disponible
-      const participatingLLMs = apiKeys.claude ? ['claude', ...availableLLMs.filter(llm => llm !== 'claude')] : availableLLMs.filter(llm => llm !== 'claude');
+      // Incluir Claude en la primera ronda
+      const participatingLLMs = ['claude', 'openai', 'gemini', 'perplexity', 'inflection', 'mistral'];
       
       const llmPromises = participatingLLMs.map(async (llmName) => {
         try {
@@ -279,14 +318,14 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
         throw new Error('Ningún LLM respondió exitosamente');
       }
 
-      // Paso 5: Consolidación con Claude (si está disponible y hay múltiples respuestas)
+      // Paso 5: Consolidación con Claude
       setStep(5);
       
-      // Separar la respuesta de Claude de las demás para consolidación
+      // Separar la respuesta de Claude de las demás
       const claudeResponse = successfulResults.find(r => r.llm === 'claude');
       const otherResponses = successfulResults.filter(r => r.llm !== 'claude');
       
-      if (apiKeys.claude && successfulResults.length > 1) {
+      if (successfulResults.length > 1) {
         log('system', '🧠 Claude iniciando consolidación final...');
         
         let consolidationQuery;
@@ -409,10 +448,10 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       const processingTime = Math.round((Date.now() - startTime) / 1000);
       const calculatedMetrics = {
         llmsUsed: successfulResults.length,
-        totalLlmsAvailable: availableLLMs.length,
+        totalLlmsAvailable: 4,
         processingTime,
-        consolidationUsed: apiKeys.claude && successfulResults.length > 1,
-        memoryEnabled: availableLLMs.filter(llm => llm !== 'claude').length,
+        consolidationUsed: successfulResults.length > 1,
+        memoryEnabled: 3, // OpenAI, Gemini, Perplexity tienen memoria
         responseLengths: successfulResults.map(r => r.response.length)
       };
       
@@ -449,7 +488,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
 
   // Función para generar Google Docs con Gemini
   const generateGoogleDocs = async () => {
-    if (!finalResponse || !apiKeys.gemini) {
+    if (!finalResponse) {
       return;
     }
 
@@ -457,7 +496,6 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
     log('system', '📄 Gemini iniciando generación de Google Docs...');
 
     try {
-      // Determinar el tipo de consulta para estructurar mejor el documento
       const queryType = query.toLowerCase().includes('análisis') ? 'analítica' :
                        query.toLowerCase().includes('crear') || query.toLowerCase().includes('diseñ') ? 'creativa' :
                        query.toLowerCase().includes('investig') || query.toLowerCase().includes('estudi') ? 'investigación' :
@@ -465,12 +503,15 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
 
       const response = await fetch('/api/generate-docs', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-auth-password': password
+        },
         body: JSON.stringify({
-          geminiApiKey: apiKeys.gemini,
           content: finalResponse,
           title: `Análisis Multi-IA: ${query.substring(0, 50)}...`,
-          queryType
+          queryType,
+          password
         })
       });
 
@@ -504,6 +545,52 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       setGeneratingDocs(false);
     }
   };
+
+  // Si no está autenticado, mostrar pantalla de login
+  if (!authenticated) {
+    return (
+      <>
+        <Head>
+          <title>LLM Colaborativa - Autenticación | Pixan.ai</title>
+          <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+        </Head>
+
+        <div className="min-h-screen bg-gradient-to-br from-purple-50 to-cyan-50 flex items-center justify-center">
+          <div className="bg-white rounded-xl shadow-2xl p-8 max-w-md w-full">
+            <div className="text-center mb-8">
+              <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">
+                LLM Colaborativa
+              </h1>
+              <p className="text-gray-600 mt-2">Ingresa la contraseña para continuar</p>
+            </div>
+
+            <div className="space-y-4">
+              <input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
+                className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
+                placeholder="Contraseña"
+                autoFocus
+              />
+              
+              {errors.auth && (
+                <p className="text-red-500 text-sm">{errors.auth}</p>
+              )}
+
+              <button
+                onClick={handleAuth}
+                className="w-full py-3 px-6 text-white font-medium rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600 transition-all duration-200"
+              >
+                Acceder
+              </button>
+            </div>
+          </div>
+        </div>
+      </>
+    );
+  }
 
   return (
     <>
@@ -546,6 +633,8 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         .openai-badge { background: #10b981; color: white; }
         .gemini-badge { background: #3b82f6; color: white; }
         .perplexity-badge { background: #f59e0b; color: white; }
+        .inflection-badge { background: #ec4899; color: white; }
+        .mistral-badge { background: #ef4444; color: white; }
         .system-badge { background: #6b7280; color: white; }
         .error-badge { background: #ef4444; color: white; }
 
@@ -557,9 +646,54 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         .processing-glow {
           animation: pulse-glow 2s infinite;
         }
+
+        .token-monitor {
+          position: fixed;
+          top: 20px;
+          right: 20px;
+          background: rgba(255, 255, 255, 0.95);
+          backdrop-filter: blur(10px);
+          border-radius: 12px;
+          padding: 16px;
+          box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          z-index: 100;
+          min-width: 300px;
+        }
+
+        @media (max-width: 768px) {
+          .token-monitor {
+            position: relative;
+            top: auto;
+            right: auto;
+            margin-bottom: 20px;
+          }
+        }
       `}</style>
 
       <div className="min-h-screen bg-white">
+        {/* Monitor de Tokens */}
+        <div className="token-monitor">
+          <h3 className="text-sm font-semibold text-gray-700 mb-3">💰 Monitor de Tokens y Saldos</h3>
+          <div className="space-y-2">
+            {Object.entries(tokenStats).map(([llm, stats]) => (
+              <div key={llm} className="flex justify-between items-center text-xs">
+                <span className={`${llm}-badge`}>{llm.toUpperCase()}</span>
+                <div className="flex gap-3">
+                  <span className="text-gray-600">
+                    {stats.usage.input + stats.usage.output} tokens
+                  </span>
+                  <span className="text-gray-900 font-medium">
+                    ${stats.usage.cost.toFixed(4)}
+                  </span>
+                  <span className={`font-bold ${stats.balance < 10 ? 'text-red-600' : 'text-green-600'}`}>
+                    ${stats.balance.toFixed(2)}
+                  </span>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
           {/* Header */}
           <div className="text-center mb-12">
@@ -614,85 +748,18 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                     )}
                   </div>
 
-                  {/* API Keys */}
-                  <div className="space-y-4">
-                    <h3 className="font-semibold text-gray-700">APIs Disponibles (completa las que tengas)</h3>
-                    
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                          <span className="claude-badge">Claude</span>
-                          Clave API de Claude
-                        </label>
-                        <input
-                          type="password"
-                          value={apiKeys.claude}
-                          onChange={(e) => updateApiKey('claude', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="sk-ant-..."
-                          disabled={processing}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                          <span className="openai-badge">GPT-4</span>
-                          Clave API de OpenAI
-                        </label>
-                        <input
-                          type="password"
-                          value={apiKeys.openai}
-                          onChange={(e) => updateApiKey('openai', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="sk-..."
-                          disabled={processing}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                          <span className="gemini-badge">Gemini</span>
-                          Clave API de Gemini
-                        </label>
-                        <input
-                          type="password"
-                          value={apiKeys.gemini}
-                          onChange={(e) => updateApiKey('gemini', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="AIza..."
-                          disabled={processing}
-                        />
-                      </div>
-                      
-                      <div>
-                        <label className="flex items-center text-sm font-medium text-gray-700 mb-2">
-                          <span className="perplexity-badge">Perplexity</span>
-                          Clave API de Perplexity
-                        </label>
-                        <input
-                          type="password"
-                          value={apiKeys.perplexity}
-                          onChange={(e) => updateApiKey('perplexity', e.target.value)}
-                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                          placeholder="pplx-..."
-                          disabled={processing}
-                        />
-                      </div>
-                    </div>
-                  </div>
-
                   {/* Estado de APIs */}
                   <div className="bg-white rounded-lg p-4">
                     <h4 className="font-medium text-gray-700 mb-2">Estado de Conexiones</h4>
                     <div className="flex flex-wrap gap-2">
-                      {Object.entries(apiKeys).map(([llm, key]) => (
+                      {Object.keys(tokenStats).map(llm => (
                         <span 
                           key={llm}
                           className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            key ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-500'
+                            tokenStats[llm].balance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                           }`}
                         >
-                          {llm.toUpperCase()}: {key ? '✓ Conectado' : '○ Desconectado'}
+                          {llm.toUpperCase()}: {tokenStats[llm].balance > 0 ? '✓ Activo' : '✗ Sin saldo'}
                         </span>
                       ))}
                     </div>
@@ -815,36 +882,34 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                       )}
                     </button>
                     
-                    {apiKeys.gemini && (
-                      <button
-                        onClick={generateGoogleDocs}
-                        disabled={generatingDocs}
-                        className={`flex items-center px-4 py-2 text-sm rounded-lg shadow hover:shadow-md transition-all ${
-                          generatingDocs 
-                            ? 'bg-gray-400 text-white cursor-not-allowed' 
-                            : docsGenerated
-                            ? 'bg-green-500 text-white'
-                            : 'bg-blue-500 text-white hover:bg-blue-600'
-                        }`}
-                      >
-                        {generatingDocs ? (
-                          <>
-                            <span className="mr-2 animate-spin">⚙️</span>
-                            Generando...
-                          </>
-                        ) : docsGenerated ? (
-                          <>
-                            <span className="mr-2">✅</span>
-                            ¡Descargado!
-                          </>
-                        ) : (
-                          <>
-                            <span className="mr-2">📄</span>
-                            Google Docs
-                          </>
-                        )}
-                      </button>
-                    )}
+                    <button
+                      onClick={generateGoogleDocs}
+                      disabled={generatingDocs}
+                      className={`flex items-center px-4 py-2 text-sm rounded-lg shadow hover:shadow-md transition-all ${
+                        generatingDocs 
+                          ? 'bg-gray-400 text-white cursor-not-allowed' 
+                          : docsGenerated
+                          ? 'bg-green-500 text-white'
+                          : 'bg-blue-500 text-white hover:bg-blue-600'
+                      }`}
+                    >
+                      {generatingDocs ? (
+                        <>
+                          <span className="mr-2 animate-spin">⚙️</span>
+                          Generando...
+                        </>
+                      ) : docsGenerated ? (
+                        <>
+                          <span className="mr-2">✅</span>
+                          ¡Descargado!
+                        </>
+                      ) : (
+                        <>
+                          <span className="mr-2">📄</span>
+                          Google Docs
+                        </>
+                      )}
+                    </button>
                   </div>
                 </div>
                 

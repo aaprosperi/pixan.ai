@@ -14,14 +14,14 @@ async function handler(req, res) {
   }
 
   // Usar API key del servidor
-  const apiKey = API_KEYS.perplexity;
+  const apiKey = API_KEYS.inflection;
   if (!apiKey) {
-    return res.status(500).json({ error: 'Perplexity API not configured' });
+    return res.status(500).json({ error: 'Inflection API not configured' });
   }
 
   // Verificar saldo
-  if (!hasBalance('perplexity', 0.02)) {
-    return res.status(402).json({ error: 'Insufficient balance for Perplexity API' });
+  if (!hasBalance('inflection', 0.03)) {
+    return res.status(402).json({ error: 'Insufficient balance for Inflection API' });
   }
 
   try {
@@ -30,14 +30,14 @@ async function handler(req, res) {
       { role: 'user', content: message }
     ];
 
-    const response = await fetch('https://api.perplexity.ai/chat/completions', {
+    const response = await fetch('https://api.inflection.ai/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'inflection-2.5',
         messages: messages,
         temperature: 0.7,
         max_tokens: 2000
@@ -47,7 +47,7 @@ async function handler(req, res) {
     if (!response.ok) {
       const errorData = await response.json();
       return res.status(response.status).json({ 
-        error: `Perplexity API Error: ${errorData.error?.message || 'Unknown error'}` 
+        error: `Inflection API Error: ${errorData.error?.message || 'Unknown error'}` 
       });
     }
 
@@ -55,22 +55,22 @@ async function handler(req, res) {
     const content = data.choices[0]?.message?.content;
 
     if (!content) {
-      return res.status(500).json({ error: 'No content received from Perplexity' });
+      return res.status(500).json({ error: 'No content received from Inflection' });
     }
 
     // Actualizar uso de tokens
-    const tokenStats = updateTokenUsage('perplexity', message, content);
+    const tokenStats = updateTokenUsage('inflection', message, content);
 
     return res.status(200).json({ 
       content,
       usage: tokenStats,
-      model: 'llama-3.1-sonar-large-128k-online'
+      model: 'inflection-2.5'
     });
 
   } catch (error) {
-    console.error('Perplexity API Error:', error);
+    console.error('Inflection API Error:', error);
     return res.status(500).json({ 
-      error: `Perplexity request failed: ${error.message}` 
+      error: `Inflection request failed: ${error.message}` 
     });
   }
 }

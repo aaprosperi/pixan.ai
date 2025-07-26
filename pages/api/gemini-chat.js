@@ -1,12 +1,27 @@
-export default async function handler(req, res) {
+import authMiddleware from './auth-middleware';
+import { API_KEYS } from '../../lib/api-config';
+import { updateTokenUsage, hasBalance } from '../../lib/token-tracker';
+
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { apiKey, prompt, parameters } = req.body;
+  const { prompt, parameters } = req.body;
   
-  if (!apiKey || !prompt) {
-    return res.status(400).json({ error: 'Missing apiKey or prompt' });
+  if (!prompt) {
+    return res.status(400).json({ error: 'Missing prompt' });
+  }
+  
+  // Usar API key del servidor
+  const apiKey = API_KEYS.gemini;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Gemini API not configured' });
+  }
+  
+  // Verificar saldo
+  if (!hasBalance('gemini', 0.01)) {
+    return res.status(402).json({ error: 'Insufficient balance for Gemini API' });
   }
   
   try {
@@ -110,7 +125,14 @@ export default async function handler(req, res) {
       });
     }
     
-    res.status(200).json({ content });
+    // Actualizar uso de tokens
+    const tokenStats = updateTokenUsage('gemini', prompt, content);
+    
+    res.status(200).json({ 
+      content,
+      usage: tokenStats,
+      model: 'gemini-2.5-flash'
+    });
     
   } catch (error) {
     console.error('Gemini API request failed:', error);
@@ -130,3 +152,5 @@ export default async function handler(req, res) {
     });
   }
 }
+
+export default authMiddleware(handler);

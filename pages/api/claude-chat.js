@@ -1,12 +1,27 @@
-export default async function handler(req, res) {
+import authMiddleware from './auth-middleware';
+import { API_KEYS } from '../../lib/api-config';
+import { updateTokenUsage, hasBalance } from '../../lib/token-tracker';
+
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { apiKey, message, context } = req.body;
+  const { message, context } = req.body;
 
-  if (!apiKey || !message) {
-    return res.status(400).json({ error: 'Missing required parameters' });
+  if (!message) {
+    return res.status(400).json({ error: 'Missing required message' });
+  }
+
+  // Usar API key del servidor
+  const apiKey = API_KEYS.claude;
+  if (!apiKey) {
+    return res.status(500).json({ error: 'Claude API not configured' });
+  }
+
+  // Verificar saldo
+  if (!hasBalance('claude', 0.05)) {
+    return res.status(402).json({ error: 'Insufficient balance for Claude API' });
   }
 
   try {
@@ -48,7 +63,16 @@ export default async function handler(req, res) {
     const data = await response.json();
     
     if (data.content && data.content[0] && data.content[0].text) {
-      return res.status(200).json({ content: data.content[0].text });
+      const content = data.content[0].text;
+      
+      // Actualizar uso de tokens
+      const tokenStats = updateTokenUsage('claude', message, content);
+      
+      return res.status(200).json({ 
+        content,
+        usage: tokenStats,
+        model: 'claude-3-5-sonnet-20241022'
+      });
     } else {
       return res.status(500).json({ error: 'Unexpected response format from Claude' });
     }
@@ -63,3 +87,5 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+export default authMiddleware(handler);
