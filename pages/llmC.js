@@ -132,38 +132,127 @@ export default function LLMColaborativa() {
       log('system', `🚀 Iniciando LLM Colaborativa con ${availableLLMs.length} modelos activos`);
       log('system', `📋 Modelos: ${availableLLMs.map(llm => llm.toUpperCase()).join(', ')}`);
 
-      // Paso 2: Envío paralelo a todos los LLMs disponibles
+      // Paso 2: Claude analiza el prompt y asigna roles
       setStep(2);
-      log('system', '⚡ Enviando consulta a todos los LLMs simultáneamente...');
+      let roleAssignments = {};
       
-      const llmPromises = availableLLMs.map(async (llmName) => {
+      if (apiKeys.claude && availableLLMs.length > 1) {
+        log('system', '🧠 Claude analizando consulta y asignando roles...');
+        log('claude', '📊 Analizando tipo de consulta y capacidades de cada LLM...', 'claude');
+        
+        const analysisPrompt = `Analiza esta consulta y asigna roles específicos a los LLMs disponibles:
+
+CONSULTA DEL USUARIO: "${query}"
+
+LLMs DISPONIBLES: ${availableLLMs.filter(llm => llm !== 'claude').map(llm => llm.toUpperCase()).join(', ')}
+
+CAPACIDADES DE CADA LLM:
+- GPT-4: Excelente en análisis profundo, razonamiento complejo, código, matemáticas
+- GEMINI: Creatividad, síntesis multimodal, perspectivas innovadoras, generación de contenido
+- PERPLEXITY: Búsqueda en tiempo real, verificación de hechos, información actualizada, investigación
+
+INSTRUCCIONES:
+1. Identifica el tipo de consulta (técnica, creativa, analítica, investigativa, mixta)
+2. Asigna a cada LLM un rol específico basado en sus fortalezas
+3. Crea una instrucción personalizada para cada LLM que maximice su contribución
+4. Devuelve la respuesta en formato JSON exactamente así:
+
+{
+  "queryType": "tipo de consulta",
+  "analysis": "breve análisis de la consulta",
+  "roles": {
+    "openai": { "role": "título del rol", "instruction": "instrucción específica" },
+    "gemini": { "role": "título del rol", "instruction": "instrucción específica" },
+    "perplexity": { "role": "título del rol", "instruction": "instrucción específica" }
+  }
+}
+
+IMPORTANTE: Adapta las instrucciones al contexto específico de la consulta.`;
+
         try {
-          log('system', `📤 Consultando ${llmName.toUpperCase()}...`, llmName);
+          const analysisResponse = await callLLM('claude', analysisPrompt);
+          const analysis = JSON.parse(analysisResponse.content);
+          roleAssignments = analysis.roles;
+          
+          log('claude', `✅ Análisis completado: Consulta tipo "${analysis.queryType}"`, 'claude');
+          log('system', '📋 ASIGNACIÓN DE ROLES:');
+          
+          // Mostrar roles asignados en formato tabla
+          Object.entries(roleAssignments).forEach(([llm, assignment]) => {
+            if (availableLLMs.includes(llm)) {
+              log('system', `┃ ${llm.toUpperCase().padEnd(12)} ┃ ${assignment.role.padEnd(30)} ┃`);
+            }
+          });
+          
+        } catch (error) {
+          log('error', '⚠️ Error en análisis de Claude, usando roles genéricos');
+          // Roles por defecto si falla el análisis
+          roleAssignments = {
+            openai: { role: "Analista Principal", instruction: "Proporciona un análisis detallado y estructurado" },
+            gemini: { role: "Innovador Creativo", instruction: "Aporta perspectivas creativas y soluciones innovadoras" },
+            perplexity: { role: "Investigador", instruction: "Busca información actualizada y verifica hechos" }
+          };
+        }
+      } else {
+        // Si no hay Claude o solo un LLM, usar roles genéricos
+        roleAssignments = {
+          openai: { role: "Analista Principal", instruction: "Responde de manera completa y detallada" },
+          gemini: { role: "Asistente Creativo", instruction: "Proporciona una respuesta clara y útil" },
+          perplexity: { role: "Investigador", instruction: "Proporciona información precisa y actualizada" }
+        };
+      }
+
+      // Paso 3: Envío paralelo a todos los LLMs con sus roles específicos
+      setStep(3);
+      log('system', '⚡ Enviando tareas especializadas a cada LLM...');
+      
+      const llmPromises = availableLLMs.filter(llm => llm !== 'claude').map(async (llmName) => {
+        try {
+          const role = roleAssignments[llmName];
+          if (!role) return null;
+          
+          log('system', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          log(llmName, `🎭 ROL: ${role.role}`, llmName);
+          log(llmName, `📝 TAREA: ${role.instruction}`, llmName);
+          
+          // Crear prompt personalizado para cada LLM según su rol
+          const customPrompt = `${role.instruction}
+
+CONSULTA ORIGINAL: ${query}
+
+Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${role.instruction.toLowerCase()}.`;
           
           const conversation = conversations[llmName] || [];
-          const response = await callLLM(llmName, query, conversation);
+          const response = await callLLM(llmName, customPrompt, conversation);
           
           // Actualizar memoria para LLMs que la soportan
           if (llmName !== 'claude') {
             setConversations(prev => ({
               ...prev,
               [llmName]: [...conversation, 
-                { role: 'user', content: query },
+                { role: 'user', content: customPrompt },
                 { role: 'assistant', content: response.content }
               ]
             }));
           }
           
-          log(llmName, response.content, llmName);
-          return { llm: llmName, response: response.content, success: true };
+          log(llmName, `✅ Respuesta recibida (${response.content.length} caracteres)`, llmName);
+          log('system', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
+          
+          return { 
+            llm: llmName, 
+            response: response.content, 
+            role: role.role,
+            success: true 
+          };
         } catch (error) {
           log('error', `❌ Error en ${llmName.toUpperCase()}: ${error.message}`, llmName);
           return { llm: llmName, error: error.message, success: false };
         }
-      });
+      }).filter(p => p !== null);
 
-      // Paso 3: Esperar respuestas
-      setStep(3);
+      // Paso 4: Esperar respuestas especializadas
+      setStep(4);
       const results = await Promise.all(llmPromises);
       const successfulResults = results.filter(r => r.success);
       
@@ -180,36 +269,75 @@ export default function LLMColaborativa() {
         throw new Error('Ningún LLM respondió exitosamente');
       }
 
-      // Paso 4: Consolidación con Claude (si está disponible)
-      setStep(4);
+      // Paso 5: Consolidación con Claude (si está disponible)
+      setStep(5);
       if (apiKeys.claude && successfulResults.length > 1) {
         log('system', '🧠 Claude iniciando consolidación inteligente...');
         
-        const consolidationQuery = `Como experto en análisis de IA, consolida estas ${successfulResults.length} respuestas de diferentes LLMs sobre la consulta: "${query}"
+        const consolidationQuery = `Como Director de Orquesta de IA, consolida estas respuestas especializadas en una síntesis magistral.
 
+📋 **CONSULTA ORIGINAL:** "${query}"
+
+🎭 **RESPUESTAS POR ROL:**
 ${successfulResults.map((result, idx) => 
-  `**${result.llm.toUpperCase()} (Respuesta ${idx + 1}):**\n${result.response}`
-).join('\n\n')}
+  `\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+🤖 **${result.llm.toUpperCase()}** - ${result.role}
+━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+${result.response}`
+).join('\n')}
 
-INSTRUCCIONES CRÍTICAS:
-1. Analiza cada respuesta por precisión, coherencia y completitud
-2. Identifica información consistente entre modelos (alta confiabilidad)
-3. Detecta y elimina posibles alucinaciones o inconsistencias
-4. Sintetiza una respuesta final que combine lo mejor de cada modelo
-5. Prioriza información que aparece en múltiples respuestas
-6. Mantén el tono y estilo más apropiado para la consulta
-7. Si hay contradicciones, explica brevemente por qué elegiste una versión
-8. Adapta el formato según el tipo de consulta (técnica, creativa, analítica, etc.)
+📊 **INSTRUCCIONES DE CONSOLIDACIÓN:**
 
-Genera UNA respuesta consolidada definitiva que represente la síntesis más precisa y completa.`;
+Tu respuesta DEBE incluir estos elementos gráficos y de formato:
+
+1. **ESTRUCTURA VISUAL:**
+   - Usa encabezados con emojis temáticos (📊, 🎯, 💡, 🔍, ⚡, etc.)
+   - Separa secciones con líneas: ─────────────────
+   - Destaca puntos clave con **negrita** y *cursiva*
+
+2. **TABLAS COMPARATIVAS** (cuando aplique):
+   ┌─────────────┬──────────────┬──────────────┐
+   │ Aspecto     │ Opción A     │ Opción B     │
+   ├─────────────┼──────────────┼──────────────┤
+   │ Ejemplo     │ Valor 1      │ Valor 2      │
+   └─────────────┴──────────────┴──────────────┘
+
+3. **LISTAS JERÁRQUICAS:**
+   • Punto principal
+     ◦ Subpunto con detalle
+       ▪ Detalle específico
+   
+4. **INDICADORES VISUALES:**
+   ✅ Información verificada por múltiples fuentes
+   ⚠️  Puntos de atención o precaución
+   💡 Insights únicos o innovadores
+   🎯 Conclusiones clave
+   📈 Tendencias o patrones identificados
+
+5. **BLOQUES DESTACADOS:**
+   ╔════════════════════════════════════╗
+   ║  PUNTO CLAVE: Texto importante     ║
+   ╚════════════════════════════════════╝
+
+6. **SÍNTESIS FINAL:**
+   - Identifica consensos entre los LLMs (marca con ✅)
+   - Resalta contribuciones únicas de cada rol
+   - Elimina redundancias y contradicciones
+   - Presenta la información de forma visualmente atractiva
+
+IMPORTANTE: La respuesta debe ser rica en formato visual pero mantener claridad y precisión. Usa los elementos gráficos para mejorar la comprensión, no solo por decoración.`;
 
         const consolidationResponse = await callLLM('claude', consolidationQuery);
         
-        setStep(5);
+        setStep(6);
+        log('system', '─────────────────────────────────────────────────────────');
+        log('claude', '🎯 RESPUESTA CONSOLIDADA FINAL:', 'claude');
+        log('system', '─────────────────────────────────────────────────────────');
         log('claude', consolidationResponse.content, 'claude');
+        log('system', '─────────────────────────────────────────────────────────');
         setFinalResponse(consolidationResponse.content);
         
-        log('system', '🎯 Consolidación completada con máxima precisión');
+        log('system', '✨ Consolidación completada con formato enriquecido');
       } else if (successfulResults.length === 1) {
         // Solo un LLM respondió
         setFinalResponse(successfulResults[0].response);
@@ -404,7 +532,7 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
               </span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              4 IAs trabajando juntas: Claude supervisa, GPT-4 analiza, Gemini innova, Perplexity investiga
+              Claude dirige la orquesta: Asigna roles específicos a cada IA y consolida respuestas con formato visual
             </p>
             <p className="text-sm text-gray-500 mt-2">
               Tecnología revolucionaria de colaboración multi-IA por Pixan.ai 🧠
@@ -538,10 +666,15 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                   >
                     {processing ? (
                       <span className="flex items-center justify-center">
-                        🧠 Colaborando... Paso {step}/6
+                        🧠 {step === 1 ? 'Inicializando...' : 
+                           step === 2 ? 'Claude analizando y asignando roles...' :
+                           step === 3 ? 'Enviando tareas especializadas...' :
+                           step === 4 ? 'Recibiendo respuestas...' :
+                           step === 5 ? 'Claude consolidando...' :
+                           'Finalizando...'} ({step}/6)
                       </span>
                     ) : (
-                      '🚀 Iniciar Colaboración Multi-IA'
+                      '🚀 Iniciar Colaboración Dirigida por Claude'
                     )}
                   </button>
 
@@ -725,8 +858,8 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                     <div className="flex items-start space-x-4 p-4 bg-purple-50 rounded-lg">
                       <span className="claude-badge">Claude</span>
                       <div>
-                        <h4 className="font-semibold text-gray-900">Supervisor & Consolidador</h4>
-                        <p className="text-sm text-gray-700">Analiza todas las respuestas, elimina alucinaciones y genera síntesis final</p>
+                        <h4 className="font-semibold text-gray-900">Director de Orquesta IA</h4>
+                        <p className="text-sm text-gray-700">Analiza consultas, asigna roles específicos, supervisa respuestas y consolida con formato visual enriquecido</p>
                       </div>
                     </div>
                     
@@ -767,8 +900,8 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">🧠 Memoria Selectiva</h4>
-                    <p className="text-sm">GPT-4, Gemini y Perplexity mantienen contexto conversacional. Claude permanece neutro para consolidación objetiva.</p>
+                    <h4 className="font-semibold mb-2">🎭 Asignación Dinámica</h4>
+                    <p className="text-sm">Claude analiza cada consulta y asigna roles específicos a cada LLM según sus fortalezas y el tipo de tarea.</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
                     <h4 className="font-semibold mb-2">⚡ Procesamiento Paralelo</h4>
@@ -779,8 +912,8 @@ Genera UNA respuesta consolidada definitiva que represente la síntesis más pre
                     <p className="text-sm">Claude verifica consistencia entre respuestas y elimina información contradictoria.</p>
                   </div>
                   <div className="bg-white/10 backdrop-blur-sm rounded-lg p-4">
-                    <h4 className="font-semibold mb-2">📄 Auto-Documentación</h4>
-                    <p className="text-sm">Gemini convierte la respuesta final en Google Docs estructurados con tablas y formato profesional.</p>
+                    <h4 className="font-semibold mb-2">🎨 Formato Visual</h4>
+                    <p className="text-sm">Respuestas con tablas, líneas, emojis temáticos, bloques destacados y estructura jerárquica clara.</p>
                   </div>
                 </div>
               </div>
