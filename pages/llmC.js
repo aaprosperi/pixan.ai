@@ -24,7 +24,8 @@ export default function LLMColaborativa() {
     openai: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     gemini: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     perplexity: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
-    inflection: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    qwen: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
+    deepseek: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     mistral: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 }
   });
 
@@ -34,7 +35,8 @@ export default function LLMColaborativa() {
     openai: null,
     gemini: null,
     perplexity: null,
-    inflection: null,
+    qwen: null,
+    deepseek: null,
     mistral: null
   });
 
@@ -43,7 +45,8 @@ export default function LLMColaborativa() {
     openai: [],
     gemini: [],
     perplexity: [],
-    inflection: [],
+    qwen: [],
+    deepseek: [],
     mistral: []
   });
 
@@ -104,7 +107,8 @@ export default function LLMColaborativa() {
       openai: '/api/openai-chat',
       gemini: '/api/gemini-chat',
       perplexity: '/api/perplexity-chat',
-      inflection: '/api/inflection-chat',
+      qwen: '/api/qwen-chat',
+      deepseek: '/api/deepseek-chat',
       mistral: '/api/mistral-chat'
     };
 
@@ -212,7 +216,8 @@ INSTRUCCIONES CRÍTICAS:
     "openai": { "role": "título del rol", "instruction": "instrucción específica" },
     "gemini": { "role": "título del rol", "instruction": "instrucción específica" },
     "perplexity": { "role": "título del rol", "instruction": "instrucción específica" },
-    "inflection": { "role": "título del rol", "instruction": "instrucción específica" },
+    "qwen": { "role": "título del rol", "instruction": "instrucción específica" },
+    "deepseek": { "role": "título del rol", "instruction": "instrucción específica" },
     "mistral": { "role": "título del rol", "instruction": "instrucción específica" }
   }
 }
@@ -243,7 +248,8 @@ IMPORTANTE:
           openai: { role: "Analista Principal", instruction: "Proporciona un análisis detallado y estructurado" },
           gemini: { role: "Innovador Creativo", instruction: "Aporta perspectivas creativas y soluciones innovadoras" },
           perplexity: { role: "Investigador", instruction: "Busca información actualizada y verifica hechos" },
-          inflection: { role: "Sintetizador de Datos", instruction: "Sintetiza información y encuentra patrones en los datos" },
+          qwen: { role: "Analista de Datos", instruction: "Analiza datos complejos y proporciona insights profundos" },
+          deepseek: { role: "Explorador de Soluciones", instruction: "Busca soluciones innovadoras y alternativas no convencionales" },
           mistral: { role: "Especialista Técnico", instruction: "Proporciona análisis técnico especializado y recomendaciones" }
         };
       }
@@ -253,7 +259,7 @@ IMPORTANTE:
       log('system', '⚡ Enviando tareas especializadas a cada LLM...');
       
       // Incluir Claude en la primera ronda
-      const participatingLLMs = ['claude', 'openai', 'gemini', 'perplexity', 'inflection', 'mistral'];
+      const participatingLLMs = ['claude', 'openai', 'gemini', 'perplexity', 'qwen', 'deepseek', 'mistral'];
       
       const llmPromises = participatingLLMs.map(async (llmName) => {
         try {
@@ -633,7 +639,8 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         .openai-badge { background: #10b981; color: white; }
         .gemini-badge { background: #3b82f6; color: white; }
         .perplexity-badge { background: #f59e0b; color: white; }
-        .inflection-badge { background: #ec4899; color: white; }
+        .qwen-badge { background: #ec4899; color: white; }
+        .deepseek-badge { background: #06b6d4; color: white; }
         .mistral-badge { background: #ef4444; color: white; }
         .system-badge { background: #6b7280; color: white; }
         .error-badge { background: #ef4444; color: white; }

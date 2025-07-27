@@ -14,14 +14,14 @@ async function handler(req, res) {
   }
 
   // Usar API key del servidor
-  const apiKey = API_KEYS.inflection;
+  const apiKey = API_KEYS.deepseek;
   if (!apiKey) {
-    return res.status(500).json({ error: 'Inflection API not configured' });
+    return res.status(500).json({ error: 'DeepSeek API not configured' });
   }
 
   // Verificar saldo
-  if (!hasBalance('inflection', 0.03)) {
-    return res.status(402).json({ error: 'Insufficient balance for Inflection API' });
+  if (!hasBalance('deepseek', 0.01)) {
+    return res.status(402).json({ error: 'Insufficient balance for DeepSeek API' });
   }
 
   try {
@@ -30,24 +30,25 @@ async function handler(req, res) {
       { role: 'user', content: message }
     ];
 
-    const response = await fetch('https://api.inflection.ai/v1/chat/completions', {
+    const response = await fetch('https://api.deepseek.com/v1/chat/completions', {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'inflection-2.5',
+        model: 'deepseek-chat',
         messages: messages,
         temperature: 0.7,
-        max_tokens: 2000
+        max_tokens: 2000,
+        stream: false
       })
     });
 
     if (!response.ok) {
       const errorData = await response.json();
       return res.status(response.status).json({ 
-        error: `Inflection API Error: ${errorData.error?.message || 'Unknown error'}` 
+        error: `DeepSeek API Error: ${errorData.error?.message || 'Unknown error'}` 
       });
     }
 
@@ -55,22 +56,22 @@ async function handler(req, res) {
     const content = data.choices[0]?.message?.content;
 
     if (!content) {
-      return res.status(500).json({ error: 'No content received from Inflection' });
+      return res.status(500).json({ error: 'No content received from DeepSeek' });
     }
 
     // Actualizar uso de tokens
-    const tokenStats = updateTokenUsage('inflection', message, content);
+    const tokenStats = updateTokenUsage('deepseek', message, content);
 
     return res.status(200).json({ 
       content,
       usage: tokenStats,
-      model: 'inflection-2.5'
+      model: 'deepseek-chat'
     });
 
   } catch (error) {
-    console.error('Inflection API Error:', error);
+    console.error('DeepSeek API Error:', error);
     return res.status(500).json({ 
-      error: `Inflection request failed: ${error.message}` 
+      error: `DeepSeek request failed: ${error.message}` 
     });
   }
 }
