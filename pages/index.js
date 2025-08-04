@@ -131,7 +131,15 @@ export default function HomePage() {
         </main>
 
         <footer className="footer">
-          <p>© 2025 Powered by Pixan</p>
+          <div className="footer-content">
+            <p>© 2025 Powered by Pixan</p>
+            <a href="/api-admin" className="admin-link">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
+                <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
+                <path d="M12 9V3m0 0L9 6m3-3l3 3" />
+              </svg>
+            </a>
+          </div>
         </footer>
       </div>
 
@@ -311,10 +319,37 @@ export default function HomePage() {
           border-top: 1px solid #e9ecef;
         }
 
+        .footer-content {
+          max-width: 1200px;
+          margin: 0 auto;
+          display: flex;
+          justify-content: center;
+          align-items: center;
+          position: relative;
+        }
+
         .footer p {
           font-size: 14px;
           color: #666666;
           font-weight: 400;
+        }
+
+        .admin-link {
+          position: absolute;
+          right: 0;
+          padding: 8px;
+          color: #999999;
+          text-decoration: none;
+          transition: all 0.2s ease;
+          opacity: 0.3;
+          border-radius: 4px;
+        }
+
+        .admin-link:hover {
+          opacity: 0.8;
+          color: #666666;
+          transform: translateY(-1px);
+          background: rgba(0, 0, 0, 0.02);
         }
 
         @media (max-width: 768px) {
