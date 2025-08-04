@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef } from 'react';
-import { motion, AnimatePresence, useMotionValue, useTransform } from 'framer-motion';
+import { useState, useEffect } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { FiLock, FiUnlock, FiKey, FiCheck, FiX, FiDollarSign, FiEye, FiEyeOff, FiRefreshCw, FiZap, FiShield, FiDatabase, FiActivity, FiTrendingUp } from 'react-icons/fi';
 import { SiOpenai, SiGoogle, SiMistralai, SiAnthropic } from 'react-icons/si';
 import { BiBot } from 'react-icons/bi';
 import { toast, Toaster } from 'react-hot-toast';
-import confetti from 'canvas-confetti';
+// Eliminamos confetti por ahora para evitar errores de SSR
 
 const API_PROVIDERS = [
   { id: 'claude', name: 'Claude', icon: SiAnthropic, color: 'from-purple-500 to-purple-700', supportsBalance: true, glow: 'shadow-purple-500/50' },
@@ -138,13 +138,7 @@ export default function APIAdmin() {
           }
         }
         
-        // Efectos visuales de éxito
-        confetti({
-          particleCount: 100,
-          spread: 70,
-          origin: { y: 0.6 },
-          colors: ['#10B981', '#3B82F6', '#8B5CF6']
-        });
+        // Efectos visuales de éxito - confetti removido temporalmente
         
         toast.success(`${provider} conectado correctamente`, {
           icon: '🎉',
