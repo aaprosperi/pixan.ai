@@ -54,25 +54,23 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid API key format' });
     }
 
-    // Leer keys existentes
-    let keys = {};
-    try {
-      const data = await fs.readFile(KEYS_FILE, 'utf8');
-      keys = JSON.parse(data);
-    } catch {
-      // Si no existe el archivo, comenzar con objeto vacío
-    }
-
-    // Encriptar y guardar la nueva key
-    keys[provider] = encrypt(key);
+    // Encriptar la API key
+    const encryptedKey = encrypt(key);
+    console.log('Key encrypted successfully');
     
-    // Guardar en archivo
-    await fs.writeFile(KEYS_FILE, JSON.stringify(keys, null, 2));
-    
-    // También actualizar las variables de entorno en memoria para uso inmediato
+    // Guardar en variable de entorno temporal (en memoria)
+    // NOTA: En Vercel, las API keys deben configurarse manualmente en el dashboard
+    // Esta es una demostración del flujo completo
+    process.env[`${provider.toUpperCase()}_API_KEY_ENCRYPTED`] = encryptedKey;
     process.env[`${provider.toUpperCase()}_API_KEY`] = key;
+    
+    console.log('Key saved to environment variables');
 
-    return res.status(200).json({ success: true });
+    return res.status(200).json({ 
+      success: true, 
+      message: 'API key saved temporarily. In production, configure in Vercel dashboard.',
+      note: 'This demo shows the encryption/validation flow working correctly.'
+    });
   } catch (error) {
     console.error('Error saving key:', error);
     return res.status(500).json({ error: 'Internal server error' });
