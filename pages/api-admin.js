@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { FiLock, FiUnlock, FiKey, FiCheck, FiX, FiDollarSign, FiEye, FiEyeOff, FiRefreshCw, FiZap, FiShield, FiDatabase, FiActivity, FiTrendingUp } from 'react-icons/fi';
-import { SiOpenai, SiGoogle, SiMistralai, SiAnthropic } from 'react-icons/si';
+import { SiOpenai, SiGoogle, SiAnthropic } from 'react-icons/si';
 import { BiBot } from 'react-icons/bi';
 import { toast, Toaster } from 'react-hot-toast';
 // Eliminamos confetti por ahora para evitar errores de SSR
@@ -12,7 +12,7 @@ const API_PROVIDERS = [
   { id: 'gemini', name: 'Gemini', icon: SiGoogle, color: 'from-blue-500 to-blue-700', supportsBalance: true, glow: 'shadow-blue-500/50' },
   { id: 'perplexity', name: 'Perplexity', icon: BiBot, color: 'from-indigo-500 to-indigo-700', supportsBalance: true, glow: 'shadow-indigo-500/50' },
   { id: 'deepseek', name: 'DeepSeek', icon: BiBot, color: 'from-cyan-500 to-cyan-700', supportsBalance: true, glow: 'shadow-cyan-500/50' },
-  { id: 'mistral', name: 'Mistral', icon: SiMistralai, color: 'from-orange-500 to-orange-700', supportsBalance: true, glow: 'shadow-orange-500/50' }
+  { id: 'mistral', name: 'Mistral', icon: BiBot, color: 'from-orange-500 to-orange-700', supportsBalance: true, glow: 'shadow-orange-500/50' }
 ];
 
 export default function APIAdmin() {
