@@ -37,7 +37,7 @@ async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'llama-3.1-sonar-large-128k-online',
+        model: 'sonar-pro',
         messages: messages,
         temperature: 0.7,
         max_tokens: 2000
@@ -64,7 +64,7 @@ async function handler(req, res) {
     return res.status(200).json({ 
       content,
       usage: tokenStats,
-      model: 'llama-3.1-sonar-large-128k-online'
+      model: 'sonar-pro'
     });
 
   } catch (error) {
