@@ -101,9 +101,16 @@ async function testPerplexity(apiKey) {
       }),
     });
     
-    return { success: response.ok };
+    if (!response.ok) {
+      const errorData = await response.text();
+      console.error('Perplexity error:', response.status, errorData);
+      return { success: false, error: `HTTP ${response.status}: ${errorData.substring(0, 100)}` };
+    }
+    
+    return { success: true };
   } catch (error) {
-    return { success: false, error: error.message };
+    console.error('Perplexity connection error:', error);
+    return { success: false, error: error.message || 'Connection failed' };
   }
 }
 

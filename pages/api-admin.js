@@ -191,7 +191,16 @@ export default function APIAdmin() {
         });
       } else {
         setConnectionStatus({ ...connectionStatus, [provider]: 'error' });
-        toast.error(`Error en ${provider}: ${data.error}`);
+        const errorMessage = data.error || 'Error desconocido';
+        toast.error(`Error en ${provider}: ${errorMessage}`, {
+          duration: 5000,
+          style: {
+            borderRadius: '10px',
+            background: '#333',
+            color: '#fff',
+            maxWidth: '500px',
+          },
+        });
       }
     } catch (error) {
       setConnectionStatus({ ...connectionStatus, [provider]: 'error' });
