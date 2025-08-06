@@ -30,6 +30,21 @@ export default function APIAdmin() {
     }
   }, [isAuthenticated]);
 
+  // Función para encriptar en el cliente
+  const encryptClient = (text) => {
+    // Simple encriptación para localStorage (NO es seguridad real, solo ofuscación)
+    return btoa(encodeURIComponent(text));
+  };
+
+  // Función para desencriptar en el cliente
+  const decryptClient = (text) => {
+    try {
+      return decodeURIComponent(atob(text));
+    } catch {
+      return '';
+    }
+  };
+
   const handleLogin = async (e) => {
     e.preventDefault();
     
@@ -67,12 +82,22 @@ export default function APIAdmin() {
 
   const loadAPIKeys = async () => {
     try {
-      const response = await fetch('/api/admin/get-keys');
-      if (response.ok) {
-        const data = await response.json();
-        setApiKeys(data.keys || {});
-      }
+      // Cargar desde localStorage
+      const storedKeys = {};
+      API_PROVIDERS.forEach(provider => {
+        const encryptedKey = localStorage.getItem(`pixan_api_${provider.id}`);
+        if (encryptedKey) {
+          const decryptedKey = decryptClient(encryptedKey);
+          if (decryptedKey) {
+            // Mostrar solo los primeros y últimos caracteres
+            const masked = decryptedKey.substring(0, 8) + '...' + decryptedKey.substring(decryptedKey.length - 4);
+            storedKeys[provider.id] = masked;
+          }
+        }
+      });
+      setApiKeys(storedKeys);
     } catch (error) {
+      console.error('Error loading keys:', error);
       toast.error('Error al cargar las API keys');
     }
   };
@@ -81,6 +106,7 @@ export default function APIAdmin() {
     setLoading({ ...loading, [provider]: true });
     
     try {
+      // Validar la API key primero
       const response = await fetch('/api/admin/save-key', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -88,7 +114,11 @@ export default function APIAdmin() {
       });
 
       if (response.ok) {
-        toast.success(`API key de ${provider} guardada`, {
+        // Guardar en localStorage encriptada
+        const encryptedKey = encryptClient(key);
+        localStorage.setItem(`pixan_api_${provider}`, encryptedKey);
+        
+        toast.success(`API key de ${provider} guardada localmente`, {
           icon: '✅',
           style: {
             borderRadius: '10px',
@@ -98,7 +128,8 @@ export default function APIAdmin() {
         });
         await loadAPIKeys();
       } else {
-        toast.error('Error al guardar la API key');
+        const data = await response.json();
+        toast.error(`Error: ${data.error}`);
       }
     } catch (error) {
       toast.error('Error al guardar');
@@ -111,10 +142,20 @@ export default function APIAdmin() {
     setConnectionStatus({ ...connectionStatus, [provider]: 'testing' });
     
     try {
+      // Obtener la API key de localStorage
+      const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
+      if (!encryptedKey) {
+        toast.error('No se encontró API key guardada');
+        setConnectionStatus({ ...connectionStatus, [provider]: 'error' });
+        return;
+      }
+      
+      const apiKey = decryptClient(encryptedKey);
+      
       const response = await fetch('/api/admin/test-connection', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ provider })
+        body: JSON.stringify({ provider, apiKey })
       });
 
       const data = await response.json();
@@ -297,6 +338,14 @@ export default function APIAdmin() {
                         type={showKeys[provider.id] ? 'text' : 'password'}
                         value={apiKeys[provider.id] || ''}
                         onChange={(e) => setApiKeys({ ...apiKeys, [provider.id]: e.target.value })}
+                        onFocus={(e) => {
+                          // Al hacer focus, cargar la key real si existe
+                          const encryptedKey = localStorage.getItem(`pixan_api_${provider.id}`);
+                          if (encryptedKey && apiKeys[provider.id]?.includes('...')) {
+                            const decryptedKey = decryptClient(encryptedKey);
+                            setApiKeys({ ...apiKeys, [provider.id]: decryptedKey });
+                          }
+                        }}
                         placeholder="API Key"
                         className="w-full px-4 py-2 bg-gray-900/50 border border-gray-700 rounded-lg text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all pr-10"
                       />

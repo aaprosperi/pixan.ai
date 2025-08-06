@@ -159,26 +159,10 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { provider } = req.body;
+    const { provider, apiKey } = req.body;
     
-    if (!provider) {
-      return res.status(400).json({ error: 'Provider required' });
-    }
-
-    // Leer la API key encriptada
-    let apiKey = '';
-    try {
-      const data = await fs.readFile(KEYS_FILE, 'utf8');
-      const keys = JSON.parse(data);
-      if (keys[provider]) {
-        apiKey = decrypt(keys[provider]);
-      }
-    } catch {
-      return res.status(400).json({ error: 'No API key found' });
-    }
-
-    if (!apiKey) {
-      return res.status(400).json({ error: 'No API key configured' });
+    if (!provider || !apiKey) {
+      return res.status(400).json({ error: 'Provider and API key required' });
     }
 
     // Probar la conexión según el proveedor
