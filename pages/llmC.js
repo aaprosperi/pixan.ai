@@ -2,8 +2,6 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function LLMColaborativa() {
-  console.log('🚀 LLMColaborativa component rendering');
-  
   // Estado para autenticación
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
@@ -51,10 +49,8 @@ export default function LLMColaborativa() {
 
   // Actualizar estadísticas de tokens cada 5 segundos
   useEffect(() => {
-    console.log('🔄 useEffect running - authenticated:', authenticated, 'password:', password ? '[SET]' : '[EMPTY]');
     const interval = setInterval(() => {
       if (authenticated) {
-        console.log('⏰ Interval tick - calling fetchTokenStats');
         fetchTokenStats();
       }
     }, 5000);
@@ -63,36 +59,29 @@ export default function LLMColaborativa() {
 
   // Función para obtener estadísticas de tokens
   const fetchTokenStats = async () => {
-    console.log('📊 fetchTokenStats called with password:', password ? '[SET]' : '[EMPTY]');
     try {
       const response = await fetch('/api/token-stats/', {
         headers: {
           'x-auth-password': password
         }
       });
-      console.log('📡 Response status:', response.status, response.statusText);
       if (response.ok) {
         const data = await response.json();
-        console.log('✅ Token stats received:', data);
         setTokenStats(data);
       } else {
-        console.error('❌ Error fetching token stats:', response.status, response.statusText);
+        console.error('Error fetching token stats:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('💥 Exception fetching token stats:', error);
-      // Mantener el estado anterior en caso de error
+      console.error('Error fetching token stats:', error);
     }
   };
 
   // Función de autenticación
   const handleAuth = () => {
-    console.log('🔐 handleAuth called with password:', password);
     if (password === 'pixan') {
-      console.log('✅ Authentication successful');
       setAuthenticated(true);
       fetchTokenStats();
     } else {
-      console.log('❌ Authentication failed');
       setErrors({ auth: 'Password incorrecto' });
     }
   };
@@ -605,9 +594,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
     );
   }
 
-  try {
-    console.log('🎨 About to render JSX, tokenStats:', tokenStats);
-    return (
+  return (
       <>
         <Head>
         <title>LLM Colaborativa - IA Multi-Modelo | Pixan.ai</title>
@@ -1084,14 +1071,4 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       </div>
     </>
   );
-  } catch (error) {
-    console.error('💥 Render error caught:', error);
-    return (
-      <div style={{ padding: '20px', color: 'red', fontFamily: 'monospace' }}>
-        <h1>Error de Rendering Detectado</h1>
-        <pre>{error.message}</pre>
-        <pre>{error.stack}</pre>
-      </div>
-    );
-  }
 }
