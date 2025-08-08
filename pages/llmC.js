@@ -47,6 +47,10 @@ export default function LLMColaborativa() {
     mistral: []
   });
 
+  // Estado para el historial completo de conversación
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [isFollowUp, setIsFollowUp] = useState(false);
+
   // Actualizar estadísticas de tokens cada 5 segundos
   useEffect(() => {
     const interval = setInterval(() => {
@@ -211,7 +215,10 @@ export default function LLMColaborativa() {
       
       const analysisPrompt = `Analiza esta consulta y asigna roles específicos a TODOS los LLMs disponibles, incluyéndote a ti mismo (Claude):
 
-CONSULTA DEL USUARIO: "${query}"
+${isFollowUp && conversationHistory.length > 0 ? `CONTEXTO DE CONVERSACIÓN PREVIA:
+${conversationHistory.map(h => `${h.role}: ${h.content}`).join('\n')}
+
+NUEVA ` : ''}CONSULTA DEL USUARIO: "${query}"
 
 TODOS LOS LLMs DISPONIBLES: CLAUDE, OPENAI, GEMINI, PERPLEXITY
 
@@ -289,11 +296,14 @@ IMPORTANTE:
           log(llmName, `📝 TAREA: ${role.instruction}`, llmName);
           
           // Crear prompt personalizado para cada LLM según su rol
-          const customPrompt = `${role.instruction}
+          const customPrompt = `${isFollowUp && conversationHistory.length > 0 ? `CONTEXTO DE CONVERSACIÓN PREVIA:
+${conversationHistory.slice(-4).map(h => `${h.role === 'user' ? 'Usuario' : 'Asistente'}: ${h.content.substring(0, 500)}${h.content.length > 500 ? '...' : ''}`).join('\n\n')}
 
-CONSULTA ORIGINAL: ${query}
+` : ''}${role.instruction}
 
-Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${role.instruction.toLowerCase()}.`;
+${isFollowUp ? 'NUEVA ' : ''}CONSULTA ${isFollowUp ? 'DE SEGUIMIENTO' : 'ORIGINAL'}: ${query}
+
+Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${role.instruction.toLowerCase()}${isFollowUp ? ', considerando el contexto de la conversación previa' : ''}.`;
           
           const conversation = conversations[llmName] || [];
           const response = await callLLM(llmName, customPrompt, conversation, apiKeys);
@@ -358,7 +368,10 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
           // Claude participó y hay otras respuestas para consolidar
           consolidationQuery = `Como Director de Orquesta de IA, ahora debes consolidar TODAS las respuestas (incluyendo tu propia respuesta inicial) en una síntesis magistral final.
 
-📋 **CONSULTA ORIGINAL:** "${query}"
+${isFollowUp && conversationHistory.length > 0 ? `📚 **CONTEXTO DE CONVERSACIÓN:**
+${conversationHistory.slice(-4).map(h => `${h.role === 'user' ? '👤 Usuario' : '🤖 Asistente'}: ${h.content.substring(0, 300)}${h.content.length > 300 ? '...' : ''}`).join('\n')}
+
+` : ''}📋 **${isFollowUp ? 'NUEVA ' : ''}CONSULTA${isFollowUp ? ' DE SEGUIMIENTO' : ' ORIGINAL'}:** "${query}"
 
 🎭 **TU PROPIA RESPUESTA INICIAL:**
 ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
@@ -391,7 +404,10 @@ Ahora debes actuar como un meta-analista que evalúa su propia contribución jun
           // Consolidación estándar sin Claude participando
           consolidationQuery = `Como Director de Orquesta de IA, consolida estas respuestas especializadas en una síntesis magistral.
 
-📋 **CONSULTA ORIGINAL:** "${query}"
+${isFollowUp && conversationHistory.length > 0 ? `📚 **CONTEXTO DE CONVERSACIÓN:**
+${conversationHistory.slice(-4).map(h => `${h.role === 'user' ? '👤 Usuario' : '🤖 Asistente'}: ${h.content.substring(0, 300)}${h.content.length > 300 ? '...' : ''}`).join('\n')}
+
+` : ''}📋 **${isFollowUp ? 'NUEVA ' : ''}CONSULTA${isFollowUp ? ' DE SEGUIMIENTO' : ' ORIGINAL'}:** "${query}"
 
 🎭 **RESPUESTAS POR ROL:**
 ${successfulResults.map((result, idx) => 
@@ -481,6 +497,18 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       
       setMetrics(calculatedMetrics);
       log('system', '🏆 ¡Colaboración LLM completada con éxito por Pixan.ai!');
+      
+      // Guardar en el historial de conversación
+      const newHistory = [
+        ...conversationHistory,
+        { role: 'user', content: query },
+        { role: 'assistant', content: finalResponse || combinedResponse || successfulResults[0]?.response || '' }
+      ];
+      setConversationHistory(newHistory);
+      setIsFollowUp(true);
+      
+      // Limpiar el input para permitir nueva pregunta
+      setQuery('');
 
     } catch (error) {
       log('error', `💥 Error crítico: ${error.message}`);
@@ -506,7 +534,11 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
 
   // Función para limpiar memoria
   const clearMemory = () => {
-    setConversations({ openai: [], gemini: [], perplexity: [] });
+    setConversations({ openai: [], gemini: [], perplexity: [], deepseek: [], mistral: [] });
+    setConversationHistory([]);
+    setIsFollowUp(false);
+    setFinalResponse('');
+    setTerminal([]);
     log('system', '🧹 Memoria de conversación limpiada');
   };
 
@@ -943,10 +975,79 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                 </div>
                 
                 <div className="bg-white rounded-lg p-6 shadow-inner">
+                  {/* Historial de conversación */}
+                  {conversationHistory.length > 0 && (
+                    <div className="mb-6 pb-6 border-b border-gray-200">
+                      <h4 className="text-sm font-semibold text-gray-600 mb-3 flex items-center">
+                        <span className="mr-2">💬</span> Historial de Conversación
+                      </h4>
+                      <div className="space-y-3 max-h-96 overflow-y-auto">
+                        {conversationHistory.slice(-6).map((msg, idx) => (
+                          <div key={idx} className={`text-sm ${msg.role === 'user' ? 'text-blue-700' : 'text-gray-700'}`}>
+                            <span className="font-semibold">
+                              {msg.role === 'user' ? '👤 Tú: ' : '🤖 Asistente: '}
+                            </span>
+                            <span className="whitespace-pre-wrap">
+                              {msg.content.substring(0, 200)}{msg.content.length > 200 ? '...' : ''}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  
+                  {/* Respuesta actual */}
                   <div className="text-gray-800 whitespace-pre-wrap leading-relaxed">
                     {finalResponse}
                   </div>
                 </div>
+                
+                {/* Input para pregunta de seguimiento */}
+                {isFollowUp && (
+                  <div className="mt-6 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-lg p-4">
+                    <label className="block text-sm font-medium text-gray-700 mb-2">
+                      💭 Pregunta de Seguimiento
+                    </label>
+                    <div className="flex gap-2">
+                      <textarea
+                        value={query}
+                        onChange={(e) => setQuery(e.target.value)}
+                        className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
+                        rows={2}
+                        placeholder="Continúa la conversación con contexto..."
+                        disabled={processing}
+                        onKeyDown={(e) => {
+                          if (e.key === 'Enter' && e.ctrlKey && !processing) {
+                            startCollaboration();
+                          }
+                        }}
+                      />
+                      <div className="flex flex-col gap-2">
+                        <button
+                          onClick={startCollaboration}
+                          disabled={processing || query.length < 10}
+                          className={`px-4 py-2 text-white font-medium rounded-lg transition-all ${
+                            processing || query.length < 10
+                              ? 'bg-gray-400 cursor-not-allowed'
+                              : 'bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600'
+                          }`}
+                        >
+                          {processing ? '⏳' : '🚀'} Enviar
+                        </button>
+                        <button
+                          onClick={clearMemory}
+                          className="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all"
+                          title="Nueva conversación"
+                        >
+                          🔄 Nueva
+                        </button>
+                      </div>
+                    </div>
+                    <div className="mt-2 text-xs text-gray-500">
+                      Presiona Ctrl+Enter para enviar • La conversación mantiene el contexto completo
+                    </div>
+                  </div>
+                )}
               </div>
 
               {/* Métricas de Colaboración */}
