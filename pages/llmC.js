@@ -2,6 +2,8 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 
 export default function LLMColaborativa() {
+  console.log('🚀 LLMColaborativa component rendering');
+  
   // Estado para autenticación
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
@@ -24,7 +26,6 @@ export default function LLMColaborativa() {
     openai: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     gemini: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     perplexity: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
-    qwen: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     deepseek: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 },
     mistral: { usage: { input: 0, output: 0, cost: 0 }, balance: 100 }
   });
@@ -35,7 +36,6 @@ export default function LLMColaborativa() {
     openai: null,
     gemini: null,
     perplexity: null,
-    qwen: null,
     deepseek: null,
     mistral: null
   });
@@ -45,44 +45,54 @@ export default function LLMColaborativa() {
     openai: [],
     gemini: [],
     perplexity: [],
-    qwen: [],
     deepseek: [],
     mistral: []
   });
 
   // Actualizar estadísticas de tokens cada 5 segundos
   useEffect(() => {
+    console.log('🔄 useEffect running - authenticated:', authenticated, 'password:', password ? '[SET]' : '[EMPTY]');
     const interval = setInterval(() => {
       if (authenticated) {
+        console.log('⏰ Interval tick - calling fetchTokenStats');
         fetchTokenStats();
       }
     }, 5000);
     return () => clearInterval(interval);
-  }, [authenticated]);
+  }, [authenticated, password]);
 
   // Función para obtener estadísticas de tokens
   const fetchTokenStats = async () => {
+    console.log('📊 fetchTokenStats called with password:', password ? '[SET]' : '[EMPTY]');
     try {
-      const response = await fetch('/api/token-stats', {
+      const response = await fetch('/api/token-stats/', {
         headers: {
           'x-auth-password': password
         }
       });
+      console.log('📡 Response status:', response.status, response.statusText);
       if (response.ok) {
         const data = await response.json();
+        console.log('✅ Token stats received:', data);
         setTokenStats(data);
+      } else {
+        console.error('❌ Error fetching token stats:', response.status, response.statusText);
       }
     } catch (error) {
-      console.error('Error fetching token stats:', error);
+      console.error('💥 Exception fetching token stats:', error);
+      // Mantener el estado anterior en caso de error
     }
   };
 
   // Función de autenticación
   const handleAuth = () => {
+    console.log('🔐 handleAuth called with password:', password);
     if (password === 'pixan') {
+      console.log('✅ Authentication successful');
       setAuthenticated(true);
       fetchTokenStats();
     } else {
+      console.log('❌ Authentication failed');
       setErrors({ auth: 'Password incorrecto' });
     }
   };
@@ -107,7 +117,6 @@ export default function LLMColaborativa() {
       openai: '/api/openai-chat',
       gemini: '/api/gemini-chat',
       perplexity: '/api/perplexity-chat',
-      qwen: '/api/qwen-chat',
       deepseek: '/api/deepseek-chat',
       mistral: '/api/mistral-chat'
     };
@@ -216,7 +225,6 @@ INSTRUCCIONES CRÍTICAS:
     "openai": { "role": "título del rol", "instruction": "instrucción específica" },
     "gemini": { "role": "título del rol", "instruction": "instrucción específica" },
     "perplexity": { "role": "título del rol", "instruction": "instrucción específica" },
-    "qwen": { "role": "título del rol", "instruction": "instrucción específica" },
     "deepseek": { "role": "título del rol", "instruction": "instrucción específica" },
     "mistral": { "role": "título del rol", "instruction": "instrucción específica" }
   }
@@ -248,7 +256,6 @@ IMPORTANTE:
           openai: { role: "Analista Principal", instruction: "Proporciona un análisis detallado y estructurado" },
           gemini: { role: "Innovador Creativo", instruction: "Aporta perspectivas creativas y soluciones innovadoras" },
           perplexity: { role: "Investigador", instruction: "Busca información actualizada y verifica hechos" },
-          qwen: { role: "Analista de Datos", instruction: "Analiza datos complejos y proporciona insights profundos" },
           deepseek: { role: "Explorador de Soluciones", instruction: "Busca soluciones innovadoras y alternativas no convencionales" },
           mistral: { role: "Especialista Técnico", instruction: "Proporciona análisis técnico especializado y recomendaciones" }
         };
@@ -259,7 +266,7 @@ IMPORTANTE:
       log('system', '⚡ Enviando tareas especializadas a cada LLM...');
       
       // Incluir Claude en la primera ronda
-      const participatingLLMs = ['claude', 'openai', 'gemini', 'perplexity', 'qwen', 'deepseek', 'mistral'];
+      const participatingLLMs = ['claude', 'openai', 'gemini', 'perplexity', 'deepseek', 'mistral'];
       
       const llmPromises = participatingLLMs.map(async (llmName) => {
         try {
@@ -598,9 +605,11 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
     );
   }
 
-  return (
-    <>
-      <Head>
+  try {
+    console.log('🎨 About to render JSX, tokenStats:', tokenStats);
+    return (
+      <>
+        <Head>
         <title>LLM Colaborativa - IA Multi-Modelo | Pixan.ai</title>
         <meta name="description" content="Colaboración inteligente entre Claude, GPT-4, Gemini y Perplexity con consolidación automática - Desarrollado por Pixan.ai" />
         <link rel="icon" href="/favicon.ico" />
@@ -639,7 +648,6 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         .openai-badge { background: #10b981; color: white; }
         .gemini-badge { background: #3b82f6; color: white; }
         .perplexity-badge { background: #f59e0b; color: white; }
-        .qwen-badge { background: #ec4899; color: white; }
         .deepseek-badge { background: #06b6d4; color: white; }
         .mistral-badge { background: #ef4444; color: white; }
         .system-badge { background: #6b7280; color: white; }
@@ -759,16 +767,21 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                   <div className="bg-white rounded-lg p-4">
                     <h4 className="font-medium text-gray-700 mb-2">Estado de Conexiones</h4>
                     <div className="flex flex-wrap gap-2">
-                      {Object.keys(tokenStats).map(llm => (
-                        <span 
-                          key={llm}
-                          className={`px-3 py-1 rounded-full text-xs font-medium ${
-                            tokenStats[llm].balance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                          }`}
-                        >
-                          {llm.toUpperCase()}: {tokenStats[llm].balance > 0 ? '✓ Activo' : '✗ Sin saldo'}
-                        </span>
-                      ))}
+                      {Object.keys(tokenStats).map(llm => {
+                        const llmData = tokenStats[llm];
+                        if (!llmData || typeof llmData.balance === 'undefined') return null;
+                        
+                        return (
+                          <span 
+                            key={llm}
+                            className={`px-3 py-1 rounded-full text-xs font-medium ${
+                              llmData.balance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                            }`}
+                          >
+                            {llm.toUpperCase()}: {llmData.balance > 0 ? '✓ Activo' : '✗ Sin saldo'}
+                          </span>
+                        );
+                      })}
                     </div>
                   </div>
 
@@ -1071,4 +1084,14 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       </div>
     </>
   );
+  } catch (error) {
+    console.error('💥 Render error caught:', error);
+    return (
+      <div style={{ padding: '20px', color: 'red', fontFamily: 'monospace' }}>
+        <h1>Error de Rendering Detectado</h1>
+        <pre>{error.message}</pre>
+        <pre>{error.stack}</pre>
+      </div>
+    );
+  }
 }

@@ -9,7 +9,14 @@
       "Bash(curl:*)",
       "Bash(pkill:*)",
       "Bash(vercel:*)",
-      "Bash(find:*)"
+      "Bash(find:*)",
+      "Bash(npm run dev:*)",
+      "Bash(npm install:*)",
+      "Bash(touch:*)",
+      "Bash(ls:*)",
+      "Bash(echo:*)",
+      "Bash(npm start)",
+      "Bash(grep:*)"
     ],
     "deny": []
   }
