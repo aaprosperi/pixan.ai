@@ -138,6 +138,7 @@ export default function HomePage() {
                 <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 <path d="M12 9V3m0 0L9 6m3-3l3 3" />
               </svg>
+              <span className="admin-text">Local API keys admin</span>
             </a>
           </div>
         </footer>
@@ -337,19 +338,32 @@ export default function HomePage() {
         .admin-link {
           position: absolute;
           right: 0;
-          padding: 8px;
-          color: #999999;
+          padding: 8px 12px;
+          color: #666666;
           text-decoration: none;
           transition: all 0.2s ease;
-          opacity: 0.3;
-          border-radius: 4px;
+          opacity: 0.8;
+          border-radius: 6px;
+          border: 1px solid #e9ecef;
+          background: #f8f9fa;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          font-size: 12px;
+          font-weight: 500;
         }
 
         .admin-link:hover {
-          opacity: 0.8;
-          color: #666666;
+          opacity: 1;
+          color: #000000;
           transform: translateY(-1px);
-          background: rgba(0, 0, 0, 0.02);
+          background: #ffffff;
+          border-color: #28106A;
+        }
+
+        .admin-text {
+          font-size: 12px;
+          font-weight: 500;
         }
 
         @media (max-width: 768px) {

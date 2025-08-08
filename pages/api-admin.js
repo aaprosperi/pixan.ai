@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FiLock, FiUnlock, FiKey, FiCheck, FiX, FiDollarSign, FiEye, FiEyeOff, FiRefreshCw, FiZap, FiShield, FiDatabase, FiActivity, FiTrendingUp } from 'react-icons/fi';
+import { FiLock, FiUnlock, FiKey, FiCheck, FiX, FiDollarSign, FiEye, FiEyeOff, FiRefreshCw, FiZap, FiShield, FiDatabase, FiActivity, FiTrendingUp, FiTrash } from 'react-icons/fi';
 import { SiOpenai, SiGoogle, SiAnthropic } from 'react-icons/si';
 import { BiBot } from 'react-icons/bi';
 import { toast, Toaster } from 'react-hot-toast';
@@ -212,6 +212,34 @@ export default function APIAdmin() {
     setShowKeys({ ...showKeys, [provider]: !showKeys[provider] });
   };
 
+  const deleteAPIKey = (provider) => {
+    try {
+      // Remove from localStorage
+      localStorage.removeItem(`pixan_api_${provider}`);
+      
+      // Update state to remove the masked key
+      const updatedKeys = { ...apiKeys };
+      delete updatedKeys[provider];
+      setApiKeys(updatedKeys);
+      
+      // Clear connection status for this provider
+      const updatedStatus = { ...connectionStatus };
+      delete updatedStatus[provider];
+      setConnectionStatus(updatedStatus);
+      
+      toast.success(`API de ${API_PROVIDERS.find(p => p.id === provider)?.name} eliminada`, {
+        icon: '🗑️',
+        style: {
+          borderRadius: '10px',
+          background: '#333',
+          color: '#fff',
+        },
+      });
+    } catch (error) {
+      toast.error('Error al eliminar API');
+    }
+  };
+
   if (!isAuthenticated) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-gray-900 via-black to-gray-900 flex items-center justify-center p-4">
@@ -292,6 +320,29 @@ export default function APIAdmin() {
             <FiUnlock /> Cerrar sesión
           </motion.button>
         </div>
+
+        {/* Explanatory text about client vs server API keys */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: 0.2 }}
+          className="mb-8 p-6 bg-blue-500/10 border border-blue-500/20 rounded-2xl backdrop-blur-sm"
+        >
+          <div className="flex items-start gap-3">
+            <FiDatabase className="text-blue-400 text-xl mt-1 flex-shrink-0" />
+            <div>
+              <h3 className="text-xl font-semibold text-white mb-2">APIs del Cliente vs Servidor</h3>
+              <p className="text-gray-300 leading-relaxed mb-3">
+                <strong>APIs del Cliente:</strong> Las APIs que configures aquí se almacenan localmente en tu navegador y tienen prioridad. 
+                Estas se perderán si cambias de navegador o eliminas los datos del sitio.
+              </p>
+              <p className="text-gray-300 leading-relaxed">
+                <strong>APIs del Servidor:</strong> Como respaldo, también tenemos APIs configuradas en los servidores de Vercel que se utilizarán 
+                automáticamente cuando no tengas APIs del cliente configuradas.
+              </p>
+            </div>
+          </div>
+        </motion.div>
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {API_PROVIDERS.map((provider, index) => {
@@ -385,6 +436,18 @@ export default function APIAdmin() {
                       >
                         <FiZap /> Test
                       </motion.button>
+                      
+                      {apiKeys[provider.id] && (
+                        <motion.button
+                          whileHover={{ scale: 1.02 }}
+                          whileTap={{ scale: 0.98 }}
+                          onClick={() => deleteAPIKey(provider.id)}
+                          className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 border border-red-500/30 transition-all flex items-center"
+                          title="Eliminar API"
+                        >
+                          <FiTrash />
+                        </motion.button>
+                      )}
                     </div>
                   </div>
                 </div>
