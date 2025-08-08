@@ -150,9 +150,4 @@ async function handler(req, res) {
     res.status(500).json({ 
       error: 'Internal server error while calling Gemini API' 
     });
-  }
-}
-
-// Temporalmente sin middleware para testing
-export default handler;
-// export default authMiddleware(handler);
+export default authMiddleware(handler);

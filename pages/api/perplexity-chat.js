@@ -72,9 +72,4 @@ async function handler(req, res) {
     return res.status(500).json({ 
       error: `Perplexity request failed: ${error.message}` 
     });
-  }
-}
-
-// Temporalmente sin middleware para testing
-export default handler;
-// export default authMiddleware(handler);
+export default authMiddleware(handler);

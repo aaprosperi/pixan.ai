@@ -75,6 +75,4 @@ async function handler(req, res) {
   }
 }
 
-// Temporalmente sin middleware para testing
-export default handler;
-// export default authMiddleware(handler);
+export default authMiddleware(handler);
