@@ -337,7 +337,7 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
       // Paso 4: Esperar respuestas especializadas
       setStep(4);
       const results = await Promise.all(llmPromises);
-      const successfulResults = results.filter(r => r.success);
+      const successfulResults = results.filter(r => r && r.success);
       
       // Actualizar estado con respuestas
       const newResponses = {};
@@ -354,6 +354,9 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
 
       // Paso 5: Consolidación con Claude
       setStep(5);
+      
+      // Variable para almacenar la respuesta final fuera de los bloques
+      let currentFinalResponse = '';
       
       // Separar la respuesta de Claude de las demás
       const claudeResponse = successfulResults.find(r => r.llm === 'claude');
@@ -464,20 +467,22 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         log('system', '─────────────────────────────────────────────────────────');
         log('claude', consolidationResponse.content, 'claude');
         log('system', '─────────────────────────────────────────────────────────');
-        setFinalResponse(consolidationResponse.content);
+        currentFinalResponse = consolidationResponse.content;
+        setFinalResponse(currentFinalResponse);
         
         log('system', '✨ Consolidación completada con formato enriquecido');
       } else if (successfulResults.length === 1) {
         // Solo un LLM respondió
-        setFinalResponse(successfulResults[0].response);
+        currentFinalResponse = successfulResults[0].response;
+        setFinalResponse(currentFinalResponse);
         log('system', `✨ Respuesta única de ${successfulResults[0].llm.toUpperCase()}`);
       } else {
         // Múltiples respuestas pero sin Claude para consolidar
-        const combinedResponse = successfulResults.map((result, idx) => 
+        currentFinalResponse = successfulResults.map((result, idx) => 
           `**${result.llm.toUpperCase()}:**\n${result.response}`
         ).join('\n\n---\n\n');
         
-        setFinalResponse(combinedResponse);
+        setFinalResponse(currentFinalResponse);
         log('system', '📊 Múltiples respuestas presentadas sin consolidación');
       }
 
@@ -502,7 +507,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       const newHistory = [
         ...conversationHistory,
         { role: 'user', content: query },
-        { role: 'assistant', content: finalResponse || combinedResponse || successfulResults[0]?.response || '' }
+        { role: 'assistant', content: currentFinalResponse || '' }
       ];
       setConversationHistory(newHistory);
       setIsFollowUp(true);
