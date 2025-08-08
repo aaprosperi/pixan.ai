@@ -17,7 +17,8 @@
       "Bash(echo:*)",
       "Bash(npm start)",
       "Bash(grep:*)",
-      "Bash(rm:*)"
+      "Bash(rm:*)",
+      "Bash(true)"
     ],
     "deny": []
   }

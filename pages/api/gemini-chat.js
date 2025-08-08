@@ -7,14 +7,14 @@ async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
   
-  const { prompt, parameters } = req.body;
+  const { prompt, parameters, apiKey: clientApiKey } = req.body;
   
   if (!prompt) {
     return res.status(400).json({ error: 'Missing prompt' });
   }
   
-  // Usar API key del servidor
-  const apiKey = API_KEYS.gemini;
+  // Usar API key del cliente si está disponible, si no del servidor
+  const apiKey = clientApiKey || API_KEYS.gemini;
   if (!apiKey) {
     return res.status(500).json({ error: 'Gemini API not configured' });
   }

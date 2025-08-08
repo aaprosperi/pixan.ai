@@ -7,14 +7,14 @@ async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message, context } = req.body;
+  const { message, context, apiKey: clientApiKey } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Missing required message' });
   }
 
-  // Usar API key del servidor
-  const apiKey = API_KEYS.claude;
+  // Usar API key del cliente si está disponible, si no del servidor
+  const apiKey = clientApiKey || API_KEYS.claude;
   if (!apiKey) {
     return res.status(500).json({ error: 'Claude API not configured' });
   }

@@ -100,7 +100,7 @@ export default function LLMColaborativa() {
   };
 
   // Función para llamar a cada API
-  const callLLM = async (llmName, message, conversation = []) => {
+  const callLLM = async (llmName, message, conversation = [], apiKeys = {}) => {
     const endpoints = {
       claude: '/api/claude-chat',
       openai: '/api/openai-chat',
@@ -111,10 +111,10 @@ export default function LLMColaborativa() {
     };
 
     const body = llmName === 'claude' 
-      ? { message, context: 'general_query', password }
+      ? { message, context: 'general_query', password, apiKey: apiKeys[llmName] }
       : llmName === 'gemini'
-      ? { prompt: message, parameters: { temperature: 0.7 }, password }
-      : { message, conversation, password };
+      ? { prompt: message, parameters: { temperature: 0.7 }, password, apiKey: apiKeys[llmName] }
+      : { message, conversation, password, apiKey: apiKeys[llmName] };
 
     const response = await fetch(endpoints[llmName], {
       method: 'POST',
@@ -162,6 +162,25 @@ export default function LLMColaborativa() {
     return Object.keys(newErrors).length === 0;
   };
 
+  // Función para obtener API keys del localStorage
+  const getApiKeys = () => {
+    const keys = {};
+    const providers = ['claude', 'openai', 'gemini', 'perplexity', 'deepseek', 'mistral'];
+    
+    providers.forEach(provider => {
+      const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
+      if (encryptedKey) {
+        try {
+          keys[provider] = decodeURIComponent(atob(encryptedKey));
+        } catch (e) {
+          console.error(`Error decoding ${provider} key:`, e);
+        }
+      }
+    });
+    
+    return keys;
+  };
+
   // Proceso principal de colaboración
   const startCollaboration = async () => {
     if (!validate()) return;
@@ -173,6 +192,9 @@ export default function LLMColaborativa() {
     setMetrics(null);
 
     const startTime = Date.now();
+    
+    // Obtener API keys del localStorage
+    const apiKeys = getApiKeys();
 
     try {
       // Paso 1: Inicialización
@@ -225,7 +247,7 @@ IMPORTANTE:
 - Adapta todas las instrucciones al contexto específico de la consulta`;
 
       try {
-        const analysisResponse = await callLLM('claude', analysisPrompt);
+        const analysisResponse = await callLLM('claude', analysisPrompt, [], apiKeys);
         const analysis = JSON.parse(analysisResponse.content);
         roleAssignments = analysis.roles;
         
@@ -274,7 +296,7 @@ CONSULTA ORIGINAL: ${query}
 Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${role.instruction.toLowerCase()}.`;
           
           const conversation = conversations[llmName] || [];
-          const response = await callLLM(llmName, customPrompt, conversation);
+          const response = await callLLM(llmName, customPrompt, conversation, apiKeys);
           
           // Actualizar memoria para LLMs que la soportan
           if (llmName !== 'claude') {
@@ -418,7 +440,7 @@ Tu respuesta DEBE incluir estos elementos gráficos:
 
 IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de todas las perspectivas.`;
 
-        const consolidationResponse = await callLLM('claude', consolidationQuery);
+        const consolidationResponse = await callLLM('claude', consolidationQuery, [], apiKeys);
         
         setStep(6);
         log('system', '─────────────────────────────────────────────────────────');

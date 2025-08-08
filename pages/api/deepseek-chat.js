@@ -7,14 +7,14 @@ async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message, conversation = [] } = req.body;
+  const { message, conversation = [], apiKey: clientApiKey } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
   }
 
-  // Usar API key del servidor
-  const apiKey = API_KEYS.deepseek;
+  // Usar API key del cliente si está disponible, si no del servidor
+  const apiKey = clientApiKey || API_KEYS.deepseek;
   if (!apiKey) {
     return res.status(500).json({ error: 'DeepSeek API not configured' });
   }
