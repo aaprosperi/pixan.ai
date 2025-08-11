@@ -1,8 +1,11 @@
 import React, { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function HomePage() {
   const [displayText, setDisplayText] = useState('');
+  const { t } = useLanguage();
   
   const words = ['AI', 'pixan'];
   
@@ -81,19 +84,20 @@ export default function HomePage() {
               </div>
             </div>
             <ul className="nav-links">
-              <li><a href="#about">Acerca</a></li>
-              <li><a href="#projects">Proyectos</a></li>
-              <li><a href="#contact">Contacto</a></li>
+              <li><a href="#about">{t('landing.about')}</a></li>
+              <li><a href="#projects">{t('landing.projects')}</a></li>
+              <li><a href="#contact">{t('landing.contact')}</a></li>
               <li><a href="https://github.com/aaprosperi">GitHub</a></li>
             </ul>
+            <LanguageSelector />
           </nav>
         </header>
 
         <main className="main">
           <section className="hero">
-            <h1 className="hero-title">Business upscale.</h1>
+            <h1 className="hero-title">{t('landing.title')}</h1>
             <p className="hero-powered">
-              <span className="powered-text">Powered by </span>
+              <span className="powered-text">{t('landing.poweredBy')} </span>
               <span className="changing-word">{displayText}</span>
             </p>
             
@@ -112,33 +116,33 @@ export default function HomePage() {
 
           <div className="service-buttons">
             <a href="/pb" className="service-button">
-              <div className="service-title">Prompt Boost</div>
-              <div className="service-description">Optimiza tu prompt con Claude para cualquier LLM y maximiza resultados.</div>
+              <div className="service-title">{t('landing.services.promptBoost.title')}</div>
+              <div className="service-description">{t('landing.services.promptBoost.description')}</div>
             </a>
             <a href="/llmC" className="service-button">
-              <div className="service-title">Prompt to Multi‑LLM</div>
-              <div className="service-description">Lanza tu prompt a 4 LLMs simultáneamente. Claude supervisa e integra una respuesta consolidada.</div>
+              <div className="service-title">{t('landing.services.multiLLM.title')}</div>
+              <div className="service-description">{t('landing.services.multiLLM.description')}</div>
             </a>
             <a href="#" className="service-button">
-              <div className="service-title">IA 60+</div>
-              <div className="service-description">Prompting pensado para mayores de 60 años, inspirado en la simplicidad de la Web 2.0.</div>
+              <div className="service-title">{t('landing.services.ia60.title')}</div>
+              <div className="service-description">{t('landing.services.ia60.description')}</div>
             </a>
             <a href="https://labs.pixan.ai" className="service-button primary">
-              <div className="service-title">Ir a Pixan Labs</div>
-              <div className="service-description">Crea un nuevo proyecto y experimenta con nuestras herramientas avanzadas.</div>
+              <div className="service-title">{t('landing.services.pixanLabs.title')}</div>
+              <div className="service-description">{t('landing.services.pixanLabs.description')}</div>
             </a>
           </div>
         </main>
 
         <footer className="footer">
           <div className="footer-content">
-            <p>© 2025 Powered by Pixan</p>
+            <p>{t('landing.footer')}</p>
             <a href="/api-admin" className="admin-link">
               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2">
                 <path d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2z" />
                 <path d="M12 9V3m0 0L9 6m3-3l3 3" />
               </svg>
-              <span className="admin-text">Local API keys admin</span>
+              <span className="admin-text">{t('landing.adminButton')}</span>
             </a>
           </div>
         </footer>
@@ -176,6 +180,7 @@ export default function HomePage() {
           display: flex;
           justify-content: space-between;
           align-items: center;
+          gap: 20px;
         }
 
         .logo-container {

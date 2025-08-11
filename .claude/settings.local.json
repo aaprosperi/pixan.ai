@@ -18,7 +18,13 @@
       "Bash(npm start)",
       "Bash(grep:*)",
       "Bash(rm:*)",
-      "Bash(true)"
+      "Bash(true)",
+      "Bash(for:*)",
+      "Bash(do echo \"=== $file ===\")",
+      "Bash(tail:*)",
+      "Bash(done)",
+      "Bash(do)",
+      "Bash(sed:*)"
     ],
     "deny": []
   }
