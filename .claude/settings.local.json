@@ -24,7 +24,9 @@
       "Bash(tail:*)",
       "Bash(done)",
       "Bash(do)",
-      "Bash(sed:*)"
+      "Bash(sed:*)",
+      "Bash(npx next build:*)",
+      "Bash(node:*)"
     ],
     "deny": []
   }

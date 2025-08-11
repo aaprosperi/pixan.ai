@@ -1,7 +1,11 @@
 import { useState, useEffect } from 'react';
 import Head from 'next/head';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 
 export default function LLMColaborativa() {
+  const { t } = useLanguage();
+  
   // Estado para autenticación
   const [password, setPassword] = useState('');
   const [authenticated, setAuthenticated] = useState(false);
@@ -86,7 +90,7 @@ export default function LLMColaborativa() {
       setAuthenticated(true);
       fetchTokenStats();
     } else {
-      setErrors({ auth: 'Password incorrecto' });
+      setErrors({ auth: t('llmC.wrongPassword') });
     }
   };
 
@@ -159,7 +163,7 @@ export default function LLMColaborativa() {
   const validate = () => {
     const newErrors = {};
     if (query.length < 10) {
-      newErrors.query = 'La consulta debe tener al menos 10 caracteres';
+      newErrors.query = t('promptBoost.errors.tooShort').replace('prompt', 'consulta');
     }
     
     setErrors(newErrors);
@@ -203,15 +207,15 @@ export default function LLMColaborativa() {
     try {
       // Paso 1: Inicialización
       setStep(1);
-      log('system', `🚀 Iniciando LLM Colaborativa con 4 modelos`);
-      log('system', `📋 Modelos: CLAUDE, OPENAI, GEMINI, PERPLEXITY`);
+      log('system', `🚀 ${t('llmC.terminal.starting')}`);
+      log('system', `📋 ${t('llmC.terminal.models')}: CLAUDE, OPENAI, GEMINI, PERPLEXITY`);
 
       // Paso 2: Claude analiza el prompt y asigna roles
       setStep(2);
       let roleAssignments = {};
       
-      log('system', '🧠 Claude analizando consulta y asignando roles...');
-      log('claude', '📊 Analizando tipo de consulta y capacidades de cada LLM...', 'claude');
+      log('system', `🧠 ${t('llmC.terminal.analyzingQuery')}`);
+      log('claude', `📊 ${t('llmC.terminal.analyzingType')}`, 'claude');
       
       const analysisPrompt = `Analiza esta consulta y asigna roles específicos a TODOS los LLMs disponibles, incluyéndote a ti mismo (Claude):
 
@@ -258,8 +262,8 @@ IMPORTANTE:
         const analysis = JSON.parse(analysisResponse.content);
         roleAssignments = analysis.roles;
         
-        log('claude', `✅ Análisis completado: Consulta tipo "${analysis.queryType}"`, 'claude');
-        log('system', '📋 ASIGNACIÓN DE ROLES:');
+        log('claude', `✅ ${t('llmC.terminal.analysisComplete')} "${analysis.queryType}"`, 'claude');
+        log('system', `📋 ${t('llmC.terminal.roleAssignment')}:`);
         
         // Mostrar roles asignados en formato tabla
         Object.entries(roleAssignments).forEach(([llm, assignment]) => {
@@ -267,7 +271,7 @@ IMPORTANTE:
         });
         
       } catch (error) {
-        log('error', '⚠️ Error en análisis de Claude, usando roles genéricos');
+        log('error', `⚠️ ${t('llmC.terminal.error')} análisis de Claude, usando roles genéricos`);
         // Roles por defecto si falla el análisis
         roleAssignments = {
           claude: { role: "Arquitecto de Soluciones", instruction: "Proporciona una perspectiva estratégica y análisis conceptual profundo" },
@@ -281,7 +285,7 @@ IMPORTANTE:
 
       // Paso 3: Envío paralelo a todos los LLMs con sus roles específicos
       setStep(3);
-      log('system', '⚡ Enviando tareas especializadas a cada LLM...');
+      log('system', `⚡ ${t('llmC.terminal.sendingTasks')}`);
       
       // Incluir Claude en la primera ronda
       const participatingLLMs = ['claude', 'openai', 'gemini', 'perplexity', 'deepseek', 'mistral'];
@@ -292,8 +296,8 @@ IMPORTANTE:
           if (!role) return null;
           
           log('system', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
-          log(llmName, `🎭 ROL: ${role.role}`, llmName);
-          log(llmName, `📝 TAREA: ${role.instruction}`, llmName);
+          log(llmName, `🎭 ${t('llmC.terminal.role')}: ${role.role}`, llmName);
+          log(llmName, `📝 ${t('llmC.terminal.task')}: ${role.instruction}`, llmName);
           
           // Crear prompt personalizado para cada LLM según su rol
           const customPrompt = `${isFollowUp && conversationHistory.length > 0 ? `CONTEXTO DE CONVERSACIÓN PREVIA:
@@ -319,7 +323,7 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
             }));
           }
           
-          log(llmName, `✅ Respuesta recibida (${response.content.length} caracteres)`, llmName);
+          log(llmName, `✅ ${t('llmC.terminal.responseReceived')} (${response.content.length} ${t('llmC.terminal.characters')})`, llmName);
           log('system', `━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━`);
           
           return { 
@@ -329,7 +333,7 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
             success: true 
           };
         } catch (error) {
-          log('error', `❌ Error en ${llmName.toUpperCase()}: ${error.message}`, llmName);
+          log('error', `❌ ${t('llmC.terminal.error')} ${llmName.toUpperCase()}: ${error.message}`, llmName);
           return { llm: llmName, error: error.message, success: false };
         }
       }).filter(p => p !== null);
@@ -346,10 +350,10 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
       });
       setLlmResponses(newResponses);
 
-      log('system', `✅ Recibidas ${successfulResults.length} respuestas exitosas`);
+      log('system', `✅ ${t('llmC.terminal.successfulResponses')} ${successfulResults.length}`);
 
       if (successfulResults.length === 0) {
-        throw new Error('Ningún LLM respondió exitosamente');
+        throw new Error(t('llmC.terminal.noResponses'));
       }
 
       // Paso 5: Consolidación con Claude
@@ -363,7 +367,7 @@ Por favor, responde según tu rol asignado de "${role.role}" y enfócate en ${ro
       const otherResponses = successfulResults.filter(r => r.llm !== 'claude');
       
       if (successfulResults.length > 1) {
-        log('system', '🧠 Claude iniciando consolidación final...');
+        log('system', `🧠 ${t('llmC.terminal.consolidating')}`);
         
         let consolidationQuery;
         
@@ -463,14 +467,14 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         
         setStep(6);
         log('system', '─────────────────────────────────────────────────────────');
-        log('claude', '🎯 RESPUESTA CONSOLIDADA FINAL:', 'claude');
+        log('claude', `🎯 ${t('llmC.consolidatedResponse')}:`, 'claude');
         log('system', '─────────────────────────────────────────────────────────');
         log('claude', consolidationResponse.content, 'claude');
         log('system', '─────────────────────────────────────────────────────────');
         currentFinalResponse = consolidationResponse.content;
         setFinalResponse(currentFinalResponse);
         
-        log('system', '✨ Consolidación completada con formato enriquecido');
+        log('system', `✨ ${t('llmC.terminal.consolidationComplete')}`);
       } else if (successfulResults.length === 1) {
         // Solo un LLM respondió
         currentFinalResponse = successfulResults[0].response;
@@ -488,7 +492,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
 
       // Paso 6: Calcular métricas
       setStep(6);
-      log('system', '📈 Calculando métricas de colaboración...');
+      log('system', `📈 ${t('llmC.terminal.calculatingMetrics')}`);
       
       const processingTime = Math.round((Date.now() - startTime) / 1000);
       const calculatedMetrics = {
@@ -501,7 +505,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       };
       
       setMetrics(calculatedMetrics);
-      log('system', '🏆 ¡Colaboración LLM completada con éxito por Pixan.ai!');
+      log('system', `🏆 ${t('llmC.terminal.collaborationSuccess')}`);
       
       // Guardar en el historial de conversación
       const newHistory = [
@@ -516,7 +520,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       setQuery('');
 
     } catch (error) {
-      log('error', `💥 Error crítico: ${error.message}`);
+      log('error', `💥 ${t('llmC.terminal.criticalError')}: ${error.message}`);
     } finally {
       setProcessing(false);
       setStep(0);
@@ -534,7 +538,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
   const cancelProcess = () => {
     setProcessing(false);
     setStep(0);
-    log('system', '⏹️ Proceso cancelado por el usuario');
+    log('system', `⏹️ ${t('llmC.terminal.processCanceled')}`);
   };
 
   // Función para limpiar memoria
@@ -544,7 +548,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
     setIsFollowUp(false);
     setFinalResponse('');
     setTerminal([]);
-    log('system', '🧹 Memoria de conversación limpiada');
+    log('system', `🧹 ${t('llmC.terminal.memoryCleared')}`);
   };
 
   // Función para generar Google Docs con Gemini
@@ -554,7 +558,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
     }
 
     setGeneratingDocs(true);
-    log('system', '📄 Gemini iniciando generación de Google Docs...');
+    log('system', `📄 Gemini iniciando generación de ${t('llmC.googleDocs')}...`);
 
     try {
       const queryType = query.toLowerCase().includes('análisis') ? 'analítica' :
@@ -596,7 +600,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
 
       setDocsGenerated(true);
       log('gemini', `📄 Documento HTML generado: ${data.fileName}`, 'gemini');
-      log('system', '✅ Documento listo para importar a Google Docs');
+      log('system', `✅ Documento listo para importar a ${t('llmC.googleDocs')}`);
       
       setTimeout(() => setDocsGenerated(false), 3000);
 
@@ -622,7 +626,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
               <h1 className="text-3xl font-bold bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">
                 LLM Colaborativa
               </h1>
-              <p className="text-gray-600 mt-2">Ingresa la contraseña para continuar</p>
+              <p className="text-gray-600 mt-2">{t('llmC.subtitle')}</p>
             </div>
 
             <div className="space-y-4">
@@ -632,7 +636,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                 onChange={(e) => setPassword(e.target.value)}
                 onKeyPress={(e) => e.key === 'Enter' && handleAuth()}
                 className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent"
-                placeholder="Contraseña"
+                placeholder={t('llmC.password')}
                 autoFocus
               />
               
@@ -644,7 +648,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                 onClick={handleAuth}
                 className="w-full py-3 px-6 text-white font-medium rounded-lg bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600 transition-all duration-200"
               >
-                Acceder
+                {t('llmC.access')}
               </button>
             </div>
           </div>
@@ -756,6 +760,11 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
         </div>
 
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-12">
+          {/* Language Selector */}
+          <div className="flex justify-end mb-6">
+            <LanguageSelector />
+          </div>
+          
           {/* Header */}
           <div className="text-center mb-12">
             <div className="flex justify-center mb-6">
@@ -773,7 +782,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
             </div>
             <h1 className="text-4xl md:text-5xl font-bold mb-4">
               <span className="bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">
-                LLM Colaborativa
+                {t('llmC.title')}
               </span>
             </h1>
             <p className="text-xl text-gray-600 max-w-2xl mx-auto">
@@ -794,14 +803,14 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                   {/* Consulta */}
                   <div>
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      Tu Consulta ({query.length} caracteres)
+                      {t('llmC.yourQuery')} ({query.length} {t('llmC.charactersCount')})
                     </label>
                     <textarea
                       value={query}
                       onChange={(e) => setQuery(e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                       rows={4}
-                      placeholder="Pregunta, solicitud, análisis, investigación, creatividad... cualquier consulta que necesites resolver"
+                      placeholder={t('llmC.placeholder')}
                       disabled={processing}
                     />
                     {errors.query && (
@@ -811,7 +820,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
 
                   {/* Estado de APIs */}
                   <div className="bg-white rounded-lg p-4">
-                    <h4 className="font-medium text-gray-700 mb-2">Estado de Conexiones</h4>
+                    <h4 className="font-medium text-gray-700 mb-2">{t('llmC.connectionStatus')}</h4>
                     <div className="flex flex-wrap gap-2">
                       {Object.keys(tokenStats).map(llm => {
                         const llmData = tokenStats[llm];
@@ -824,7 +833,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                               llmData.balance > 0 ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
                             }`}
                           >
-                            {llm.toUpperCase()}: {llmData.balance > 0 ? '✓ Activo' : '✗ Sin saldo'}
+                            {llm.toUpperCase()}: {llmData.balance > 0 ? `✓ ${t('llmC.active')}` : `✗ ${t('llmC.noBalance')}`}
                           </span>
                         );
                       })}
@@ -849,15 +858,15 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                   >
                     {processing ? (
                       <span className="flex items-center justify-center">
-                        🧠 {step === 1 ? 'Inicializando...' : 
-                           step === 2 ? 'Claude analizando y asignando roles...' :
-                           step === 3 ? 'Enviando tareas especializadas...' :
-                           step === 4 ? 'Recibiendo respuestas...' :
-                           step === 5 ? 'Claude consolidando...' :
-                           'Finalizando...'} ({step}/6)
+                        🧠 {step === 1 ? t('llmC.processing.initializing') : 
+                           step === 2 ? t('llmC.processing.analyzing') :
+                           step === 3 ? t('llmC.processing.assigning') :
+                           step === 4 ? t('llmC.processing.waiting') :
+                           step === 5 ? t('llmC.processing.consolidating') :
+                           t('llmC.processing.calculating')} ({step}/6)
                       </span>
                     ) : (
-                      '🚀 Iniciar Colaboración Dirigida por Claude'
+                      `🚀 ${t('llmC.startButton')}`
                     )}
                   </button>
 
@@ -866,7 +875,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                       onClick={cancelProcess}
                       className="w-full py-3 px-6 text-gray-700 font-medium rounded-lg border border-gray-300 hover:bg-gray-50 transition-all duration-200"
                     >
-                      ⏹️ Cancelar Proceso
+                      ⏹️ {t('llmC.cancel')}
                     </button>
                   )}
 
@@ -929,7 +938,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
             <div className="mt-8 space-y-6">
               <div className="bg-gradient-to-r from-purple-50 to-cyan-50 rounded-lg p-6">
                 <div className="flex justify-between items-start mb-4">
-                  <h3 className="text-xl font-semibold text-gray-800">Respuesta Consolidada Multi-IA</h3>
+                  <h3 className="text-xl font-semibold text-gray-800">{t('llmC.consolidatedResponse')}</h3>
                   <div className="flex gap-2">
                     <button
                       onClick={copyResponse}
@@ -938,12 +947,12 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                       {copied ? (
                         <>
                           <span className="mr-2 text-green-500">✓</span>
-                          ¡Copiado!
+                          {t('llmC.copied')}
                         </>
                       ) : (
                         <>
                           <span className="mr-2">📋</span>
-                          Copiar
+                          {t('llmC.copy')}
                         </>
                       )}
                     </button>
@@ -962,17 +971,17 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                       {generatingDocs ? (
                         <>
                           <span className="mr-2 animate-spin">⚙️</span>
-                          Generando...
+                          {t('llmC.generating')}
                         </>
                       ) : docsGenerated ? (
                         <>
                           <span className="mr-2">✅</span>
-                          ¡Descargado!
+                          {t('llmC.downloaded')}
                         </>
                       ) : (
                         <>
                           <span className="mr-2">📄</span>
-                          Google Docs
+                          {t('llmC.googleDocs')}
                         </>
                       )}
                     </button>
@@ -984,13 +993,13 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                   {conversationHistory.length > 0 && (
                     <div className="mb-6 pb-6 border-b border-gray-200">
                       <h4 className="text-sm font-semibold text-gray-600 mb-3 flex items-center">
-                        <span className="mr-2">💬</span> Historial de Conversación
+                        <span className="mr-2">💬</span> {t('llmC.conversationHistory')}
                       </h4>
                       <div className="space-y-3 max-h-96 overflow-y-auto">
                         {conversationHistory.slice(-6).map((msg, idx) => (
                           <div key={idx} className={`text-sm ${msg.role === 'user' ? 'text-blue-700' : 'text-gray-700'}`}>
                             <span className="font-semibold">
-                              {msg.role === 'user' ? '👤 Tú: ' : '🤖 Asistente: '}
+                              {msg.role === 'user' ? `👤 ${t('llmC.you')}: ` : `🤖 ${t('llmC.assistant')}: `}
                             </span>
                             <span className="whitespace-pre-wrap">
                               {msg.content.substring(0, 200)}{msg.content.length > 200 ? '...' : ''}
@@ -1011,7 +1020,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                 {isFollowUp && (
                   <div className="mt-6 bg-gradient-to-r from-purple-50 to-cyan-50 rounded-lg p-4">
                     <label className="block text-sm font-medium text-gray-700 mb-2">
-                      💭 Pregunta de Seguimiento
+                      💭 {t('llmC.followUp.title')}
                     </label>
                     <div className="flex gap-2">
                       <textarea
@@ -1019,7 +1028,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                         onChange={(e) => setQuery(e.target.value)}
                         className="flex-1 px-4 py-2 border border-gray-300 rounded-lg focus:ring-2 focus:ring-purple-500 focus:border-transparent resize-none"
                         rows={2}
-                        placeholder="Continúa la conversación con contexto..."
+                        placeholder={t('llmC.followUp.placeholder')}
                         disabled={processing}
                         onKeyDown={(e) => {
                           if (e.key === 'Enter' && e.ctrlKey && !processing) {
@@ -1037,19 +1046,19 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                               : 'bg-gradient-to-r from-purple-600 to-cyan-500 hover:from-purple-700 hover:to-cyan-600'
                           }`}
                         >
-                          {processing ? '⏳' : '🚀'} Enviar
+                          {processing ? '⏳' : '🚀'} {t('llmC.followUp.send')}
                         </button>
                         <button
                           onClick={clearMemory}
                           className="px-4 py-2 bg-red-500 text-white font-medium rounded-lg hover:bg-red-600 transition-all"
                           title="Nueva conversación"
                         >
-                          🔄 Nueva
+                          🔄 {t('llmC.followUp.newConversation')}
                         </button>
                       </div>
                     </div>
                     <div className="mt-2 text-xs text-gray-500">
-                      Presiona Ctrl+Enter para enviar • La conversación mantiene el contexto completo
+                      {t('llmC.followUp.hint')}
                     </div>
                   </div>
                 )}
@@ -1060,19 +1069,19 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
                   <div className="bg-white rounded-lg p-4 shadow">
                     <div className="text-2xl font-bold text-purple-600">{metrics.llmsUsed}/{metrics.totalLlmsAvailable}</div>
-                    <div className="text-sm text-gray-600">LLMs Activos</div>
+                    <div className="text-sm text-gray-600">{t('llmC.metrics.activeLLMs')}</div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow">
                     <div className="text-2xl font-bold text-cyan-600">{metrics.processingTime}s</div>
-                    <div className="text-sm text-gray-600">Tiempo Total</div>
+                    <div className="text-sm text-gray-600">{t('llmC.metrics.totalTime')}</div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow">
                     <div className="text-2xl font-bold text-green-600">{metrics.consolidationUsed ? '✓' : '○'}</div>
-                    <div className="text-sm text-gray-600">Consolidación</div>
+                    <div className="text-sm text-gray-600">{t('llmC.metrics.consolidation')}</div>
                   </div>
                   <div className="bg-white rounded-lg p-4 shadow">
                     <div className="text-2xl font-bold text-orange-600">{metrics.memoryEnabled}</div>
-                    <div className="text-sm text-gray-600">Con Memoria</div>
+                    <div className="text-sm text-gray-600">{t('llmC.metrics.withMemory')}</div>
                   </div>
                 </div>
               )}
@@ -1083,16 +1092,15 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
           <div className="mt-16 max-w-4xl mx-auto">
             <div className="bg-gradient-to-br from-purple-50 to-cyan-50 rounded-2xl p-8 mb-8">
               <h2 className="text-3xl font-bold text-gray-900 mb-6 text-center">
-                🧠 Cómo Funciona la LLM Colaborativa
+                🧠 {t('llmC.howItWorks.title')}
               </h2>
               <div className="text-center mb-8">
                 <span className="text-xl font-semibold bg-gradient-to-r from-purple-600 to-cyan-500 bg-clip-text text-transparent">
-                  Inteligencia Artificial Colaborativa de Nueva Generación 🚀
+                  {t('llmC.howItWorks.subtitle')} 🚀
                 </span>
               </div>
               <p className="text-lg text-gray-700 leading-relaxed text-center">
-                Primera plataforma mundial que orquesta 4 IAs líderes trabajando simultáneamente, 
-                con consolidación inteligente y memoria conversacional avanzada
+                {t('llmC.howItWorks.description')}
               </p>
             </div>
 
@@ -1100,7 +1108,7 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
               {/* Arquitectura */}
               <div className="bg-white rounded-xl shadow-lg p-8">
                 <h3 className="text-2xl font-bold text-gray-900 mb-6 text-center">
-                  ⚡ Arquitectura de Colaboración Simultánea
+                  ⚡ {t('llmC.howItWorks.architecture.title')}
                 </h3>
                 
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

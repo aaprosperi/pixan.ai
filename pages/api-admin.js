@@ -4,6 +4,8 @@ import { FiLock, FiUnlock, FiKey, FiCheck, FiX, FiDollarSign, FiEye, FiEyeOff, F
 import { SiOpenai, SiGoogle, SiAnthropic } from 'react-icons/si';
 import { BiBot } from 'react-icons/bi';
 import { toast, Toaster } from 'react-hot-toast';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
 // Eliminamos confetti por ahora para evitar errores de SSR
 
 const API_PROVIDERS = [
@@ -16,6 +18,7 @@ const API_PROVIDERS = [
 ];
 
 export default function APIAdmin() {
+  const { t } = useLanguage();
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [apiKeys, setApiKeys] = useState({});
@@ -57,7 +60,7 @@ export default function APIAdmin() {
 
       if (response.ok) {
         setIsAuthenticated(true);
-        toast.success('Acceso autorizado', {
+        toast.success(t('apiAdmin.success.authorized'), {
           icon: '🔓',
           style: {
             borderRadius: '10px',
@@ -66,7 +69,7 @@ export default function APIAdmin() {
           },
         });
       } else {
-        toast.error('Contraseña incorrecta', {
+        toast.error(t('apiAdmin.errors.wrongPassword'), {
           icon: '🔒',
           style: {
             borderRadius: '10px',
@@ -76,7 +79,7 @@ export default function APIAdmin() {
         });
       }
     } catch (error) {
-      toast.error('Error de autenticación');
+      toast.error(t('apiAdmin.errors.authError'));
     }
   };
 
@@ -98,7 +101,7 @@ export default function APIAdmin() {
       setApiKeys(storedKeys);
     } catch (error) {
       console.error('Error loading keys:', error);
-      toast.error('Error al cargar las API keys');
+      toast.error(t('apiAdmin.errors.saveError'));
     }
   };
 
@@ -118,7 +121,7 @@ export default function APIAdmin() {
         const encryptedKey = encryptClient(key);
         localStorage.setItem(`pixan_api_${provider}`, encryptedKey);
         
-        toast.success(`API key de ${provider} guardada localmente`, {
+        toast.success(`${t('apiAdmin.success.keySaved')} - ${provider}`, {
           icon: '✅',
           style: {
             borderRadius: '10px',
@@ -145,7 +148,7 @@ export default function APIAdmin() {
       // Obtener la API key de localStorage
       const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
       if (!encryptedKey) {
-        toast.error('No se encontró API key guardada');
+        toast.error(t('apiAdmin.errors.invalidKey'));
         setConnectionStatus({ ...connectionStatus, [provider]: 'error' });
         return;
       }
@@ -181,7 +184,7 @@ export default function APIAdmin() {
         
         // Efectos visuales de éxito - confetti removido temporalmente
         
-        toast.success(`${provider} conectado correctamente`, {
+        toast.success(`${provider} ${t('apiAdmin.success.testSuccess')}`, {
           icon: '🎉',
           style: {
             borderRadius: '10px',
@@ -204,7 +207,7 @@ export default function APIAdmin() {
       }
     } catch (error) {
       setConnectionStatus({ ...connectionStatus, [provider]: 'error' });
-      toast.error('Error de conexión');
+      toast.error(t('apiAdmin.errors.connectionError'));
     }
   };
 
@@ -227,7 +230,7 @@ export default function APIAdmin() {
       delete updatedStatus[provider];
       setConnectionStatus(updatedStatus);
       
-      toast.success(`API de ${API_PROVIDERS.find(p => p.id === provider)?.name} eliminada`, {
+      toast.success(`${API_PROVIDERS.find(p => p.id === provider)?.name} ${t('apiAdmin.success.keyDeleted')}`, {
         icon: '🗑️',
         style: {
           borderRadius: '10px',
@@ -236,7 +239,7 @@ export default function APIAdmin() {
         },
       });
     } catch (error) {
-      toast.error('Error al eliminar API');
+      toast.error(t('apiAdmin.errors.saveError'));
     }
   };
 
@@ -257,8 +260,8 @@ export default function APIAdmin() {
             >
               <FiLock className="text-white text-3xl" />
             </motion.div>
-            <h1 className="text-3xl font-bold text-white mb-2">Administración de APIs</h1>
-            <p className="text-gray-400">Ingresa la contraseña para continuar</p>
+            <h1 className="text-3xl font-bold text-white mb-2">{t('apiAdmin.title')}</h1>
+            <p className="text-gray-400">{t('apiAdmin.subtitle')}</p>
           </div>
 
           <form onSubmit={handleLogin} className="space-y-6">
@@ -267,7 +270,7 @@ export default function APIAdmin() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="Contraseña"
+                placeholder={t('apiAdmin.password')}
                 className="w-full px-4 py-3 bg-gray-900/50 border border-gray-700 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all"
               />
               <FiKey className="absolute right-3 top-3.5 text-gray-500" />
@@ -279,7 +282,7 @@ export default function APIAdmin() {
               type="submit"
               className="w-full py-3 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-semibold rounded-xl shadow-lg hover:shadow-purple-500/25 transition-all"
             >
-              Acceder
+              {t('apiAdmin.access')}
             </motion.button>
           </form>
         </motion.div>
@@ -306,19 +309,22 @@ export default function APIAdmin() {
               <FiShield className="text-white text-2xl" />
             </motion.div>
             <div>
-              <h1 className="text-4xl font-bold text-white">Centro de Control de APIs</h1>
-              <p className="text-gray-400 mt-1">Administra todas las APIs de Pixan.ai</p>
+              <h1 className="text-4xl font-bold text-white">{t('apiAdmin.controlCenter')}</h1>
+              <p className="text-gray-400 mt-1">{t('apiAdmin.manageAPIs')}</p>
             </div>
           </div>
           
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => setIsAuthenticated(false)}
-            className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-all flex items-center gap-2"
-          >
-            <FiUnlock /> Cerrar sesión
-          </motion.button>
+          <div className="flex items-center gap-4">
+            <LanguageSelector />
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => setIsAuthenticated(false)}
+              className="px-4 py-2 bg-red-500/20 text-red-400 rounded-lg border border-red-500/30 hover:bg-red-500/30 transition-all flex items-center gap-2"
+            >
+              <FiUnlock /> {t('apiAdmin.logout')}
+            </motion.button>
+          </div>
         </div>
 
         {/* Explanatory text about client vs server API keys */}
@@ -331,14 +337,12 @@ export default function APIAdmin() {
           <div className="flex items-start gap-3">
             <FiDatabase className="text-blue-400 text-xl mt-1 flex-shrink-0" />
             <div>
-              <h3 className="text-xl font-semibold text-white mb-2">APIs del Cliente vs Servidor</h3>
+              <h3 className="text-xl font-semibold text-white mb-2">{t('apiAdmin.clientVsServer.title')}</h3>
               <p className="text-gray-300 leading-relaxed mb-3">
-                <strong>APIs del Cliente:</strong> Las APIs que configures aquí se almacenan localmente en tu navegador y tienen prioridad. 
-                Estas se perderán si cambias de navegador o eliminas los datos del sitio.
+                {t('apiAdmin.clientVsServer.clientDesc')}
               </p>
               <p className="text-gray-300 leading-relaxed">
-                <strong>APIs del Servidor:</strong> Como respaldo, también tenemos APIs configuradas en los servidores de Vercel que se utilizarán 
-                automáticamente cuando no tengas APIs del cliente configuradas.
+                {t('apiAdmin.clientVsServer.serverDesc')}
               </p>
             </div>
           </div>
@@ -425,7 +429,7 @@ export default function APIAdmin() {
                         disabled={loading[provider.id]}
                         className="flex-1 py-2 bg-gradient-to-r from-purple-500 to-pink-500 text-white font-medium rounded-lg hover:shadow-lg hover:shadow-purple-500/25 transition-all disabled:opacity-50 disabled:cursor-not-allowed"
                       >
-                        {loading[provider.id] ? 'Guardando...' : 'Guardar'}
+                        {loading[provider.id] ? t('apiAdmin.saving') : t('apiAdmin.save')}
                       </motion.button>
                       
                       <motion.button
@@ -434,7 +438,7 @@ export default function APIAdmin() {
                         onClick={() => testConnection(provider.id)}
                         className="px-4 py-2 bg-gray-800 text-white rounded-lg hover:bg-gray-700 transition-all flex items-center gap-2"
                       >
-                        <FiZap /> Test
+                        <FiZap /> {t('apiAdmin.test')}
                       </motion.button>
                       
                       {apiKeys[provider.id] && (
@@ -443,7 +447,7 @@ export default function APIAdmin() {
                           whileTap={{ scale: 0.98 }}
                           onClick={() => deleteAPIKey(provider.id)}
                           className="px-3 py-2 bg-red-500/20 text-red-400 rounded-lg hover:bg-red-500/30 border border-red-500/30 transition-all flex items-center"
-                          title="Eliminar API"
+                          title={t('apiAdmin.delete')}
                         >
                           <FiTrash />
                         </motion.button>
@@ -469,7 +473,7 @@ export default function APIAdmin() {
             >
               <FiDatabase className="text-purple-400" />
             </motion.div>
-            Estado del Sistema
+            {t('apiAdmin.systemStatus')}
           </h2>
           
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -478,7 +482,7 @@ export default function APIAdmin() {
               className="bg-gray-900/50 rounded-xl p-4 border border-gray-700 hover:border-purple-500/50 transition-all"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="text-gray-400 text-sm">APIs Configuradas</div>
+                <div className="text-gray-400 text-sm">{t('apiAdmin.configuredAPIs')}</div>
                 <FiKey className="text-purple-400" />
               </div>
               <div className="text-3xl font-bold text-white">
@@ -499,7 +503,7 @@ export default function APIAdmin() {
               className="bg-gray-900/50 rounded-xl p-4 border border-gray-700 hover:border-green-500/50 transition-all"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="text-gray-400 text-sm">APIs Activas</div>
+                <div className="text-gray-400 text-sm">{t('apiAdmin.activeAPIs')}</div>
                 <FiActivity className="text-green-400" />
               </div>
               <div className="text-3xl font-bold text-green-400">
@@ -520,7 +524,7 @@ export default function APIAdmin() {
               className="bg-gray-900/50 rounded-xl p-4 border border-gray-700 hover:border-blue-500/50 transition-all"
             >
               <div className="flex items-center justify-between mb-2">
-                <div className="text-gray-400 text-sm">Saldo Total</div>
+                <div className="text-gray-400 text-sm">{t('apiAdmin.totalBalance')}</div>
                 <FiTrendingUp className="text-blue-400" />
               </div>
               <div className="text-3xl font-bold text-white flex items-center">
@@ -528,7 +532,7 @@ export default function APIAdmin() {
                 {Object.values(balances).reduce((sum, b) => sum + (b || 0), 0).toFixed(2)}
               </div>
               <div className="mt-2 text-xs text-gray-500">
-                {Object.values(balances).filter(b => b > 0).length} APIs con saldo
+                {Object.values(balances).filter(b => b > 0).length} {t('apiAdmin.withBalance')}
               </div>
             </motion.div>
           </div>
