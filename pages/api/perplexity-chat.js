@@ -72,4 +72,7 @@ async function handler(req, res) {
     return res.status(500).json({ 
       error: `Perplexity request failed: ${error.message}` 
     });
+  }
+}
+
 export default authMiddleware(handler);
