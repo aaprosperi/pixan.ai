@@ -7,9 +7,10 @@
 - Mejora del manejo de errores para DeepSeek y Mistral
 - Implementación de localStorage para almacenamiento persistente de API keys
 - Validación de API keys para aceptar todos los formatos válidos
+- Cambio del idioma por defecto a inglés (eliminada detección automática del navegador)
 
 ## Archivos Modificados
-[Agrega aquí los archivos específicos que modificaste]
+- contexts/LanguageContext.js - Idioma por defecto ahora es siempre inglés
 
 ## Tareas Pendientes
 [Agrega las tareas que quedaron pendientes]

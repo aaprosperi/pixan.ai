@@ -11,13 +11,8 @@ export function LanguageProvider({ children }) {
     const savedLang = localStorage.getItem('pixan_language');
     if (savedLang && translations[savedLang]) {
       setLanguage(savedLang);
-    } else {
-      // Detect browser language
-      const browserLang = navigator.language.substring(0, 2);
-      if (browserLang === 'es') {
-        setLanguage('es');
-      }
     }
+    // Default language is already 'en' (English)
   }, []);
 
   const changeLanguage = (lang) => {
