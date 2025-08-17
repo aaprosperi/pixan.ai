@@ -59,8 +59,8 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>Pixan.ai - Business upscale. Powered by AI</title>
-        <meta name="description" content="Business upscale. Powered by AI" />
+        <title>Pixan.ai - Collaborative GenAI for business scaling</title>
+        <meta name="description" content="Collaborative GenAI for business scaling" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
