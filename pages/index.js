@@ -59,8 +59,8 @@ export default function HomePage() {
   return (
     <>
       <Head>
-        <title>Pixan.ai - Collaborative genAI for growth</title>
-        <meta name="description" content="Collaborative genAI for growth" />
+        <title>Pixan.ai - Collaborative genAI</title>
+        <meta name="description" content="Collaborative genAI" />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
