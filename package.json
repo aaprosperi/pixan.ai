@@ -12,7 +12,6 @@
     "test:coverage": "jest --coverage"
   },
   "dependencies": {
-    "@next/swc-android-arm64": "^13.2.4",
     "bcryptjs": "^3.0.2",
     "canvas-confetti": "^1.9.3",
     "framer-motion": "^12.23.12",
