@@ -1,8 +1,18 @@
 // API para exportar documentos a Google Sheets
-// Nota: Para producción, necesitarás configurar las credenciales de Google Sheets API
-// Esta es una implementación básica que devuelve los datos en formato CSV
+// Versión mejorada con mejor manejo de errores
 
 export default async function handler(req, res) {
+  // Configurar CORS
+  res.setHeader('Access-Control-Allow-Credentials', 'true');
+  res.setHeader('Access-Control-Allow-Origin', '*');
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+
+  // Manejar preflight request
+  if (req.method === 'OPTIONS') {
+    return res.status(200).end();
+  }
+
   // Solo permitir POST
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
@@ -15,27 +25,29 @@ export default async function handler(req, res) {
       return res.status(400).json({ error: 'Invalid documents data' });
     }
 
+    if (documents.length === 0) {
+      return res.status(400).json({ error: 'No documents to export' });
+    }
+
     // Convertir a formato CSV para exportación
     const csvData = convertToCSV(documents);
 
-    // En producción, aquí integrarías con Google Sheets API
-    // Por ahora, solo confirmamos que los datos están listos para exportar
-    
-    // Ejemplo de integración con Google Sheets:
-    // const auth = await authorize(); // Autenticar con Google
-    // const sheets = google.sheets({ version: 'v4', auth });
-    // await sheets.spreadsheets.values.append({
-    //   spreadsheetId: 'YOUR_SPREADSHEET_ID',
-    //   range: 'Sheet1!A1',
-    //   valueInputOption: 'RAW',
-    //   resource: { values: csvData }
-    // });
+    // Generar CSV como string
+    const csvString = csvData.map(row => 
+      row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+    ).join('\n');
 
+    console.log(`Exporting ${documents.length} documents`);
+
+    // En producción, aquí integrarías con Google Sheets API
+    // Por ahora, devolvemos los datos en formato CSV para descarga manual
+    
     return res.status(200).json({ 
       success: true, 
       message: 'Data ready for export',
       count: documents.length,
-      csvData: csvData // En producción, no devuelvas esto, solo el resultado de la operación
+      csvString: csvString,
+      instructions: 'Copy the csvString value and paste it into a new Google Sheet'
     });
     
   } catch (error) {
@@ -68,13 +80,13 @@ function convertToCSV(documents) {
 
   // Filas de datos
   const rows = documents.map(doc => [
-    doc.id,
+    doc.id || '',
     doc.type === 'policy' ? 'Política' : 'Proceso',
-    doc.username,
-    new Date(doc.createdAt).toLocaleString('es-ES'),
-    doc.objective,
-    doc.scope,
-    doc.responsibles,
+    doc.username || '',
+    doc.createdAt ? new Date(doc.createdAt).toLocaleString('es-ES') : '',
+    doc.objective || '',
+    doc.scope || '',
+    doc.responsibles || '',
     doc.principles || 'N/A',
     doc.steps || 'N/A',
     doc.indicators || 'N/A',

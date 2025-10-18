@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
@@ -26,6 +26,26 @@ export default function Proc() {
   const [saving, setSaving] = useState(false);
   const [exporting, setExporting] = useState(false);
   const [savedDocs, setSavedDocs] = useState([]);
+
+  // Cargar documentos guardados del usuario al iniciar sesión
+  useEffect(() => {
+    if (step === 'selection' && username) {
+      loadUserDocuments();
+    }
+  }, [step, username]);
+
+  // Cargar documentos del usuario
+  const loadUserDocuments = async () => {
+    try {
+      const response = await fetch(`/api/save-document?username=${encodeURIComponent(username)}`);
+      if (response.ok) {
+        const result = await response.json();
+        setSavedDocs(result.documents || []);
+      }
+    } catch (error) {
+      console.error('Error loading documents:', error);
+    }
+  };
 
   // Login (sin autenticación real)
   const handleLogin = (e) => {
@@ -90,16 +110,27 @@ export default function Proc() {
         ...formData
       };
       
+      console.log('Sending document:', document);
+      
       // Llamar a la API para guardar
       const response = await fetch('/api/save-document', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: { 
+          'Content-Type': 'application/json',
+          'Accept': 'application/json'
+        },
         body: JSON.stringify(document)
       });
       
-      if (!response.ok) throw new Error('Error saving');
-      
       const result = await response.json();
+      
+      if (!response.ok) {
+        console.error('Save failed:', result);
+        throw new Error(result.error || 'Error saving');
+      }
+      
+      console.log('Save successful:', result);
+      
       setSavedDocs(prev => [...prev, result.document]);
       toast.success(t('proc.messages.saved'));
       
@@ -115,7 +146,8 @@ export default function Proc() {
       });
       setStep('selection');
     } catch (error) {
-      toast.error(t('proc.messages.error'));
+      console.error('Error in handleSave:', error);
+      toast.error(t('proc.messages.error') + ': ' + error.message);
     } finally {
       setSaving(false);
     }
@@ -123,6 +155,11 @@ export default function Proc() {
 
   // Exportar a Google Sheets
   const handleExport = async () => {
+    if (savedDocs.length === 0) {
+      toast.error('No hay documentos para exportar');
+      return;
+    }
+
     setExporting(true);
     
     try {
@@ -132,10 +169,29 @@ export default function Proc() {
         body: JSON.stringify({ documents: savedDocs })
       });
       
-      if (!response.ok) throw new Error('Error exporting');
+      const result = await response.json();
+      
+      if (!response.ok) {
+        throw new Error(result.error || 'Error exporting');
+      }
+      
+      // Mostrar el CSV en la consola para que el usuario pueda copiarlo
+      console.log('CSV Data:\n', result.csvString);
+      
+      // Crear un blob y descargarlo
+      const blob = new Blob([result.csvString], { type: 'text/csv;charset=utf-8;' });
+      const link = document.createElement('a');
+      const url = URL.createObjectURL(blob);
+      link.setAttribute('href', url);
+      link.setAttribute('download', `politicas_procedimientos_${username}_${Date.now()}.csv`);
+      link.style.visibility = 'hidden';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
       
       toast.success(t('proc.messages.exported'));
     } catch (error) {
+      console.error('Export error:', error);
       toast.error(t('proc.messages.error'));
     } finally {
       setExporting(false);
