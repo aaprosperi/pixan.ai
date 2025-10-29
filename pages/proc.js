@@ -24,6 +24,13 @@ export default function Proc() {
   const [filterType, setFilterType] = useState('all');
   const [selectedDoc, setSelectedDoc] = useState(null);
 
+  // AI Assistant states
+  const [conversationHistory, setConversationHistory] = useState([]);
+  const [currentMessage, setCurrentMessage] = useState('');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [extractedData, setExtractedData] = useState(null);
+  const [showPreview, setShowPreview] = useState(false);
+
   useEffect(() => {
     if (step === 'consult') {
       loadDocuments();
@@ -43,6 +50,13 @@ export default function Proc() {
   const handleSelection = (type) => {
     if (type === 'consult') {
       setStep('consult');
+    } else if (type === 'ai-policy' || type === 'ai-process') {
+      // Modo asistente AI
+      setDocType(type === 'ai-policy' ? 'policy' : 'process');
+      setConversationHistory([]);
+      setExtractedData(null);
+      setShowPreview(false);
+      setStep('ai-assistant');
     } else {
       setDocType(type);
       setFormData({
@@ -113,6 +127,102 @@ export default function Proc() {
     }
   };
 
+  // AI Assistant functions
+  const handleSendMessage = async () => {
+    if (!currentMessage.trim() || isAiLoading) return;
+
+    const userMessage = currentMessage.trim();
+    setCurrentMessage('');
+    setIsAiLoading(true);
+
+    // Agregar mensaje del usuario al historial
+    const newHistory = [
+      ...conversationHistory,
+      { role: 'user', content: userMessage }
+    ];
+    setConversationHistory(newHistory);
+
+    try {
+      const response = await fetch('/api/proc-assistant', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          message: userMessage,
+          conversationHistory: conversationHistory,
+          documentType: docType,
+          currentData: extractedData || {}
+        })
+      });
+
+      if (!response.ok) {
+        throw new Error('Error communicating with AI assistant');
+      }
+
+      const data = await response.json();
+
+      // Agregar respuesta del asistente al historial
+      setConversationHistory([
+        ...newHistory,
+        { role: 'assistant', content: data.content }
+      ]);
+
+      // Si hay datos extraídos, mostrarlos
+      if (data.isComplete && data.extractedData) {
+        setExtractedData(data.extractedData);
+        setShowPreview(true);
+        toast.success('Documento completo! Revisa los datos y guarda.');
+      }
+
+    } catch (error) {
+      console.error('Error sending message:', error);
+      toast.error('Error al comunicarse con el asistente AI');
+    } finally {
+      setIsAiLoading(false);
+    }
+  };
+
+  const handleSaveAiDocument = async () => {
+    if (!extractedData) {
+      toast.error('No hay datos para guardar');
+      return;
+    }
+
+    const document = {
+      type: docType,
+      username: username,
+      timestamp: new Date().toISOString(),
+      ...extractedData
+    };
+
+    try {
+      const response = await fetch('/api/save-document', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(document)
+      });
+
+      if (response.ok) {
+        toast.success(t('proc.form.success'));
+        setStep('selection');
+        setConversationHistory([]);
+        setExtractedData(null);
+        setShowPreview(false);
+      } else {
+        toast.error(t('proc.form.error'));
+      }
+    } catch (error) {
+      console.error('Error saving document:', error);
+      toast.error(t('proc.form.error'));
+    }
+  };
+
+  const handleStartNewConversation = () => {
+    setConversationHistory([]);
+    setExtractedData(null);
+    setShowPreview(false);
+    setCurrentMessage('');
+  };
+
   const handleDelete = async (docId) => {
     if (!confirm(t('proc.consult.deleteConfirm'))) return;
 
@@ -177,9 +287,12 @@ export default function Proc() {
   };
 
   const handleBack = () => {
-    if (step === 'form' || step === 'consult') {
+    if (step === 'form' || step === 'consult' || step === 'ai-assistant') {
       setStep('selection');
       setSelectedDoc(null);
+      setConversationHistory([]);
+      setExtractedData(null);
+      setShowPreview(false);
     } else if (step === 'selection') {
       setStep('login');
     }
@@ -233,40 +346,66 @@ export default function Proc() {
 
   const renderSelection = () => (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
-      <div className="max-w-4xl mx-auto pt-8">
+      <div className="max-w-6xl mx-auto pt-8">
         <div className="bg-white rounded-lg shadow-xl p-8">
           <h1 className="text-3xl font-bold text-gray-800 mb-2">
             {t('proc.selection.welcome')}, {username}
           </h1>
           <p className="text-gray-600 mb-8">{t('proc.selection.choose')}</p>
-          
-          <div className="grid md:grid-cols-3 gap-6">
-            <button
-              onClick={() => handleSelection('policy')}
-              className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-8 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
-            >
-              <div className="text-5xl mb-4">📋</div>
-              <h3 className="text-xl font-bold mb-2">{t('proc.selection.policy')}</h3>
-              <p className="text-blue-100 text-sm">{t('proc.selection.policyDesc')}</p>
-            </button>
-            
-            <button
-              onClick={() => handleSelection('process')}
-              className="bg-gradient-to-br from-green-500 to-green-600 text-white p-8 rounded-xl hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105 shadow-lg"
-            >
-              <div className="text-5xl mb-4">⚙️</div>
-              <h3 className="text-xl font-bold mb-2">{t('proc.selection.process')}</h3>
-              <p className="text-green-100 text-sm">{t('proc.selection.processDesc')}</p>
-            </button>
 
-            <button
-              onClick={() => handleSelection('consult')}
-              className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-8 rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
-            >
-              <div className="text-5xl mb-4">🔍</div>
-              <h3 className="text-xl font-bold mb-2">{t('proc.selection.consult')}</h3>
-              <p className="text-purple-100 text-sm">{t('proc.selection.consultDesc')}</p>
-            </button>
+          <div className="mb-8">
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">✨ Asistente AI (Recomendado)</h2>
+            <div className="grid md:grid-cols-2 gap-6">
+              <button
+                onClick={() => handleSelection('ai-policy')}
+                className="bg-gradient-to-br from-indigo-500 to-purple-600 text-white p-6 rounded-xl hover:from-indigo-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg border-2 border-yellow-300"
+              >
+                <div className="text-4xl mb-3">🤖📋</div>
+                <h3 className="text-lg font-bold mb-2">Política con AI</h3>
+                <p className="text-indigo-100 text-sm">Claude te ayudará paso a paso a crear una política completa</p>
+              </button>
+
+              <button
+                onClick={() => handleSelection('ai-process')}
+                className="bg-gradient-to-br from-teal-500 to-cyan-600 text-white p-6 rounded-xl hover:from-teal-600 hover:to-cyan-700 transition-all transform hover:scale-105 shadow-lg border-2 border-yellow-300"
+              >
+                <div className="text-4xl mb-3">🤖⚙️</div>
+                <h3 className="text-lg font-bold mb-2">Proceso con AI</h3>
+                <p className="text-teal-100 text-sm">Claude te guiará para documentar tu proceso de forma profesional</p>
+              </button>
+            </div>
+          </div>
+
+          <div>
+            <h2 className="text-lg font-semibold text-gray-700 mb-4">📝 Modo Manual</h2>
+            <div className="grid md:grid-cols-3 gap-6">
+              <button
+                onClick={() => handleSelection('policy')}
+                className="bg-gradient-to-br from-blue-500 to-blue-600 text-white p-6 rounded-xl hover:from-blue-600 hover:to-blue-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-4xl mb-3">📋</div>
+                <h3 className="text-lg font-bold mb-2">{t('proc.selection.policy')}</h3>
+                <p className="text-blue-100 text-sm">{t('proc.selection.policyDesc')}</p>
+              </button>
+
+              <button
+                onClick={() => handleSelection('process')}
+                className="bg-gradient-to-br from-green-500 to-green-600 text-white p-6 rounded-xl hover:from-green-600 hover:to-green-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-4xl mb-3">⚙️</div>
+                <h3 className="text-lg font-bold mb-2">{t('proc.selection.process')}</h3>
+                <p className="text-green-100 text-sm">{t('proc.selection.processDesc')}</p>
+              </button>
+
+              <button
+                onClick={() => handleSelection('consult')}
+                className="bg-gradient-to-br from-purple-500 to-purple-600 text-white p-6 rounded-xl hover:from-purple-600 hover:to-purple-700 transition-all transform hover:scale-105 shadow-lg"
+              >
+                <div className="text-4xl mb-3">🔍</div>
+                <h3 className="text-lg font-bold mb-2">{t('proc.selection.consult')}</h3>
+                <p className="text-purple-100 text-sm">{t('proc.selection.consultDesc')}</p>
+              </button>
+            </div>
           </div>
 
           <button
@@ -611,6 +750,196 @@ export default function Proc() {
     );
   };
 
+  const renderAiAssistant = () => (
+    <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 p-4">
+      <div className="max-w-6xl mx-auto pt-8 pb-8">
+        <div className="bg-white rounded-lg shadow-xl p-8 h-[calc(100vh-8rem)] flex flex-col">
+          <div className="mb-6">
+            <h1 className="text-3xl font-bold text-gray-800 mb-2">
+              🤖 {docType === 'policy' ? 'Asistente AI para Política' : 'Asistente AI para Proceso'}
+            </h1>
+            <p className="text-gray-600">
+              Chatea con Claude Sonnet 4.5 para crear tu documento de forma guiada
+            </p>
+          </div>
+
+          {/* Chat container */}
+          <div className="flex-1 overflow-y-auto mb-6 border rounded-lg bg-gray-50 p-4 space-y-4">
+            {conversationHistory.length === 0 ? (
+              <div className="text-center py-12 text-gray-500">
+                <div className="text-6xl mb-4">💬</div>
+                <p className="text-lg mb-2">¡Hola! Soy tu asistente AI</p>
+                <p className="text-sm">
+                  {docType === 'policy'
+                    ? 'Te ayudaré a crear una política completa. Cuéntame sobre la política que quieres documentar.'
+                    : 'Te ayudaré a documentar tu proceso. Describe el proceso que quieres documentar.'}
+                </p>
+              </div>
+            ) : (
+              conversationHistory.map((msg, idx) => (
+                <div
+                  key={idx}
+                  className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                >
+                  <div
+                    className={`max-w-[80%] rounded-lg p-4 ${
+                      msg.role === 'user'
+                        ? 'bg-blue-600 text-white'
+                        : 'bg-white border border-gray-200 text-gray-800'
+                    }`}
+                  >
+                    <div className="flex items-start gap-2">
+                      <span className="text-xl">
+                        {msg.role === 'user' ? '👤' : '🤖'}
+                      </span>
+                      <div className="flex-1">
+                        <p className="whitespace-pre-wrap">{msg.content}</p>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+
+            {isAiLoading && (
+              <div className="flex justify-start">
+                <div className="bg-white border border-gray-200 rounded-lg p-4">
+                  <div className="flex items-center gap-2">
+                    <span className="text-xl">🤖</span>
+                    <div className="flex gap-1">
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '0ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '150ms' }}></div>
+                      <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" style={{ animationDelay: '300ms' }}></div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+          </div>
+
+          {/* Message input */}
+          <div className="space-y-4">
+            <div className="flex gap-2">
+              <input
+                type="text"
+                value={currentMessage}
+                onChange={(e) => setCurrentMessage(e.target.value)}
+                onKeyPress={(e) => e.key === 'Enter' && !e.shiftKey && handleSendMessage()}
+                placeholder="Escribe tu mensaje..."
+                className="flex-1 px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                disabled={isAiLoading}
+              />
+              <button
+                onClick={handleSendMessage}
+                disabled={!currentMessage.trim() || isAiLoading}
+                className="bg-blue-600 text-white px-6 py-3 rounded-lg hover:bg-blue-700 transition-colors font-medium disabled:opacity-50 disabled:cursor-not-allowed"
+              >
+                Enviar
+              </button>
+            </div>
+
+            <div className="flex gap-2 justify-between">
+              <button
+                onClick={handleBack}
+                className="text-gray-600 hover:text-gray-800 transition-colors"
+              >
+                ← Volver
+              </button>
+
+              {conversationHistory.length > 0 && (
+                <button
+                  onClick={handleStartNewConversation}
+                  className="text-orange-600 hover:text-orange-800 transition-colors"
+                >
+                  🔄 Nueva conversación
+                </button>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Preview modal */}
+      {showPreview && extractedData && (
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center p-4 z-50">
+          <div className="bg-white rounded-lg shadow-2xl max-w-4xl w-full max-h-[90vh] overflow-y-auto">
+            <div className="sticky top-0 bg-white border-b p-6">
+              <h2 className="text-2xl font-bold text-gray-800 mb-2">
+                ✅ Documento Completo - Revisar antes de guardar
+              </h2>
+              <p className="text-sm text-gray-600">
+                Revisa que toda la información sea correcta antes de guardar en Vercel KV
+              </p>
+            </div>
+
+            <div className="p-6 space-y-4">
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">Objetivo</h3>
+                <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.objective}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">Alcance</h3>
+                <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.scope}</p>
+              </div>
+
+              <div>
+                <h3 className="font-semibold text-gray-700 mb-2">Responsables</h3>
+                <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.responsibles}</p>
+              </div>
+
+              {docType === 'policy' && extractedData.principles && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2">Principios</h3>
+                  <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.principles}</p>
+                </div>
+              )}
+
+              {docType === 'process' && (
+                <>
+                  {extractedData.steps && (
+                    <div>
+                      <h3 className="font-semibold text-gray-700 mb-2">Pasos</h3>
+                      <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.steps}</p>
+                    </div>
+                  )}
+                  {extractedData.indicators && (
+                    <div>
+                      <h3 className="font-semibold text-gray-700 mb-2">Indicadores</h3>
+                      <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.indicators}</p>
+                    </div>
+                  )}
+                </>
+              )}
+
+              {extractedData.additionalDocs && (
+                <div>
+                  <h3 className="font-semibold text-gray-700 mb-2">Documentos Adicionales</h3>
+                  <p className="text-gray-600 whitespace-pre-wrap bg-gray-50 p-3 rounded">{extractedData.additionalDocs}</p>
+                </div>
+              )}
+            </div>
+
+            <div className="sticky bottom-0 bg-gray-50 border-t p-6 flex gap-4">
+              <button
+                onClick={() => setShowPreview(false)}
+                className="flex-1 bg-gray-200 text-gray-700 py-3 rounded-lg hover:bg-gray-300 transition-colors font-medium"
+              >
+                Seguir editando
+              </button>
+              <button
+                onClick={handleSaveAiDocument}
+                className="flex-1 bg-green-600 text-white py-3 rounded-lg hover:bg-green-700 transition-colors font-medium"
+              >
+                💾 Guardar en Vercel KV
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+
   return (
     <>
       <Head>
@@ -618,13 +947,14 @@ export default function Proc() {
         <meta name="description" content={t('proc.subtitle')} />
         <meta name="viewport" content="width=device-width, initial-scale=1" />
       </Head>
-      
+
       <Toaster position="top-center" />
-      
+
       {step === 'login' && renderLogin()}
       {step === 'selection' && renderSelection()}
       {step === 'form' && renderForm()}
       {step === 'consult' && renderConsult()}
+      {step === 'ai-assistant' && renderAiAssistant()}
     </>
   );
 }
