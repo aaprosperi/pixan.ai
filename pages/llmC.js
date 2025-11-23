@@ -68,7 +68,7 @@ export default function LLMColaborativa() {
   // Función para obtener estadísticas de tokens
   const fetchTokenStats = async () => {
     try {
-      const response = await fetch('/api/token-stats/', {
+      const response = await fetch('/api/token-stats', {
         headers: {
           'x-auth-password': password
         }
@@ -86,7 +86,7 @@ export default function LLMColaborativa() {
 
   // Función de autenticación
   const handleAuth = () => {
-    if (password === 'pixan') {
+    if (password === 'Pixan01.') {
       setAuthenticated(true);
       fetchTokenStats();
     } else {
