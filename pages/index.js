@@ -115,21 +115,13 @@ export default function HomePage() {
 
 
           <div className="service-buttons">
-            <a href="/pb" className="service-button">
-              <div className="service-title">{t('landing.services.promptBoost.title')}</div>
-              <div className="service-description">{t('landing.services.promptBoost.description')}</div>
+            <a href="https://braincolab.com/multiAI" className="service-button">
+              <div className="service-title">{t('landing.services.brainColab.title')}</div>
+              <div className="service-description">{t('landing.services.brainColab.description')}</div>
             </a>
-            <a href="/llmC" className="service-button">
-              <div className="service-title">{t('landing.services.multiLLM.title')}</div>
-              <div className="service-description">{t('landing.services.multiLLM.description')}</div>
-            </a>
-            <a href="#" className="service-button">
-              <div className="service-title">{t('landing.services.ia60.title')}</div>
-              <div className="service-description">{t('landing.services.ia60.description')}</div>
-            </a>
-            <a href="https://labs.pixan.ai" className="service-button primary">
-              <div className="service-title">{t('landing.services.pixanLabs.title')}</div>
-              <div className="service-description">{t('landing.services.pixanLabs.description')}</div>
+            <a href="https://www.pixan.ai/llmC" className="service-button">
+              <div className="service-title">{t('landing.services.chatMultiGenAI.title')}</div>
+              <div className="service-description">{t('landing.services.chatMultiGenAI.description')}</div>
             </a>
           </div>
         </main>
