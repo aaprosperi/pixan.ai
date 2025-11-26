@@ -34,7 +34,7 @@ async function handler(req, res) {
       },
       body: JSON.stringify({
         model: 'claude-3-5-sonnet-20241022',
-        max_tokens: 1000,
+        max_tokens: 4096,
         messages: [
           {
             role: 'user',

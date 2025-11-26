@@ -196,7 +196,7 @@ export default function LLMColaborativa() {
     setProcessing(true);
     setTerminal([]);
     setFinalResponse('');
-    setLlmResponses({ claude: null, openai: null, gemini: null, perplexity: null });
+    setLlmResponses({ claude: null, openai: null, gemini: null, perplexity: null, deepseek: null, mistral: null });
     setMetrics(null);
 
     const startTime = Date.now();
@@ -259,7 +259,13 @@ IMPORTANTE:
 
       try {
         const analysisResponse = await callLLM('claude', analysisPrompt, [], apiKeys);
-        const analysis = JSON.parse(analysisResponse.content);
+        // Extract JSON from response (Claude might add text before/after JSON)
+        let jsonContent = analysisResponse.content;
+        const jsonMatch = jsonContent.match(/\{[\s\S]*\}/);
+        if (jsonMatch) {
+          jsonContent = jsonMatch[0];
+        }
+        const analysis = JSON.parse(jsonContent);
         roleAssignments = analysis.roles;
         
         log('claude', `✅ ${t('llmC.terminal.analysisComplete')} "${analysis.queryType}"`, 'claude');
@@ -497,10 +503,10 @@ IMPORTANTE: Presenta una síntesis visualmente rica que combine lo mejor de toda
       const processingTime = Math.round((Date.now() - startTime) / 1000);
       const calculatedMetrics = {
         llmsUsed: successfulResults.length,
-        totalLlmsAvailable: 4,
+        totalLlmsAvailable: 6,
         processingTime,
         consolidationUsed: successfulResults.length > 1,
-        memoryEnabled: 3, // OpenAI, Gemini, Perplexity tienen memoria
+        memoryEnabled: 5, // OpenAI, Gemini, Perplexity, DeepSeek, Mistral tienen memoria
         responseLengths: successfulResults.map(r => r.response.length)
       };
       
