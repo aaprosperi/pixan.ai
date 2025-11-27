@@ -123,6 +123,10 @@ export default function HomePage() {
               <div className="service-title">{t('landing.services.chatMultiGenAI.title')}</div>
               <div className="service-description">{t('landing.services.chatMultiGenAI.description')}</div>
             </a>
+            <a href="/test" className="service-button primary">
+              <div className="service-title">{t('landing.services.llmValidation.title')}</div>
+              <div className="service-description">{t('landing.services.llmValidation.description')}</div>
+            </a>
           </div>
         </main>
 

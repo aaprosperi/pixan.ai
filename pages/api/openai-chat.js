@@ -7,7 +7,7 @@ async function handler(req, res) {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { message, conversation = [], apiKey: clientApiKey } = req.body;
+  const { message, conversation = [], apiKey: clientApiKey, generateImage = false } = req.body;
 
   if (!message) {
     return res.status(400).json({ error: 'Message is required' });
@@ -20,11 +20,53 @@ async function handler(req, res) {
   }
 
   // Verificar saldo
-  if (!hasBalance('openai', 0.05)) {
+  if (!hasBalance('openai', generateImage ? 0.10 : 0.05)) {
     return res.status(402).json({ error: 'Insufficient balance for OpenAI API' });
   }
 
   try {
+    // Handle image generation with DALL-E
+    if (generateImage) {
+      const imageResponse = await fetch('https://api.openai.com/v1/images/generations', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'dall-e-3',
+          prompt: message,
+          n: 1,
+          size: '1024x1024',
+          quality: 'standard'
+        })
+      });
+
+      if (!imageResponse.ok) {
+        const errorData = await imageResponse.json();
+        return res.status(imageResponse.status).json({
+          error: `DALL-E API Error: ${errorData.error?.message || 'Unknown error'}`
+        });
+      }
+
+      const imageData = await imageResponse.json();
+      const imageUrl = imageData.data[0]?.url;
+
+      if (!imageUrl) {
+        return res.status(500).json({ error: 'No image received from DALL-E' });
+      }
+
+      // Update token usage for image generation (approximate cost)
+      const tokenStats = updateTokenUsage('openai', message, 'Image generated');
+
+      return res.status(200).json({
+        imageUrl,
+        usage: tokenStats,
+        model: 'dall-e-3'
+      });
+    }
+
+    // Regular chat completion
     const messages = [
       ...conversation,
       { role: 'user', content: message }
@@ -46,8 +88,8 @@ async function handler(req, res) {
 
     if (!response.ok) {
       const errorData = await response.json();
-      return res.status(response.status).json({ 
-        error: `OpenAI API Error: ${errorData.error?.message || 'Unknown error'}` 
+      return res.status(response.status).json({
+        error: `OpenAI API Error: ${errorData.error?.message || 'Unknown error'}`
       });
     }
 
@@ -61,7 +103,7 @@ async function handler(req, res) {
     // Actualizar uso de tokens
     const tokenStats = updateTokenUsage('openai', message, content);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       content,
       usage: tokenStats,
       model: 'gpt-4'
@@ -69,8 +111,8 @@ async function handler(req, res) {
 
   } catch (error) {
     console.error('OpenAI API Error:', error);
-    return res.status(500).json({ 
-      error: `OpenAI request failed: ${error.message}` 
+    return res.status(500).json({
+      error: `OpenAI request failed: ${error.message}`
     });
   }
 }

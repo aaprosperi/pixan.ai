@@ -1,0 +1,1073 @@
+import { useState, useEffect, useRef } from 'react';
+import Head from 'next/head';
+import { useLanguage } from '../contexts/LanguageContext';
+import LanguageSelector from '../components/LanguageSelector';
+
+// LLM configurations with colors and icons
+const LLM_CONFIG = {
+  claude: {
+    name: 'Claude',
+    color: '#8b5cf6',
+    bgColor: 'rgba(139, 92, 246, 0.1)',
+    icon: '🧠',
+    description: 'Anthropic - Reasoning & Analysis'
+  },
+  openai: {
+    name: 'GPT-4',
+    color: '#10b981',
+    bgColor: 'rgba(16, 185, 129, 0.1)',
+    icon: '🤖',
+    description: 'OpenAI - General Intelligence',
+    canGenerateImages: true
+  },
+  gemini: {
+    name: 'Gemini',
+    color: '#3b82f6',
+    bgColor: 'rgba(59, 130, 246, 0.1)',
+    icon: '✨',
+    description: 'Google - Creative & Multimodal'
+  },
+  perplexity: {
+    name: 'Perplexity',
+    color: '#f59e0b',
+    bgColor: 'rgba(245, 158, 11, 0.1)',
+    icon: '🔍',
+    description: 'Real-time Search & Facts'
+  },
+  deepseek: {
+    name: 'DeepSeek',
+    color: '#06b6d4',
+    bgColor: 'rgba(6, 182, 212, 0.1)',
+    icon: '🌊',
+    description: 'Deep Analysis & Reasoning'
+  },
+  mistral: {
+    name: 'Mistral',
+    color: '#ef4444',
+    bgColor: 'rgba(239, 68, 68, 0.1)',
+    icon: '🌀',
+    description: 'Fast & Efficient'
+  }
+};
+
+export default function LLMValidationTest() {
+  const { t } = useLanguage();
+
+  // State
+  const [prompt, setPrompt] = useState('');
+  const [primaryLLM, setPrimaryLLM] = useState('claude');
+  const [validatorLLM, setValidatorLLM] = useState('openai');
+  const [isProcessing, setIsProcessing] = useState(false);
+  const [currentPhase, setCurrentPhase] = useState(null); // 'primary' | 'validating' | 'complete'
+  const [messages, setMessages] = useState([]);
+  const [primaryResponse, setPrimaryResponse] = useState('');
+  const [validatorResponse, setValidatorResponse] = useState('');
+  const [streamingText, setStreamingText] = useState('');
+  const [showLLMSelector, setShowLLMSelector] = useState(null); // 'primary' | 'validator'
+  const [generateImage, setGenerateImage] = useState(false);
+  const [generatedImage, setGeneratedImage] = useState(null);
+
+  const messagesEndRef = useRef(null);
+  const inputRef = useRef(null);
+
+  // Scroll to bottom when messages change
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+  }, [messages, streamingText]);
+
+  // Get API keys from localStorage
+  const getApiKeys = () => {
+    const keys = {};
+    const providers = ['claude', 'openai', 'gemini', 'perplexity', 'deepseek', 'mistral'];
+
+    providers.forEach(provider => {
+      const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
+      if (encryptedKey) {
+        try {
+          keys[provider] = decodeURIComponent(atob(encryptedKey));
+        } catch (e) {
+          console.error(`Error decoding ${provider} key:`, e);
+        }
+      }
+    });
+
+    return keys;
+  };
+
+  // Call LLM API
+  const callLLM = async (llmName, message, context = '') => {
+    const endpoints = {
+      claude: '/api/claude-chat',
+      openai: '/api/openai-chat',
+      gemini: '/api/gemini-chat',
+      perplexity: '/api/perplexity-chat',
+      deepseek: '/api/deepseek-chat',
+      mistral: '/api/mistral-chat'
+    };
+
+    const apiKeys = getApiKeys();
+
+    const body = llmName === 'claude'
+      ? { message: context ? `${context}\n\n${message}` : message, context: 'general_query', apiKey: apiKeys[llmName] }
+      : llmName === 'gemini'
+      ? { prompt: context ? `${context}\n\n${message}` : message, parameters: { temperature: 0.7 }, apiKey: apiKeys[llmName] }
+      : { message: context ? `${context}\n\n${message}` : message, conversation: [], apiKey: apiKeys[llmName] };
+
+    const response = await fetch(endpoints[llmName], {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(body)
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || `${llmName} API Error`);
+    }
+
+    const data = await response.json();
+    return data.content || data.response || data.text;
+  };
+
+  // Generate image with DALL-E
+  const generateImageWithDALLE = async (imagePrompt) => {
+    const apiKeys = getApiKeys();
+
+    const response = await fetch('/api/openai-chat', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        message: imagePrompt,
+        generateImage: true,
+        apiKey: apiKeys.openai
+      })
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to generate image');
+    }
+
+    const data = await response.json();
+    return data.imageUrl;
+  };
+
+  // Simulate streaming text effect
+  const simulateStreaming = (text, callback) => {
+    return new Promise((resolve) => {
+      let index = 0;
+      const words = text.split(' ');
+
+      const interval = setInterval(() => {
+        if (index < words.length) {
+          callback(words.slice(0, index + 1).join(' '));
+          index++;
+        } else {
+          clearInterval(interval);
+          resolve();
+        }
+      }, 30);
+    });
+  };
+
+  // Handle form submission
+  const handleSubmit = async (e) => {
+    e?.preventDefault();
+    if (!prompt.trim() || isProcessing) return;
+
+    const userMessage = prompt;
+    setPrompt('');
+    setIsProcessing(true);
+    setGeneratedImage(null);
+
+    // Add user message to chat
+    setMessages(prev => [...prev, {
+      type: 'user',
+      content: userMessage,
+      timestamp: new Date()
+    }]);
+
+    try {
+      // Phase 1: Primary LLM response
+      setCurrentPhase('primary');
+      setStreamingText('');
+
+      const primaryResult = await callLLM(primaryLLM, userMessage);
+      setPrimaryResponse(primaryResult);
+
+      // Simulate streaming for primary response
+      await simulateStreaming(primaryResult, setStreamingText);
+
+      // Add primary response to messages
+      setMessages(prev => [...prev, {
+        type: 'llm',
+        llm: primaryLLM,
+        content: primaryResult,
+        phase: 'primary',
+        timestamp: new Date()
+      }]);
+
+      // Phase 2: Validator LLM analyzes and completes
+      setCurrentPhase('validating');
+      setStreamingText('');
+
+      const validationPrompt = `Eres un validador experto. Analiza la siguiente respuesta de ${LLM_CONFIG[primaryLLM].name} a la pregunta del usuario.
+
+PREGUNTA ORIGINAL DEL USUARIO:
+"${userMessage}"
+
+RESPUESTA DE ${LLM_CONFIG[primaryLLM].name.toUpperCase()}:
+${primaryResult}
+
+TU TAREA:
+1. Valida la precisión y completitud de la respuesta
+2. Identifica cualquier error o información faltante
+3. Complementa con información adicional relevante
+4. Proporciona tu análisis final mejorado
+
+Responde de forma estructurada con:
+- ✅ VALIDACIÓN: (qué está correcto)
+- ⚠️ CORRECCIONES: (si hay errores)
+- 📝 COMPLEMENTO: (información adicional)
+- 🎯 RESPUESTA FINAL MEJORADA: (síntesis completa)`;
+
+      const validatorResult = await callLLM(validatorLLM, validationPrompt);
+      setValidatorResponse(validatorResult);
+
+      // Simulate streaming for validator response
+      await simulateStreaming(validatorResult, setStreamingText);
+
+      // Add validator response to messages
+      setMessages(prev => [...prev, {
+        type: 'llm',
+        llm: validatorLLM,
+        content: validatorResult,
+        phase: 'validator',
+        timestamp: new Date()
+      }]);
+
+      // Generate image if requested and OpenAI is involved
+      if (generateImage && (primaryLLM === 'openai' || validatorLLM === 'openai')) {
+        setCurrentPhase('generating_image');
+        try {
+          const imageUrl = await generateImageWithDALLE(userMessage);
+          setGeneratedImage(imageUrl);
+          setMessages(prev => [...prev, {
+            type: 'image',
+            url: imageUrl,
+            timestamp: new Date()
+          }]);
+        } catch (imgError) {
+          console.error('Image generation failed:', imgError);
+        }
+      }
+
+      setCurrentPhase('complete');
+
+    } catch (error) {
+      console.error('Error:', error);
+      setMessages(prev => [...prev, {
+        type: 'error',
+        content: `Error: ${error.message}`,
+        timestamp: new Date()
+      }]);
+    } finally {
+      setIsProcessing(false);
+      setCurrentPhase(null);
+      setStreamingText('');
+      inputRef.current?.focus();
+    }
+  };
+
+  // Clear chat
+  const clearChat = () => {
+    setMessages([]);
+    setPrimaryResponse('');
+    setValidatorResponse('');
+    setGeneratedImage(null);
+  };
+
+  // LLM Selector dropdown component
+  const LLMSelector = ({ type, selected, onSelect, exclude }) => {
+    const llms = Object.entries(LLM_CONFIG).filter(([key]) => key !== exclude);
+
+    return (
+      <div className="llm-selector-dropdown">
+        {llms.map(([key, config]) => (
+          <button
+            key={key}
+            className={`llm-option ${selected === key ? 'selected' : ''}`}
+            onClick={() => {
+              onSelect(key);
+              setShowLLMSelector(null);
+            }}
+            style={{ '--llm-color': config.color }}
+          >
+            <span className="llm-icon">{config.icon}</span>
+            <div className="llm-info">
+              <span className="llm-name">{config.name}</span>
+              <span className="llm-desc">{config.description}</span>
+            </div>
+            {selected === key && <span className="check">✓</span>}
+          </button>
+        ))}
+      </div>
+    );
+  };
+
+  return (
+    <>
+      <Head>
+        <title>LLM Validation Test | BrainColab</title>
+        <meta name="description" content="Test LLM responses with validation from another AI" />
+        <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+      </Head>
+
+      <style jsx global>{`
+        * {
+          margin: 0;
+          padding: 0;
+          box-sizing: border-box;
+        }
+
+        body {
+          font-family: 'Inter', sans-serif;
+          background: linear-gradient(135deg, #0f0f23 0%, #1a1a2e 50%, #16213e 100%);
+          color: #ffffff;
+          min-height: 100vh;
+        }
+
+        .container {
+          max-width: 1200px;
+          margin: 0 auto;
+          padding: 20px;
+          min-height: 100vh;
+          display: flex;
+          flex-direction: column;
+        }
+
+        /* Header */
+        .header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding: 20px 0;
+          border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+          margin-bottom: 20px;
+        }
+
+        .header-left {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
+        .back-button {
+          background: rgba(255, 255, 255, 0.1);
+          border: none;
+          color: #fff;
+          padding: 8px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 14px;
+          transition: all 0.2s;
+        }
+
+        .back-button:hover {
+          background: rgba(255, 255, 255, 0.2);
+        }
+
+        .logo {
+          font-size: 24px;
+          font-weight: 700;
+          background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        /* LLM Selection Bar */
+        .llm-selection-bar {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+          padding: 16px 24px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 16px;
+          margin-bottom: 20px;
+          flex-wrap: wrap;
+        }
+
+        .llm-selector-container {
+          position: relative;
+          flex: 1;
+          min-width: 200px;
+        }
+
+        .llm-selector-button {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 2px solid var(--llm-color, rgba(255, 255, 255, 0.2));
+          border-radius: 12px;
+          cursor: pointer;
+          width: 100%;
+          transition: all 0.2s;
+        }
+
+        .llm-selector-button:hover {
+          background: rgba(255, 255, 255, 0.12);
+        }
+
+        .llm-selector-label {
+          font-size: 11px;
+          text-transform: uppercase;
+          letter-spacing: 1px;
+          color: rgba(255, 255, 255, 0.5);
+          margin-bottom: 4px;
+        }
+
+        .llm-selector-dropdown {
+          position: absolute;
+          top: 100%;
+          left: 0;
+          right: 0;
+          background: #1a1a2e;
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          margin-top: 8px;
+          padding: 8px;
+          z-index: 100;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.5);
+        }
+
+        .llm-option {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px;
+          background: transparent;
+          border: none;
+          color: #fff;
+          width: 100%;
+          cursor: pointer;
+          border-radius: 8px;
+          transition: all 0.2s;
+        }
+
+        .llm-option:hover {
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .llm-option.selected {
+          background: var(--llm-color);
+        }
+
+        .llm-icon {
+          font-size: 24px;
+        }
+
+        .llm-info {
+          flex: 1;
+          text-align: left;
+        }
+
+        .llm-name {
+          display: block;
+          font-weight: 600;
+          font-size: 14px;
+        }
+
+        .llm-desc {
+          display: block;
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.6);
+        }
+
+        .check {
+          color: #10b981;
+          font-weight: bold;
+        }
+
+        .flow-arrow {
+          font-size: 24px;
+          color: rgba(255, 255, 255, 0.4);
+        }
+
+        /* Image generation toggle */
+        .image-toggle {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 8px 16px;
+          background: rgba(255, 255, 255, 0.08);
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .image-toggle.active {
+          background: rgba(16, 185, 129, 0.2);
+          border: 1px solid #10b981;
+        }
+
+        .image-toggle input {
+          display: none;
+        }
+
+        /* Chat Area */
+        .chat-area {
+          flex: 1;
+          overflow-y: auto;
+          padding: 20px;
+          display: flex;
+          flex-direction: column;
+          gap: 24px;
+          min-height: 400px;
+          max-height: calc(100vh - 380px);
+        }
+
+        .message {
+          max-width: 85%;
+          animation: fadeIn 0.3s ease;
+        }
+
+        @keyframes fadeIn {
+          from { opacity: 0; transform: translateY(10px); }
+          to { opacity: 1; transform: translateY(0); }
+        }
+
+        .message.user {
+          align-self: flex-end;
+          background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+          padding: 16px 20px;
+          border-radius: 20px 20px 4px 20px;
+        }
+
+        .message.llm {
+          align-self: flex-start;
+        }
+
+        .llm-message-container {
+          display: flex;
+          flex-direction: column;
+          gap: 12px;
+        }
+
+        .llm-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+        }
+
+        .llm-avatar {
+          width: 40px;
+          height: 40px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 20px;
+          background: var(--llm-bg);
+          border: 2px solid var(--llm-color);
+        }
+
+        .llm-meta {
+          display: flex;
+          flex-direction: column;
+        }
+
+        .llm-meta .name {
+          font-weight: 600;
+          font-size: 14px;
+          color: var(--llm-color);
+        }
+
+        .llm-meta .phase {
+          font-size: 11px;
+          color: rgba(255, 255, 255, 0.5);
+          text-transform: uppercase;
+          letter-spacing: 0.5px;
+        }
+
+        .llm-content {
+          background: rgba(255, 255, 255, 0.05);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 4px 20px 20px 20px;
+          padding: 20px;
+          white-space: pre-wrap;
+          line-height: 1.6;
+        }
+
+        .message.error {
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid #ef4444;
+          padding: 16px;
+          border-radius: 12px;
+          color: #fca5a5;
+        }
+
+        .message.image {
+          align-self: center;
+        }
+
+        .generated-image {
+          max-width: 400px;
+          border-radius: 16px;
+          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+        }
+
+        /* Processing Animation */
+        .processing-indicator {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 20px;
+          padding: 40px;
+        }
+
+        .flow-visualization {
+          display: flex;
+          align-items: center;
+          gap: 20px;
+        }
+
+        .flow-node {
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          gap: 8px;
+          padding: 16px 24px;
+          border-radius: 16px;
+          transition: all 0.3s;
+        }
+
+        .flow-node.active {
+          transform: scale(1.1);
+          box-shadow: 0 0 30px var(--node-color);
+        }
+
+        .flow-node .icon {
+          font-size: 32px;
+        }
+
+        .flow-node .label {
+          font-size: 12px;
+          font-weight: 600;
+        }
+
+        .flow-connection {
+          display: flex;
+          align-items: center;
+          gap: 4px;
+        }
+
+        .flow-dot {
+          width: 8px;
+          height: 8px;
+          border-radius: 50%;
+          background: rgba(255, 255, 255, 0.3);
+          animation: flowPulse 1.5s ease infinite;
+        }
+
+        .flow-dot:nth-child(2) { animation-delay: 0.2s; }
+        .flow-dot:nth-child(3) { animation-delay: 0.4s; }
+        .flow-dot:nth-child(4) { animation-delay: 0.6s; }
+        .flow-dot:nth-child(5) { animation-delay: 0.8s; }
+
+        @keyframes flowPulse {
+          0%, 100% { opacity: 0.3; transform: scale(1); }
+          50% { opacity: 1; transform: scale(1.3); }
+        }
+
+        .processing-status {
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.7);
+          text-align: center;
+        }
+
+        /* Streaming response preview */
+        .streaming-preview {
+          background: rgba(255, 255, 255, 0.03);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          padding: 16px;
+          max-width: 600px;
+          max-height: 200px;
+          overflow-y: auto;
+          font-size: 13px;
+          color: rgba(255, 255, 255, 0.8);
+          white-space: pre-wrap;
+        }
+
+        /* Input Area */
+        .input-area {
+          padding: 20px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 20px;
+          margin-top: auto;
+        }
+
+        .input-container {
+          display: flex;
+          gap: 12px;
+        }
+
+        .input-wrapper {
+          flex: 1;
+          position: relative;
+        }
+
+        .prompt-input {
+          width: 100%;
+          padding: 16px 20px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-radius: 16px;
+          color: #fff;
+          font-size: 16px;
+          resize: none;
+          outline: none;
+          transition: all 0.2s;
+          min-height: 56px;
+          max-height: 200px;
+        }
+
+        .prompt-input:focus {
+          border-color: #8b5cf6;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .prompt-input::placeholder {
+          color: rgba(255, 255, 255, 0.4);
+        }
+
+        .send-button {
+          padding: 16px 32px;
+          background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+          border: none;
+          border-radius: 16px;
+          color: #fff;
+          font-weight: 600;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .send-button:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .send-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .clear-button {
+          padding: 16px;
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          border-radius: 16px;
+          color: #fca5a5;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .clear-button:hover {
+          background: rgba(239, 68, 68, 0.3);
+        }
+
+        /* Empty state */
+        .empty-state {
+          flex: 1;
+          display: flex;
+          flex-direction: column;
+          align-items: center;
+          justify-content: center;
+          text-align: center;
+          padding: 40px;
+        }
+
+        .empty-icon {
+          font-size: 64px;
+          margin-bottom: 20px;
+        }
+
+        .empty-title {
+          font-size: 24px;
+          font-weight: 600;
+          margin-bottom: 12px;
+        }
+
+        .empty-description {
+          font-size: 14px;
+          color: rgba(255, 255, 255, 0.6);
+          max-width: 400px;
+          line-height: 1.6;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+          .llm-selection-bar {
+            flex-direction: column;
+          }
+
+          .flow-arrow {
+            transform: rotate(90deg);
+          }
+
+          .chat-area {
+            max-height: calc(100vh - 500px);
+          }
+
+          .message {
+            max-width: 95%;
+          }
+
+          .flow-visualization {
+            flex-direction: column;
+          }
+
+          .flow-connection {
+            flex-direction: column;
+          }
+        }
+      `}</style>
+
+      <div className="container">
+        {/* Header */}
+        <div className="header">
+          <div className="header-left">
+            <a href="/" className="back-button">← Back</a>
+            <div>
+              <div className="logo">LLM Validation Test</div>
+              <div className="subtitle">Response validation with AI collaboration</div>
+            </div>
+          </div>
+          <LanguageSelector />
+        </div>
+
+        {/* LLM Selection Bar */}
+        <div className="llm-selection-bar">
+          {/* Primary LLM Selector */}
+          <div className="llm-selector-container">
+            <div className="llm-selector-label">Primary LLM (Responds First)</div>
+            <button
+              className="llm-selector-button"
+              style={{ '--llm-color': LLM_CONFIG[primaryLLM].color }}
+              onClick={() => setShowLLMSelector(showLLMSelector === 'primary' ? null : 'primary')}
+            >
+              <span className="llm-icon">{LLM_CONFIG[primaryLLM].icon}</span>
+              <div className="llm-info">
+                <span className="llm-name">{LLM_CONFIG[primaryLLM].name}</span>
+                <span className="llm-desc">{LLM_CONFIG[primaryLLM].description}</span>
+              </div>
+              <span>▼</span>
+            </button>
+            {showLLMSelector === 'primary' && (
+              <LLMSelector
+                type="primary"
+                selected={primaryLLM}
+                onSelect={setPrimaryLLM}
+                exclude={validatorLLM}
+              />
+            )}
+          </div>
+
+          <div className="flow-arrow">→</div>
+
+          {/* Validator LLM Selector */}
+          <div className="llm-selector-container">
+            <div className="llm-selector-label">Validator LLM (Analyzes & Completes)</div>
+            <button
+              className="llm-selector-button"
+              style={{ '--llm-color': LLM_CONFIG[validatorLLM].color }}
+              onClick={() => setShowLLMSelector(showLLMSelector === 'validator' ? null : 'validator')}
+            >
+              <span className="llm-icon">{LLM_CONFIG[validatorLLM].icon}</span>
+              <div className="llm-info">
+                <span className="llm-name">{LLM_CONFIG[validatorLLM].name}</span>
+                <span className="llm-desc">{LLM_CONFIG[validatorLLM].description}</span>
+              </div>
+              <span>▼</span>
+            </button>
+            {showLLMSelector === 'validator' && (
+              <LLMSelector
+                type="validator"
+                selected={validatorLLM}
+                onSelect={setValidatorLLM}
+                exclude={primaryLLM}
+              />
+            )}
+          </div>
+
+          {/* Image Generation Toggle */}
+          <label className={`image-toggle ${generateImage ? 'active' : ''}`}>
+            <input
+              type="checkbox"
+              checked={generateImage}
+              onChange={(e) => setGenerateImage(e.target.checked)}
+            />
+            <span>🎨</span>
+            <span>Generate Image</span>
+          </label>
+        </div>
+
+        {/* Chat Area */}
+        <div className="chat-area">
+          {messages.length === 0 && !isProcessing ? (
+            <div className="empty-state">
+              <div className="empty-icon">🧠⚡🔍</div>
+              <div className="empty-title">LLM Validation Chain</div>
+              <div className="empty-description">
+                Write a prompt and watch how {LLM_CONFIG[primaryLLM].name} responds first,
+                then {LLM_CONFIG[validatorLLM].name} validates and enhances the response.
+                Perfect for getting verified, comprehensive answers.
+              </div>
+            </div>
+          ) : (
+            <>
+              {messages.map((msg, idx) => (
+                <div key={idx} className={`message ${msg.type}`}>
+                  {msg.type === 'user' && (
+                    <div>{msg.content}</div>
+                  )}
+                  {msg.type === 'llm' && (
+                    <div
+                      className="llm-message-container"
+                      style={{
+                        '--llm-color': LLM_CONFIG[msg.llm].color,
+                        '--llm-bg': LLM_CONFIG[msg.llm].bgColor
+                      }}
+                    >
+                      <div className="llm-header">
+                        <div className="llm-avatar">{LLM_CONFIG[msg.llm].icon}</div>
+                        <div className="llm-meta">
+                          <span className="name">{LLM_CONFIG[msg.llm].name}</span>
+                          <span className="phase">
+                            {msg.phase === 'primary' ? 'Primary Response' : 'Validation & Enhancement'}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="llm-content">{msg.content}</div>
+                    </div>
+                  )}
+                  {msg.type === 'image' && (
+                    <img src={msg.url} alt="Generated" className="generated-image" />
+                  )}
+                  {msg.type === 'error' && (
+                    <div>{msg.content}</div>
+                  )}
+                </div>
+              ))}
+
+              {/* Processing Animation */}
+              {isProcessing && (
+                <div className="processing-indicator">
+                  <div className="flow-visualization">
+                    <div
+                      className={`flow-node ${currentPhase === 'primary' ? 'active' : ''}`}
+                      style={{
+                        '--node-color': LLM_CONFIG[primaryLLM].color,
+                        background: LLM_CONFIG[primaryLLM].bgColor,
+                        border: `2px solid ${LLM_CONFIG[primaryLLM].color}`
+                      }}
+                    >
+                      <span className="icon">{LLM_CONFIG[primaryLLM].icon}</span>
+                      <span className="label">{LLM_CONFIG[primaryLLM].name}</span>
+                    </div>
+
+                    <div className="flow-connection">
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
+                    </div>
+
+                    <div
+                      className={`flow-node ${currentPhase === 'validating' ? 'active' : ''}`}
+                      style={{
+                        '--node-color': LLM_CONFIG[validatorLLM].color,
+                        background: LLM_CONFIG[validatorLLM].bgColor,
+                        border: `2px solid ${LLM_CONFIG[validatorLLM].color}`
+                      }}
+                    >
+                      <span className="icon">{LLM_CONFIG[validatorLLM].icon}</span>
+                      <span className="label">{LLM_CONFIG[validatorLLM].name}</span>
+                    </div>
+                  </div>
+
+                  <div className="processing-status">
+                    {currentPhase === 'primary' && `${LLM_CONFIG[primaryLLM].icon} ${LLM_CONFIG[primaryLLM].name} is generating response...`}
+                    {currentPhase === 'validating' && `${LLM_CONFIG[validatorLLM].icon} ${LLM_CONFIG[validatorLLM].name} is validating and enhancing...`}
+                    {currentPhase === 'generating_image' && '🎨 Generating image with DALL-E...'}
+                  </div>
+
+                  {streamingText && (
+                    <div className="streaming-preview">
+                      {streamingText}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Input Area */}
+        <div className="input-area">
+          <form onSubmit={handleSubmit} className="input-container">
+            <div className="input-wrapper">
+              <textarea
+                ref={inputRef}
+                className="prompt-input"
+                value={prompt}
+                onChange={(e) => setPrompt(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && !e.shiftKey) {
+                    e.preventDefault();
+                    handleSubmit();
+                  }
+                }}
+                placeholder="Ask anything... Press Enter to send, Shift+Enter for new line"
+                disabled={isProcessing}
+                rows={1}
+              />
+            </div>
+            {messages.length > 0 && (
+              <button
+                type="button"
+                className="clear-button"
+                onClick={clearChat}
+                title="Clear chat"
+              >
+                🗑️
+              </button>
+            )}
+            <button
+              type="submit"
+              className="send-button"
+              disabled={!prompt.trim() || isProcessing}
+            >
+              {isProcessing ? (
+                <>⏳ Processing...</>
+              ) : (
+                <>🚀 Send</>
+              )}
+            </button>
+          </form>
+        </div>
+      </div>
+    </>
+  );
+}
