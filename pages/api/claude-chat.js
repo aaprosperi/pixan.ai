@@ -33,7 +33,7 @@ async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: 'claude-sonnet-4-5-20250929',
         max_tokens: 4096,
         messages: [
           {
@@ -41,7 +41,7 @@ async function handler(req, res) {
             content: message
           }
         ],
-        system: context === 'prompt_optimization' 
+        system: context === 'prompt_optimization'
           ? 'You are an expert prompt engineer. Provide clear, specific, and actionable prompt optimizations. Focus on clarity, effectiveness, and alignment with the target LLM capabilities.'
           : undefined
       })
@@ -50,7 +50,7 @@ async function handler(req, res) {
     if (!response.ok) {
       const errorData = await response.text();
       console.error('Claude API error:', response.status, errorData);
-      
+
       if (response.status === 401) {
         return res.status(401).json({ error: 'Invalid API key' });
       } else if (response.status === 429) {
@@ -61,17 +61,17 @@ async function handler(req, res) {
     }
 
     const data = await response.json();
-    
+
     if (data.content && data.content[0] && data.content[0].text) {
       const content = data.content[0].text;
-      
+
       // Actualizar uso de tokens
       const tokenStats = updateTokenUsage('claude', message, content);
-      
-      return res.status(200).json({ 
+
+      return res.status(200).json({
         content,
         usage: tokenStats,
-        model: 'claude-3-5-sonnet-20241022'
+        model: 'claude-sonnet-4-5-20250929'
       });
     } else {
       return res.status(500).json({ error: 'Unexpected response format from Claude' });

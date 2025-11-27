@@ -33,7 +33,7 @@ async function handler(req, res) {
     Provide clear, specific optimizations that enhance clarity, effectiveness, and alignment with the target LLM's capabilities.`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -86,7 +86,7 @@ async function handler(req, res) {
       console.error('Gemini API HTTP Error:', response.status, data);
       
       if (response.status === 400) {
-        return res.status(400).json({ error: 'Invalid request or API key for Gemini 2.0 Flash' });
+        return res.status(400).json({ error: 'Invalid request or API key for Gemini 1.5 Flash' });
       } else if (response.status === 429) {
         return res.status(429).json({ error: 'Rate limit exceeded - please try again' });
       } else if (response.status === 403) {
@@ -131,7 +131,7 @@ async function handler(req, res) {
     res.status(200).json({
       content,
       usage: tokenStats,
-      model: 'gemini-2.0-flash'
+      model: 'gemini-1.5-flash'
     });
     
   } catch (error) {
