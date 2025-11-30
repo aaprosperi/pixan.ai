@@ -529,7 +529,7 @@ Format:
       </div>
 
       <div className="image-section">
-        <div className="image-label">Output as image</div>
+        <div className="control-hint">Output as image</div>
         <div className="image-toggle">
           {Object.entries(IMAGE_CONFIG).map(([key, cfg]) => (
             <button key={key} className={`image-btn ${key} ${imageMode === key ? 'active' : ''}`} onClick={() => setImageMode(key)} style={imageMode === key && key !== 'none' ? { color: cfg.color } : {}}>
