@@ -42,145 +42,54 @@ const LLMIcons = {
 
 // LLM configurations
 const LLM_CONFIG = {
-  claude: {
-    name: 'Claude Sonnet 4.5',
-    modelId: 'anthropic/claude-sonnet-4.5',
-    color: '#D4A574',
-    bgColor: '#FDF6E3',
-    context: '200K',
-    inputPrice: 0.003,
-    outputPrice: 0.015,
-    inGroup: true
-  },
-  gpt: {
-    name: 'GPT-5.1 Think',
-    modelId: 'openai/gpt-5.1-thinking',
-    color: '#10A37F',
-    bgColor: '#E6F7F1',
-    context: '400K',
-    inputPrice: 0.00125,
-    outputPrice: 0.010,
-    inGroup: true
-  },
-  gemini: {
-    name: 'Gemini 3 Pro',
-    modelId: 'google/gemini-3-pro-preview',
-    color: '#4285F4',
-    bgColor: '#E8F0FE',
-    context: '1M',
-    inputPrice: 0.002,
-    outputPrice: 0.012,
-    inGroup: true
-  },
-  perplexity: {
-    name: 'Sonar Pro',
-    modelId: 'perplexity/sonar-pro',
-    color: '#20B2AA',
-    bgColor: '#E6F7F6',
-    context: '200K',
-    inputPrice: 0.003,
-    outputPrice: 0.015,
-    inGroup: false
-  },
-  deepseek: {
-    name: 'DeepSeek v3.2',
-    modelId: 'deepseek/deepseek-v3.2-exp-thinking',
-    color: '#4F46E5',
-    bgColor: '#EEF2FF',
-    context: '164K',
-    inputPrice: 0.00028,
-    outputPrice: 0.00042,
-    inGroup: false
-  },
-  grok: {
-    name: 'Grok 4.1',
-    modelId: 'xai/grok-4.1-fast-reasoning',
-    color: '#000000',
-    bgColor: '#F5F5F5',
-    context: '2M',
-    inputPrice: 0.0002,
-    outputPrice: 0.0005,
-    inGroup: true
-  },
-  kimi: {
-    name: 'Kimi K2',
-    modelId: 'moonshotai/kimi-k2-thinking',
-    color: '#7C3AED',
-    bgColor: '#F3E8FF',
-    context: '262K',
-    inputPrice: 0.0006,
-    outputPrice: 0.0025,
-    inGroup: false
-  }
+  claude: { name: 'Claude Sonnet 4.5', modelId: 'anthropic/claude-sonnet-4.5', color: '#D4A574', bgColor: '#FDF6E3', context: '200K', inputPrice: 0.003, outputPrice: 0.015, inGroup: true },
+  gpt: { name: 'GPT-5.1 Think', modelId: 'openai/gpt-5.1-thinking', color: '#10A37F', bgColor: '#E6F7F1', context: '400K', inputPrice: 0.00125, outputPrice: 0.010, inGroup: true },
+  gemini: { name: 'Gemini 3 Pro', modelId: 'google/gemini-3-pro-preview', color: '#4285F4', bgColor: '#E8F0FE', context: '1M', inputPrice: 0.002, outputPrice: 0.012, inGroup: true },
+  perplexity: { name: 'Sonar Pro', modelId: 'perplexity/sonar-pro', color: '#20B2AA', bgColor: '#E6F7F6', context: '200K', inputPrice: 0.003, outputPrice: 0.015, inGroup: false },
+  deepseek: { name: 'DeepSeek v3.2', modelId: 'deepseek/deepseek-v3.2-exp-thinking', color: '#4F46E5', bgColor: '#EEF2FF', context: '164K', inputPrice: 0.00028, outputPrice: 0.00042, inGroup: false },
+  grok: { name: 'Grok 4.1', modelId: 'xai/grok-4.1-fast-reasoning', color: '#000000', bgColor: '#F5F5F5', context: '2M', inputPrice: 0.0002, outputPrice: 0.0005, inGroup: true },
+  kimi: { name: 'Kimi K2', modelId: 'moonshotai/kimi-k2-thinking', color: '#7C3AED', bgColor: '#F3E8FF', context: '262K', inputPrice: 0.0006, outputPrice: 0.0025, inGroup: false }
 };
 
-// Get LLMs for group mode (only 4)
-const GROUP_LLMS = Object.keys(LLM_CONFIG).filter(k => LLM_CONFIG[k].inGroup);
+// Image generation config
+const IMAGE_CONFIG = {
+  none: { label: '✕ None', price: 0 },
+  schema: { label: '📐 Schema', price: 0.02, color: '#374151', bgColor: '#F3F4F6' },
+  infographic: { label: '📊 Infographic', price: 0.03, color: '#f59e0b', bgColor: '#fffbeb' },
+  realistic: { label: '🖼️ Realistic', price: 0.04, color: '#8b5cf6', bgColor: '#f3e8ff' }
+};
 
+const GROUP_LLMS = Object.keys(LLM_CONFIG).filter(k => LLM_CONFIG[k].inGroup);
 const AUTH_KEY = 'pixan_genai_auth';
 
-// Simple markdown renderer for headers and basic formatting
+// Simple markdown renderer
 const renderMarkdown = (text) => {
   if (!text) return '';
-  
   const lines = text.split('\n');
   const elements = [];
   let inCodeBlock = false;
   let codeContent = '';
-  let codeLanguage = '';
-  
+
   lines.forEach((line, i) => {
-    // Code blocks
     if (line.startsWith('```')) {
-      if (!inCodeBlock) {
-        inCodeBlock = true;
-        codeLanguage = line.slice(3).trim();
-        codeContent = '';
-      } else {
-        elements.push(
-          <pre key={i} className="code-block">
-            <code>{codeContent}</code>
-          </pre>
-        );
-        inCodeBlock = false;
-      }
+      if (!inCodeBlock) { inCodeBlock = true; codeContent = ''; }
+      else { elements.push(<pre key={i} className="code-block"><code>{codeContent}</code></pre>); inCodeBlock = false; }
       return;
     }
+    if (inCodeBlock) { codeContent += (codeContent ? '\n' : '') + line; return; }
     
-    if (inCodeBlock) {
-      codeContent += (codeContent ? '\n' : '') + line;
-      return;
-    }
-    
-    // Headers
-    if (line.startsWith('### ')) {
-      elements.push(<h4 key={i} className="md-h3">{line.slice(4)}</h4>);
-    } else if (line.startsWith('## ')) {
-      elements.push(<h3 key={i} className="md-h2">{line.slice(3)}</h3>);
-    } else if (line.startsWith('# ')) {
-      elements.push(<h2 key={i} className="md-h1">{line.slice(2)}</h2>);
-    } else if (line.startsWith('**') && line.endsWith('**')) {
-      elements.push(<p key={i} className="md-bold">{line.slice(2, -2)}</p>);
-    } else if (line.startsWith('- ') || line.startsWith('* ')) {
-      elements.push(<li key={i} className="md-li">{line.slice(2)}</li>);
-    } else if (line.match(/^\d+\. /)) {
-      elements.push(<li key={i} className="md-li-num">{line.replace(/^\d+\. /, '')}</li>);
-    } else if (line.startsWith('> ')) {
-      elements.push(<blockquote key={i} className="md-quote">{line.slice(2)}</blockquote>);
-    } else if (line.trim() === '---') {
-      elements.push(<hr key={i} className="md-hr" />);
-    } else if (line.trim()) {
-      // Process inline formatting
-      let processed = line
-        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
-        .replace(/\*(.+?)\*/g, '<em>$1</em>')
-        .replace(/`(.+?)`/g, '<code class="inline-code">$1</code>');
+    if (line.startsWith('### ')) elements.push(<h4 key={i} className="md-h3">{line.slice(4)}</h4>);
+    else if (line.startsWith('## ')) elements.push(<h3 key={i} className="md-h2">{line.slice(3)}</h3>);
+    else if (line.startsWith('# ')) elements.push(<h2 key={i} className="md-h1">{line.slice(2)}</h2>);
+    else if (line.startsWith('- ') || line.startsWith('* ')) elements.push(<li key={i} className="md-li">{line.slice(2)}</li>);
+    else if (line.match(/^\d+\. /)) elements.push(<li key={i} className="md-li-num">{line.replace(/^\d+\. /, '')}</li>);
+    else if (line.startsWith('> ')) elements.push(<blockquote key={i} className="md-quote">{line.slice(2)}</blockquote>);
+    else if (line.trim() === '---') elements.push(<hr key={i} className="md-hr" />);
+    else if (line.trim()) {
+      let processed = line.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>').replace(/\*(.+?)\*/g, '<em>$1</em>').replace(/`(.+?)`/g, '<code class="inline-code">$1</code>');
       elements.push(<p key={i} className="md-p" dangerouslySetInnerHTML={{ __html: processed }} />);
-    } else {
-      elements.push(<br key={i} />);
-    }
+    } else elements.push(<br key={i} />);
   });
-  
   return elements;
 };
 
@@ -189,7 +98,8 @@ export default function GenAI() {
   const [selectedLLM, setSelectedLLM] = useState('claude');
   const [responseMode, setResponseMode] = useState('single');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [imageMode, setImageMode] = useState('none'); // 'none', 'infographic', 'realistic'
+  const [imageMode, setImageMode] = useState('none');
+  const [attachments, setAttachments] = useState([]);
   
   const [conversationHistory, setConversationHistory] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -208,56 +118,35 @@ export default function GenAI() {
   const [authError, setAuthError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
   const [showLLMDropdown, setShowLLMDropdown] = useState(false);
-
+  
+  const abortControllerRef = useRef(null);
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const authInputRef = useRef(null);
+  const fileInputRef = useRef(null);
 
   const fetchBalance = async () => {
     try {
       const response = await fetch('/api/credits');
-      if (response.ok) {
-        const data = await response.json();
-        setGatewayBalance(data.credits);
-      }
-    } catch (error) {
-      console.error('Error fetching credits:', error);
-    }
+      if (response.ok) { const data = await response.json(); setGatewayBalance(data.credits); }
+    } catch (error) { console.error('Error fetching credits:', error); }
   };
 
   useEffect(() => {
     const savedAuth = sessionStorage.getItem(AUTH_KEY);
-    if (savedAuth) {
-      setIsAuthenticated(true);
-      fetchBalance();
-    } else {
-      setShowAuthModal(true);
-    }
+    if (savedAuth) { setIsAuthenticated(true); fetchBalance(); }
+    else setShowAuthModal(true);
   }, []);
 
+  useEffect(() => { if (showAuthModal && authInputRef.current) authInputRef.current.focus(); }, [showAuthModal]);
+  useEffect(() => { messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' }); }, [messages, parallelStreams, integrationResult]);
   useEffect(() => {
-    if (showAuthModal && authInputRef.current) {
-      authInputRef.current.focus();
-    }
-  }, [showAuthModal]);
-
-  useEffect(() => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages, parallelStreams, integrationResult]);
-
-  // Close dropdown when clicking outside
-  useEffect(() => {
-    const handleClick = (e) => {
-      if (!e.target.closest('.llm-select')) {
-        setShowLLMDropdown(false);
-      }
-    };
+    const handleClick = (e) => { if (!e.target.closest('.llm-select')) setShowLLMDropdown(false); };
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
 
   const estimateTokens = (text) => Math.ceil((text || '').length / 4);
-
   const calculateCost = (inputTokens, outputTokens, llmKey) => {
     const config = LLM_CONFIG[llmKey];
     if (!config) return 0;
@@ -267,83 +156,62 @@ export default function GenAI() {
   const handleAuth = async (e) => {
     e?.preventDefault();
     if (!authPassword.trim() || isAuthenticating) return;
-
     setIsAuthenticating(true);
     setAuthError('');
-
     try {
       const response = await fetch('/api/chat', {
         method: 'POST',
-        headers: { 
-          'Content-Type': 'application/json',
-          'x-auth-password': authPassword
-        },
-        body: JSON.stringify({
-          model: 'anthropic/claude-sonnet-4.5',
-          messages: [{ role: 'user', content: 'test' }]
-        })
+        headers: { 'Content-Type': 'application/json', 'x-auth-password': authPassword },
+        body: JSON.stringify({ model: 'anthropic/claude-sonnet-4.5', messages: [{ role: 'user', content: 'test' }] })
       });
-
-      if (response.status === 401) {
-        setAuthError('Invalid password');
-        setAuthPassword('');
-        return;
-      }
-
+      if (response.status === 401) { setAuthError('Invalid password'); setAuthPassword(''); return; }
       sessionStorage.setItem(AUTH_KEY, authPassword);
       setIsAuthenticated(true);
       setShowAuthModal(false);
       fetchBalance();
       inputRef.current?.focus();
-    } catch (error) {
-      setAuthError('Connection error');
-    } finally {
-      setIsAuthenticating(false);
-    }
+    } catch (error) { setAuthError('Connection error'); }
+    finally { setIsAuthenticating(false); }
   };
 
   const getAuthPassword = () => sessionStorage.getItem(AUTH_KEY) || '';
 
   const buildSystemPrompt = (llmKey, isGroupMode, imgMode, history) => {
     const parts = [`You are ${LLM_CONFIG[llmKey].name}, an expert AI assistant.`];
-    
-    if (isGroupMode) {
-      parts.push('CONTEXT: This is a SUPERVISED GROUP query where 4 LLMs (Claude, GPT, Gemini, Grok) respond to the same prompt. Your response will be integrated with others by Claude. Focus on your unique perspective and strengths. Be concise but insightful.');
-    }
-    
-    if (imgMode === 'infographic') {
-      parts.push('NOTE: The final response will be converted to a visual INFOGRAPHIC. Structure your response with clear key points, bullet points, and sections that can be easily visualized.');
-    } else if (imgMode === 'realistic') {
-      parts.push('NOTE: The user wants a REALISTIC IMAGE generated from your response. Describe visual elements clearly and provide details that can be used to generate a photorealistic image.');
-    }
-    
-    if (history.length > 0) {
-      parts.push('Continue the conversation naturally based on the previous exchanges.');
-    }
-    
+    if (isGroupMode) parts.push('CONTEXT: This is a SUPERVISED GROUP query where 4 LLMs (Claude, GPT, Gemini, Grok) respond INDEPENDENTLY to the same prompt. Each LLM provides its own unique analysis. Your response will be integrated with others by Claude. Focus on your unique perspective. Be concise but insightful.');
+    if (imgMode === 'schema') parts.push('NOTE: A TECHNICAL SCHEMA diagram will be generated. Structure your response with clear technical components, relationships, and hierarchies that can be visualized as a 2D/3D technical diagram with lines and geometric shapes.');
+    else if (imgMode === 'infographic') parts.push('NOTE: An INFOGRAPHIC will be generated. Structure your response with clear key points and sections that can be easily visualized.');
+    else if (imgMode === 'realistic') parts.push('NOTE: A REALISTIC IMAGE will be generated. Describe visual elements clearly for photorealistic rendering.');
+    if (history.length > 0) parts.push('Continue the conversation naturally.');
     return parts.join('\n\n');
   };
 
-  const streamLLM = async (llmKey, message, systemPrompt, onChunk) => {
+  const streamLLM = async (llmKey, message, systemPrompt, onChunk, signal) => {
     const modelId = LLM_CONFIG[llmKey].modelId;
-    
     const msgs = [];
     if (systemPrompt) msgs.push({ role: 'system', content: systemPrompt });
-    
     conversationHistory.forEach(h => {
       msgs.push({ role: 'user', content: h.user });
       if (h.assistant) msgs.push({ role: 'assistant', content: h.assistant });
     });
     
-    msgs.push({ role: 'user', content: message });
-    
+    // Include attachments if present
+    let userContent = message;
+    if (attachments.length > 0) {
+      userContent = [{ type: 'text', text: message }];
+      attachments.forEach(att => {
+        if (att.type.startsWith('image/')) {
+          userContent.push({ type: 'image_url', image_url: { url: att.data } });
+        }
+      });
+    }
+    msgs.push({ role: 'user', content: userContent });
+
     const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-auth-password': getAuthPassword()
-      },
-      body: JSON.stringify({ model: modelId, messages: msgs })
+      headers: { 'Content-Type': 'application/json', 'x-auth-password': getAuthPassword() },
+      body: JSON.stringify({ model: modelId, messages: msgs }),
+      signal
     });
 
     if (response.status === 401) {
@@ -352,11 +220,7 @@ export default function GenAI() {
       setShowAuthModal(true);
       throw new Error('Session expired');
     }
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || 'API Error');
-    }
+    if (!response.ok) { const error = await response.json(); throw new Error(error.error || 'API Error'); }
 
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
@@ -365,45 +229,34 @@ export default function GenAI() {
     while (true) {
       const { done, value } = await reader.read();
       if (done) break;
-
       const chunk = decoder.decode(value, { stream: true });
       const lines = chunk.split('\n').filter(line => line.trim());
-
       for (const line of lines) {
         if (line.startsWith('data: ')) {
           const data = line.slice(6);
           if (data === '[DONE]') break;
           try {
             const parsed = JSON.parse(data);
-            if (parsed.content) {
-              fullContent += parsed.content;
-              onChunk(fullContent);
-            }
+            if (parsed.content) { fullContent += parsed.content; onChunk(fullContent); }
           } catch (e) {}
         }
       }
     }
-
     return fullContent;
   };
 
   const generateImage = async (content, question, mode) => {
-    const promptPrefix = mode === 'infographic' 
-      ? 'Create a professional, clean infographic that visualizes the following information. Use icons, sections, and clear typography. Style: modern, minimalist, business-professional.'
-      : 'Create a photorealistic, high-quality image that represents the following concept. Style: ultra-realistic, 4K quality, professional photography.';
+    const prompts = {
+      schema: 'Create a technical SCHEMA diagram with clean lines, geometric shapes, and maximum 3 colors (black, gray, one accent). Show components, connections, and hierarchy. Style: technical blueprint, 2D or isometric 3D, functional over aesthetic. No decorative elements.',
+      infographic: 'Create a professional infographic with icons, sections, and clear typography. Style: modern, minimalist, business-professional.',
+      realistic: 'Create a photorealistic, high-quality image. Style: ultra-realistic, 4K quality, professional photography.'
+    };
     
     const response = await fetch('/api/generate-infographic', {
       method: 'POST',
-      headers: { 
-        'Content-Type': 'application/json',
-        'x-auth-password': getAuthPassword()
-      },
-      body: JSON.stringify({ 
-        prompt: `${promptPrefix}\n\nContent:\n${content}`,
-        context: { question, mode } 
-      })
+      headers: { 'Content-Type': 'application/json', 'x-auth-password': getAuthPassword() },
+      body: JSON.stringify({ prompt: `${prompts[mode]}\n\nContent:\n${content}`, context: { question, mode } })
     });
-
     if (!response.ok) throw new Error('Image generation failed');
     return await response.json();
   };
@@ -412,134 +265,99 @@ export default function GenAI() {
     const inputTokens = estimateTokens(inputText);
     const outputTokens = estimateTokens(outputText);
     const cost = calculateCost(inputTokens, outputTokens, llmKey);
-    
-    setSessionTokens(prev => ({
-      input: prev.input + inputTokens,
-      output: prev.output + outputTokens
-    }));
+    setSessionTokens(prev => ({ input: prev.input + inputTokens, output: prev.output + outputTokens }));
     setSessionCost(prev => prev + cost);
-    
     return { inputTokens, outputTokens, cost };
   };
 
-  const handleSingleMode = async (userMessage) => {
+  const handleStop = () => {
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+    setIsProcessing(false);
+    setCurrentPhase(null);
+  };
+
+  const handleSingleMode = async (userMessage, signal) => {
     const systemPrompt = buildSystemPrompt(selectedLLM, false, imageMode, conversationHistory);
-    
-    let streamContent = '';
     setMessages(prev => [...prev, { type: 'llm', llm: selectedLLM, content: '', streaming: true }]);
 
     const result = await streamLLM(selectedLLM, userMessage, systemPrompt, (content) => {
-      streamContent = content;
       setMessages(prev => {
         const updated = [...prev];
         updated[updated.length - 1] = { type: 'llm', llm: selectedLLM, content, streaming: true };
         return updated;
       });
-    });
+    }, signal);
 
     const tokenInfo = trackTokens(userMessage, result, selectedLLM);
-    
     setMessages(prev => {
       const updated = [...prev];
       updated[updated.length - 1] = { type: 'llm', llm: selectedLLM, content: result, streaming: false, tokens: tokenInfo };
       return updated;
     });
-
     setConversationHistory(prev => [...prev, { user: userMessage, assistant: result }]);
-    
     return result;
   };
 
-  const handleGroupMode = async (userMessage) => {
-    // Use only 4 LLMs for group mode
+  const handleGroupMode = async (userMessage, signal) => {
     const llmKeys = GROUP_LLMS;
-    
-    setParallelStreams(
-      llmKeys.reduce((acc, key) => ({ ...acc, [key]: { content: '', status: 'pending' } }), {})
-    );
+    setParallelStreams(llmKeys.reduce((acc, key) => ({ ...acc, [key]: { content: '', status: 'pending' } }), {}));
     setIntegrationResult(null);
     setCurrentPhase('collecting');
 
     const promises = llmKeys.map(async (llmKey) => {
       try {
-        setParallelStreams(prev => ({
-          ...prev,
-          [llmKey]: { ...prev[llmKey], status: 'streaming' }
-        }));
-
+        setParallelStreams(prev => ({ ...prev, [llmKey]: { ...prev[llmKey], status: 'streaming' } }));
         const systemPrompt = buildSystemPrompt(llmKey, true, imageMode, conversationHistory);
-        
         const result = await streamLLM(llmKey, userMessage, systemPrompt, (content) => {
-          setParallelStreams(prev => ({
-            ...prev,
-            [llmKey]: { content, status: 'streaming' }
-          }));
-        });
-
+          setParallelStreams(prev => ({ ...prev, [llmKey]: { content, status: 'streaming' } }));
+        }, signal);
         trackTokens(userMessage, result, llmKey);
-
-        setParallelStreams(prev => ({
-          ...prev,
-          [llmKey]: { content: result, status: 'complete' }
-        }));
-
+        setParallelStreams(prev => ({ ...prev, [llmKey]: { content: result, status: 'complete' } }));
         return { llmKey, result };
       } catch (error) {
-        setParallelStreams(prev => ({
-          ...prev,
-          [llmKey]: { content: `Error: ${error.message}`, status: 'error' }
-        }));
+        if (error.name === 'AbortError') throw error;
+        setParallelStreams(prev => ({ ...prev, [llmKey]: { content: `Error: ${error.message}`, status: 'error' } }));
         return { llmKey, result: `Error: ${error.message}` };
       }
     });
 
     const results = await Promise.all(promises);
     const responses = results.reduce((acc, { llmKey, result }) => ({ ...acc, [llmKey]: result }), {});
-
     setCurrentPhase('integrating');
 
-    const integrationPrompt = `You are Claude, the supervisor of this group query. 4 LLMs have responded to the user's prompt. Your task is to INTEGRATE and SYNTHESIZE all responses into a coherent, comprehensive final response.
+    const integrationPrompt = `You are Claude, the supervisor. 4 LLMs have INDEPENDENTLY responded to the user's prompt. INTEGRATE and SYNTHESIZE all responses.
 
-USER'S ORIGINAL QUESTION:
-"${userMessage}"
+USER'S QUESTION: "${userMessage}"
 
 LLM RESPONSES:
-
 ${Object.entries(responses).map(([key, response]) => `
 ## ${LLM_CONFIG[key].name}
 ${response}
 `).join('\n---\n')}
 
 YOUR TASK:
-1. Identify key points where ALL agree (consensus)
-2. Highlight valuable unique perspectives from each LLM
-3. Resolve any contradictions between responses
-4. Synthesize everything into a FINAL integrated response
+1. Identify consensus points
+2. Highlight unique insights from each
+3. Resolve contradictions
+4. Synthesize into a FINAL integrated response
 
-${imageMode !== 'none' ? `NOTE: Your response will be converted to a ${imageMode === 'infographic' ? 'visual infographic' : 'realistic image'}, so structure it with clear, visualizable points.` : ''}
+${imageMode !== 'none' ? `NOTE: Output will become a ${imageMode === 'schema' ? 'technical schema' : imageMode === 'infographic' ? 'infographic' : 'realistic image'}.` : ''}
 
-Format your response with:
+Format:
 ## 🔄 Consensus
-(common points all LLMs agree on)
-
 ## 💡 Unique Insights
-(valuable contributions from each)
+## 🎯 Final Integrated Response`;
 
-## 🎯 Final Integrated Response
-(complete synthesis)`;
-
-    let integrationContent = '';
-    
     const integration = await streamLLM('claude', integrationPrompt, null, (content) => {
-      integrationContent = content;
       setIntegrationResult({ content, streaming: true });
-    });
+    }, signal);
 
-    trackTokens(integrationPrompt, integration, 'claude');
-    setIntegrationResult({ content: integration, streaming: false });
-
+    const tokenInfo = trackTokens(integrationPrompt, integration, 'claude');
+    setIntegrationResult({ content: integration, streaming: false, tokens: tokenInfo });
     setConversationHistory(prev => [...prev, { user: userMessage, assistant: integration }]);
-
     return integration;
   };
 
@@ -551,42 +369,56 @@ Format your response with:
     setPrompt('');
     setIsProcessing(true);
     setImageResult(null);
+    abortControllerRef.current = new AbortController();
 
-    setMessages(prev => [...prev, { type: 'user', content: userMessage, mode: responseMode }]);
+    setMessages(prev => [...prev, { type: 'user', content: userMessage, mode: responseMode, attachments: [...attachments] }]);
 
     try {
       let finalResult;
-
-      if (responseMode === 'single') {
-        finalResult = await handleSingleMode(userMessage);
-      } else {
-        finalResult = await handleGroupMode(userMessage);
-      }
+      if (responseMode === 'single') finalResult = await handleSingleMode(userMessage, abortControllerRef.current.signal);
+      else finalResult = await handleGroupMode(userMessage, abortControllerRef.current.signal);
 
       if (imageMode !== 'none' && finalResult) {
         setCurrentPhase('image');
         try {
           const imageData = await generateImage(finalResult, userMessage, imageMode);
           if (imageData.images?.length > 0) {
-            setImageResult({ ...imageData, mode: imageMode });
+            const imageCost = IMAGE_CONFIG[imageMode].price;
+            setSessionCost(prev => prev + imageCost);
+            setImageResult({ ...imageData, mode: imageMode, cost: imageCost });
           }
-        } catch (error) {
-          console.error('Image error:', error);
-        }
+        } catch (error) { console.error('Image error:', error); }
       }
 
       setCurrentPhase('complete');
       fetchBalance();
-
+      setAttachments([]);
     } catch (error) {
-      console.error('Error:', error);
-      setMessages(prev => [...prev, { type: 'error', content: error.message }]);
+      if (error.name !== 'AbortError') {
+        console.error('Error:', error);
+        setMessages(prev => [...prev, { type: 'error', content: error.message }]);
+      }
     } finally {
       setIsProcessing(false);
       setCurrentPhase(null);
+      abortControllerRef.current = null;
       inputRef.current?.focus();
     }
   };
+
+  const handleFileSelect = (e) => {
+    const files = Array.from(e.target.files);
+    files.forEach(file => {
+      const reader = new FileReader();
+      reader.onload = (ev) => {
+        setAttachments(prev => [...prev, { name: file.name, type: file.type, data: ev.target.result }]);
+      };
+      reader.readAsDataURL(file);
+    });
+    e.target.value = '';
+  };
+
+  const removeAttachment = (index) => setAttachments(prev => prev.filter((_, i) => i !== index));
 
   const clearChat = () => {
     setMessages([]);
@@ -596,6 +428,7 @@ Format your response with:
     setConversationHistory([]);
     setSessionTokens({ input: 0, output: 0 });
     setSessionCost(0);
+    setAttachments([]);
   };
 
   const handleLogout = () => {
@@ -628,6 +461,84 @@ Format your response with:
     </svg>
   );
 
+  // Controls component that appears at top initially or after responses
+  const ControlsSection = () => (
+    <div className="controls-section">
+      <div className="controls-row">
+        <div className="mode-toggle">
+          <button className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`} onClick={() => setResponseMode('single')} disabled={isProcessing}>👤 Single</button>
+          <button className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`} onClick={() => setResponseMode('group')} disabled={isProcessing}>👥 Group ({GROUP_LLMS.length})</button>
+        </div>
+
+        {responseMode === 'single' && (
+          <div className="llm-select">
+            <button className="llm-select-btn" onClick={() => setShowLLMDropdown(!showLLMDropdown)}>
+              <div className="llm-icon-wrapper" style={{ background: LLM_CONFIG[selectedLLM].bgColor, color: LLM_CONFIG[selectedLLM].color }}>{LLMIcons[selectedLLM]()}</div>
+              <span className="info">
+                <span className="name">{LLM_CONFIG[selectedLLM].name}</span>
+                <span className="meta">{LLM_CONFIG[selectedLLM].context}</span>
+              </span>
+              <span>▾</span>
+            </button>
+            {showLLMDropdown && (
+              <div className="llm-dropdown">
+                {Object.entries(LLM_CONFIG).map(([key, config]) => (
+                  <div key={key} className={`llm-option ${selectedLLM === key ? 'selected' : ''}`} onClick={() => { setSelectedLLM(key); setShowLLMDropdown(false); }}>
+                    <div className="llm-icon-wrapper" style={{ background: config.bgColor, color: config.color, width: 24, height: 24 }}>{LLMIcons[key]()}</div>
+                    <span className="info">
+                      <span className="name">{config.name}</span>
+                      <span className="meta">{config.context} • ${config.inputPrice}/${config.outputPrice}</span>
+                    </span>
+                    {selectedLLM === key && <span>✓</span>}
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+
+      <div className="image-section">
+        <div className="image-label">Output as image</div>
+        <div className="image-toggle">
+          {Object.entries(IMAGE_CONFIG).map(([key, cfg]) => (
+            <button key={key} className={`image-btn ${key} ${imageMode === key ? 'active' : ''}`} onClick={() => setImageMode(key)} style={imageMode === key && key !== 'none' ? { color: cfg.color } : {}}>
+              {cfg.label}
+            </button>
+          ))}
+        </div>
+        {imageMode !== 'none' && <div className="image-cost">~${IMAGE_CONFIG[imageMode].price.toFixed(2)} per image</div>}
+      </div>
+
+      <div className="input-section">
+        {attachments.length > 0 && (
+          <div className="attachments">
+            {attachments.map((att, i) => (
+              <div key={i} className="attachment">
+                {att.type.startsWith('image/') && <img src={att.data} alt={att.name} className="attachment-preview" />}
+                {att.type.startsWith('audio/') && <span className="attachment-audio">🎵 {att.name}</span>}
+                <button className="attachment-remove" onClick={() => removeAttachment(i)}>×</button>
+              </div>
+            ))}
+          </div>
+        )}
+        <form onSubmit={handleSubmit} className="input-wrapper">
+          <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*,audio/*" multiple style={{ display: 'none' }} />
+          <button type="button" className="attach-btn" onClick={() => fileInputRef.current?.click()} disabled={isProcessing}>📎</button>
+          <textarea ref={inputRef} className="prompt-input" value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }} placeholder={`Ask anything...`} disabled={isProcessing || !isAuthenticated} rows={1} />
+          {messages.length > 0 && <button type="button" className="clear-btn" onClick={clearChat} disabled={isProcessing}>🗑️</button>}
+          {isProcessing ? (
+            <button type="button" className="stop-btn" onClick={handleStop}>⏹ Stop</button>
+          ) : (
+            <button type="submit" className="send-btn" disabled={!prompt.trim() || !isAuthenticated}>Send →</button>
+          )}
+        </form>
+      </div>
+    </div>
+  );
+
+  const hasContent = messages.length > 0 || Object.keys(parallelStreams).length > 0;
+
   return (
     <>
       <Head>
@@ -639,12 +550,11 @@ Format your response with:
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #1a1a1a; }
-        
-        .container { max-width: 1100px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 16px; min-height: 100vh; display: flex; flex-direction: column; }
         
         /* Auth Modal */
         .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .auth-modal { background: #fff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 40px; max-width: 360px; width: 90%; }
+        .auth-modal { background: #fff; border-radius: 16px; padding: 40px; max-width: 360px; width: 90%; }
         .auth-logo { margin-bottom: 24px; display: flex; justify-content: center; }
         .auth-title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 8px; }
         .auth-subtitle { color: #666; text-align: center; margin-bottom: 24px; font-size: 13px; }
@@ -656,153 +566,153 @@ Format your response with:
         .auth-error { color: #dc2626; font-size: 13px; margin-bottom: 12px; padding: 10px; background: #fef2f2; border-radius: 6px; text-align: center; }
         
         /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; }
-        .header-left { display: flex; align-items: center; gap: 16px; }
-        .header-title { font-size: 12px; color: #666; font-weight: 500; background: #f5f5f5; padding: 4px 10px; border-radius: 4px; }
-        
-        /* Stats */
-        .stats-box { display: flex; align-items: center; gap: 16px; font-size: 12px; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 12px; border-bottom: 1px solid #f0f0f0; margin-bottom: 16px; }
+        .header-left { display: flex; align-items: center; gap: 12px; }
+        .header-title { font-size: 11px; color: #666; font-weight: 500; background: #f5f5f5; padding: 3px 8px; border-radius: 4px; }
+        .stats-box { display: flex; align-items: center; gap: 12px; font-size: 11px; }
         .stat { display: flex; flex-direction: column; align-items: flex-end; }
-        .stat-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-label { font-size: 8px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-value { font-weight: 600; color: #1a1a1a; }
         .stat-value.green { color: #059669; }
-        .logout-btn { padding: 6px 10px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 11px; color: #666; cursor: pointer; }
+        .logout-btn { padding: 5px 8px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 4px; font-size: 10px; color: #666; cursor: pointer; }
         .logout-btn:hover { background: #f0f0f0; }
         
-        /* Controls */
-        .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
-        
-        .mode-toggle { display: flex; background: #f5f5f5; border-radius: 8px; padding: 3px; }
-        .mode-btn { padding: 8px 14px; border: none; background: transparent; font-size: 12px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
-        .mode-btn.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        /* Controls Section */
+        .controls-section { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .controls-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
+        .mode-toggle { display: flex; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 2px; }
+        .mode-btn { padding: 6px 12px; border: none; background: transparent; font-size: 11px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; }
+        .mode-btn.active { background: #28106A; color: #fff; }
         
         .llm-select { position: relative; }
-        .llm-select-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 12px; cursor: pointer; min-width: 180px; }
-        .llm-select-btn:hover { border-color: #ccc; }
-        .llm-icon-wrapper { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 4px; }
+        .llm-select-btn { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 11px; cursor: pointer; }
+        .llm-icon-wrapper { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; padding: 3px; }
         .llm-select-btn .info { flex: 1; text-align: left; }
-        .llm-select-btn .name { font-weight: 500; display: block; font-size: 13px; }
-        .llm-select-btn .meta { font-size: 10px; color: #999; }
-        
-        .llm-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; margin-top: 4px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12); overflow: hidden; min-width: 260px; }
-        .llm-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
+        .llm-select-btn .name { font-weight: 500; display: block; font-size: 12px; }
+        .llm-select-btn .meta { font-size: 9px; color: #999; }
+        .llm-dropdown { position: absolute; top: 100%; left: 0; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; margin-top: 4px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); min-width: 220px; }
+        .llm-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
         .llm-option:last-child { border-bottom: none; }
         .llm-option:hover { background: #fafafa; }
         .llm-option.selected { background: #f0f0ff; }
         .llm-option .info { flex: 1; }
-        .llm-option .name { font-weight: 500; font-size: 13px; }
-        .llm-option .meta { font-size: 10px; color: #999; }
+        .llm-option .name { font-weight: 500; font-size: 12px; }
+        .llm-option .meta { font-size: 9px; color: #999; }
         
-        /* Image mode toggle */
-        .image-toggle { display: flex; background: #f5f5f5; border-radius: 8px; padding: 3px; }
-        .image-btn { padding: 8px 12px; border: none; background: transparent; font-size: 11px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
-        .image-btn.active { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
-        .image-btn.active.infographic { color: #f59e0b; }
-        .image-btn.active.realistic { color: #8b5cf6; }
+        /* Image section */
+        .image-section { margin-bottom: 12px; }
+        .image-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
+        .image-toggle { display: flex; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 2px; flex-wrap: wrap; }
+        .image-btn { padding: 6px 10px; border: none; background: transparent; font-size: 10px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; white-space: nowrap; }
+        .image-btn.active { background: #f0f0f0; }
+        .image-cost { font-size: 9px; color: #999; margin-top: 4px; }
         
-        /* Input */
-        .input-section { margin-bottom: 20px; }
-        .input-wrapper { display: flex; gap: 10px; }
-        .prompt-input { flex: 1; padding: 14px 16px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px; font-family: inherit; resize: none; outline: none; min-height: 50px; }
-        .prompt-input:focus { border-color: #28106A; background: #fff; }
-        .send-btn { padding: 14px 20px; background: #28106A; border: none; border-radius: 10px; color: #fff; font-weight: 500; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
+        /* Input section */
+        .input-section { }
+        .attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
+        .attachment { position: relative; }
+        .attachment-preview { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e5e5; }
+        .attachment-audio { background: #f5f5f5; padding: 12px 16px; border-radius: 6px; font-size: 11px; }
+        .attachment-remove { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; background: #dc2626; color: #fff; border: none; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
+        .input-wrapper { display: flex; gap: 8px; align-items: flex-end; }
+        .attach-btn { padding: 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 14px; cursor: pointer; }
+        .attach-btn:hover { background: #f5f5f5; }
+        .prompt-input { flex: 1; padding: 10px 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 13px; font-family: inherit; resize: none; outline: none; min-height: 42px; }
+        .prompt-input:focus { border-color: #28106A; }
+        .send-btn { padding: 10px 16px; background: #28106A; border: none; border-radius: 8px; color: #fff; font-weight: 500; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .send-btn:hover:not(:disabled) { background: #3d1a8f; }
         .send-btn:disabled { opacity: 0.5; }
-        .clear-btn { padding: 14px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; cursor: pointer; font-size: 14px; }
+        .stop-btn { padding: 10px 16px; background: #dc2626; border: none; border-radius: 8px; color: #fff; font-weight: 500; font-size: 12px; cursor: pointer; white-space: nowrap; }
+        .stop-btn:hover { background: #b91c1c; }
+        .clear-btn { padding: 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; cursor: pointer; font-size: 12px; }
         .clear-btn:hover { background: #f0f0f0; }
         
         /* Chat */
         .chat-area { flex: 1; overflow-y: auto; }
-        
-        .message { margin-bottom: 16px; animation: fadeIn 0.3s ease; }
-        @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
-        
+        .message { margin-bottom: 12px; animation: fadeIn 0.2s ease; }
+        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
         .message.user { display: flex; justify-content: flex-end; }
-        .message.user .bubble { background: #28106A; color: #fff; padding: 12px 16px; border-radius: 16px 16px 4px 16px; max-width: 70%; }
-        .message.user .mode-tag { font-size: 9px; opacity: 0.7; margin-bottom: 4px; }
+        .message.user .bubble { background: #28106A; color: #fff; padding: 10px 14px; border-radius: 14px 14px 4px 14px; max-width: 70%; font-size: 13px; }
+        .message.user .mode-tag { font-size: 8px; opacity: 0.7; margin-bottom: 2px; }
+        .message.error .bubble { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 10px 14px; border-radius: 8px; font-size: 13px; }
         
-        .message.error .bubble { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px 16px; border-radius: 10px; }
+        /* LLM Response */
+        .llm-response { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 10px; padding: 14px; }
+        .llm-response-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .llm-response-icon { width: 24px; height: 24px; border-radius: 5px; display: flex; align-items: center; justify-content: center; padding: 4px; }
+        .llm-response-meta .name { font-weight: 600; font-size: 12px; }
+        .llm-response-meta .tokens { font-size: 9px; color: #999; }
+        .llm-response-content { font-size: 13px; line-height: 1.6; color: #333; }
         
-        /* LLM Response with Markdown */
-        .llm-response { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 12px; padding: 16px; }
-        .llm-response-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
-        .llm-response-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 5px; }
-        .llm-response-meta .name { font-weight: 600; font-size: 13px; }
-        .llm-response-meta .tokens { font-size: 10px; color: #999; }
-        .llm-response-content { font-size: 14px; line-height: 1.7; color: #333; }
-        
-        /* Markdown styles */
-        .llm-response-content .md-h1 { font-size: 20px; font-weight: 700; margin: 16px 0 8px 0; color: #1a1a1a; }
-        .llm-response-content .md-h2 { font-size: 17px; font-weight: 600; margin: 14px 0 6px 0; color: #1a1a1a; }
-        .llm-response-content .md-h3 { font-size: 15px; font-weight: 600; margin: 12px 0 4px 0; color: #333; }
-        .llm-response-content .md-p { margin: 8px 0; }
-        .llm-response-content .md-bold { font-weight: 600; margin: 8px 0; }
-        .llm-response-content .md-li { margin-left: 20px; margin-bottom: 4px; list-style-type: disc; }
-        .llm-response-content .md-li-num { margin-left: 20px; margin-bottom: 4px; list-style-type: decimal; }
-        .llm-response-content .md-quote { border-left: 3px solid #28106A; padding-left: 12px; color: #555; font-style: italic; margin: 8px 0; }
-        .llm-response-content .md-hr { border: none; border-top: 1px solid #eee; margin: 16px 0; }
-        .llm-response-content .inline-code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
-        .llm-response-content .code-block { background: #1a1a1a; color: #e5e5e5; padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 12px; margin: 8px 0; }
+        /* Markdown */
+        .llm-response-content .md-h1 { font-size: 18px; font-weight: 700; margin: 14px 0 6px 0; color: #1a1a1a; }
+        .llm-response-content .md-h2 { font-size: 15px; font-weight: 600; margin: 12px 0 4px 0; color: #1a1a1a; }
+        .llm-response-content .md-h3 { font-size: 13px; font-weight: 600; margin: 10px 0 4px 0; color: #333; }
+        .llm-response-content .md-p { margin: 6px 0; }
+        .llm-response-content .md-li { margin-left: 18px; margin-bottom: 3px; list-style-type: disc; }
+        .llm-response-content .md-li-num { margin-left: 18px; margin-bottom: 3px; list-style-type: decimal; }
+        .llm-response-content .md-quote { border-left: 2px solid #28106A; padding-left: 10px; color: #555; font-style: italic; margin: 6px 0; }
+        .llm-response-content .md-hr { border: none; border-top: 1px solid #eee; margin: 12px 0; }
+        .llm-response-content .inline-code { background: #f0f0f0; padding: 1px 4px; border-radius: 3px; font-family: monospace; font-size: 12px; }
+        .llm-response-content .code-block { background: #1a1a1a; color: #e5e5e5; padding: 10px; border-radius: 6px; font-family: monospace; font-size: 11px; margin: 6px 0; overflow-x: auto; }
         .llm-response-content strong { font-weight: 600; }
         .llm-response-content em { font-style: italic; }
         
-        /* Parallel streams */
-        .parallel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
-        .stream-card { background: #1a1a1a; border-radius: 8px; padding: 10px; font-family: 'SF Mono', monospace; font-size: 10px; color: #a0a0a0; max-height: 140px; overflow-y: auto; }
-        .stream-card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #333; }
-        .stream-card-icon { width: 18px; height: 18px; border-radius: 4px; padding: 3px; }
-        .stream-card-name { color: #fff; font-weight: 500; font-family: 'Inter', sans-serif; font-size: 11px; }
-        .stream-card-status { margin-left: auto; font-size: 9px; padding: 2px 6px; border-radius: 4px; }
+        /* Parallel streams - compact */
+        .parallel-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; margin-bottom: 12px; }
+        .stream-card { background: #1a1a1a; border-radius: 6px; padding: 6px; font-family: monospace; font-size: 8px; color: #666; height: 60px; overflow: hidden; }
+        .stream-card-header { display: flex; align-items: center; gap: 4px; margin-bottom: 4px; }
+        .stream-card-icon { width: 14px; height: 14px; border-radius: 3px; padding: 2px; }
+        .stream-card-name { color: #999; font-weight: 500; font-family: 'Inter', sans-serif; font-size: 9px; flex: 1; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .stream-card-status { font-size: 7px; padding: 1px 4px; border-radius: 3px; }
         .stream-card-status.pending { background: #333; color: #666; }
         .stream-card-status.streaming { background: #28106A; color: #fff; }
         .stream-card-status.complete { background: #059669; color: #fff; }
         .stream-card-status.error { background: #dc2626; color: #fff; }
-        .stream-card-content { line-height: 1.4; word-break: break-word; }
+        .stream-card-content { line-height: 1.2; word-break: break-all; overflow: hidden; }
         
         /* Integration */
-        .integration-box { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-        .integration-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
-        .integration-icon { width: 32px; height: 32px; background: #28106A; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 6px; color: #fff; }
-        .integration-title { font-weight: 600; font-size: 14px; }
-        .integration-subtitle { font-size: 11px; color: #666; }
-        .integration-content { font-size: 14px; line-height: 1.7; color: #333; }
+        .integration-box { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+        .integration-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; padding-bottom: 10px; border-bottom: 1px solid #eee; }
+        .integration-icon { width: 28px; height: 28px; background: #28106A; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 5px; color: #fff; }
+        .integration-title { font-weight: 600; font-size: 13px; }
+        .integration-subtitle { font-size: 10px; color: #666; }
+        .integration-content { font-size: 13px; line-height: 1.6; color: #333; }
         
         /* Image result */
-        .image-box { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
-        .image-box.realistic { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-color: #d8b4fe; }
-        .image-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .image-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
-        .image-icon.infographic { background: #f59e0b; }
-        .image-icon.realistic { background: #8b5cf6; }
-        .image-title { font-weight: 600; font-size: 14px; }
-        .image-title.infographic { color: #92400e; }
-        .image-title.realistic { color: #6b21a8; }
-        .image-images { display: flex; flex-direction: column; gap: 10px; }
-        .image-img-wrapper { position: relative; border-radius: 8px; overflow: hidden; }
+        .image-box { border-radius: 10px; padding: 14px; margin-bottom: 12px; }
+        .image-box.schema { background: #f3f4f6; border: 1px solid #d1d5db; }
+        .image-box.infographic { background: #fffbeb; border: 1px solid #fde68a; }
+        .image-box.realistic { background: #f3e8ff; border: 1px solid #d8b4fe; }
+        .image-header { display: flex; align-items: center; gap: 8px; margin-bottom: 10px; }
+        .image-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; font-size: 14px; }
+        .image-title { font-weight: 600; font-size: 13px; }
+        .image-meta { font-size: 10px; color: #666; }
+        .image-images { display: flex; flex-direction: column; gap: 8px; }
+        .image-img-wrapper { position: relative; border-radius: 6px; overflow: hidden; }
         .image-img { width: 100%; height: auto; display: block; }
-        .download-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border: none; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
-        .download-btn:hover { background: rgba(0,0,0,0.85); }
+        .download-btn { position: absolute; top: 6px; right: 6px; background: rgba(0,0,0,0.7); border: none; color: #fff; padding: 4px 8px; border-radius: 4px; font-size: 10px; cursor: pointer; }
         
         /* Processing */
-        .processing { display: flex; align-items: center; gap: 8px; padding: 12px; background: #fafafa; border-radius: 8px; font-size: 13px; color: #666; margin-bottom: 12px; }
-        .spinner { width: 16px; height: 16px; border: 2px solid #e5e5e5; border-top-color: #28106A; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        .processing { display: flex; align-items: center; gap: 6px; padding: 10px; background: #fafafa; border-radius: 6px; font-size: 12px; color: #666; margin-bottom: 10px; }
+        .spinner { width: 14px; height: 14px; border: 2px solid #e5e5e5; border-top-color: #28106A; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         /* Empty state */
         .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; color: #666; }
-        .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
-        .empty-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
-        .empty-desc { font-size: 13px; max-width: 400px; line-height: 1.5; }
+        .empty-icon { font-size: 32px; margin-bottom: 10px; opacity: 0.4; }
+        .empty-title { font-size: 14px; font-weight: 600; color: #1a1a1a; margin-bottom: 4px; }
+        .empty-desc { font-size: 12px; max-width: 360px; line-height: 1.4; }
         
         /* Footer */
-        .footer { padding-top: 16px; border-top: 1px solid #f0f0f0; margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #999; }
+        .footer { padding-top: 12px; border-top: 1px solid #f0f0f0; margin-top: auto; display: flex; justify-content: center; font-size: 10px; color: #999; }
         .footer-link { color: #28106A; text-decoration: none; font-weight: 500; }
         
         @media (max-width: 768px) {
-          .controls { flex-direction: column; align-items: stretch; }
-          .parallel-grid { grid-template-columns: 1fr; }
-          .input-wrapper { flex-direction: column; }
-          .send-btn, .clear-btn { width: 100%; justify-content: center; }
+          .parallel-grid { grid-template-columns: repeat(4, 1fr); }
+          .stream-card { height: 50px; }
+          .controls-row { flex-direction: column; align-items: stretch; }
+          .input-wrapper { flex-wrap: wrap; }
         }
       `}</style>
 
@@ -815,9 +725,7 @@ Format your response with:
             {authError && <div className="auth-error">{authError}</div>}
             <form onSubmit={handleAuth}>
               <input ref={authInputRef} type="password" className="auth-input" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password" disabled={isAuthenticating} />
-              <button type="submit" className="auth-button" disabled={!authPassword.trim() || isAuthenticating}>
-                {isAuthenticating ? 'Verifying...' : 'Enter'}
-              </button>
+              <button type="submit" className="auth-button" disabled={!authPassword.trim() || isAuthenticating}>{isAuthenticating ? 'Verifying...' : 'Enter'}</button>
             </form>
           </div>
         </div>
@@ -829,7 +737,6 @@ Format your response with:
             <a href="/" style={{ display: 'flex' }}><PixanLogo /></a>
             <span className="header-title">genAI</span>
           </div>
-          
           <div className="stats-box">
             <div className="stat">
               <span className="stat-label">Balance</span>
@@ -847,81 +754,16 @@ Format your response with:
           </div>
         </header>
 
-        <div className="controls">
-          <div className="mode-toggle">
-            <button className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`} onClick={() => setResponseMode('single')} disabled={isProcessing}>
-              👤 Single
-            </button>
-            <button className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`} onClick={() => setResponseMode('group')} disabled={isProcessing}>
-              👥 Group ({GROUP_LLMS.length})
-            </button>
-          </div>
-
-          {responseMode === 'single' && (
-            <div className="llm-select">
-              <button className="llm-select-btn" onClick={() => setShowLLMDropdown(!showLLMDropdown)}>
-                <div className="llm-icon-wrapper" style={{ background: LLM_CONFIG[selectedLLM].bgColor, color: LLM_CONFIG[selectedLLM].color }}>
-                  {LLMIcons[selectedLLM]()}
-                </div>
-                <span className="info">
-                  <span className="name">{LLM_CONFIG[selectedLLM].name}</span>
-                  <span className="meta">{LLM_CONFIG[selectedLLM].context} • ${LLM_CONFIG[selectedLLM].inputPrice}/${LLM_CONFIG[selectedLLM].outputPrice}</span>
-                </span>
-                <span>▾</span>
-              </button>
-              {showLLMDropdown && (
-                <div className="llm-dropdown">
-                  {Object.entries(LLM_CONFIG).map(([key, config]) => (
-                    <div key={key} className={`llm-option ${selectedLLM === key ? 'selected' : ''}`} onClick={() => { setSelectedLLM(key); setShowLLMDropdown(false); }}>
-                      <div className="llm-icon-wrapper" style={{ background: config.bgColor, color: config.color, width: 28, height: 28 }}>
-                        {LLMIcons[key]()}
-                      </div>
-                      <span className="info">
-                        <span className="name">{config.name}</span>
-                        <span className="meta">{config.context} • ${config.inputPrice}/${config.outputPrice} per 1K</span>
-                      </span>
-                      {selectedLLM === key && <span>✓</span>}
-                    </div>
-                  ))}
-                </div>
-              )}
-            </div>
-          )}
-
-          <div className="image-toggle">
-            <button className={`image-btn ${imageMode === 'none' ? 'active' : ''}`} onClick={() => setImageMode('none')}>
-              ✕ None
-            </button>
-            <button className={`image-btn infographic ${imageMode === 'infographic' ? 'active' : ''}`} onClick={() => setImageMode('infographic')}>
-              📊 Infographic
-            </button>
-            <button className={`image-btn realistic ${imageMode === 'realistic' ? 'active' : ''}`} onClick={() => setImageMode('realistic')}>
-              🖼️ Realistic
-            </button>
-          </div>
-        </div>
-
-        <div className="input-section">
-          <form onSubmit={handleSubmit} className="input-wrapper">
-            <textarea ref={inputRef} className="prompt-input" value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }} placeholder={`Ask anything... (${responseMode === 'single' ? LLM_CONFIG[selectedLLM].name : 'Group: ' + GROUP_LLMS.length + ' LLMs'})`} disabled={isProcessing || !isAuthenticated} rows={1} />
-            {messages.length > 0 && <button type="button" className="clear-btn" onClick={clearChat}>🗑️</button>}
-            <button type="submit" className="send-btn" disabled={!prompt.trim() || isProcessing || !isAuthenticated}>
-              {isProcessing ? <><div className="spinner"></div></> : 'Send →'}
-            </button>
-          </form>
-        </div>
+        {!hasContent && <ControlsSection />}
 
         <div className="chat-area">
-          {messages.length === 0 && Object.keys(parallelStreams).length === 0 ? (
+          {!hasContent ? (
             <div className="empty-state">
               <div className="empty-icon">{responseMode === 'single' ? '👤' : '👥'}</div>
               <div className="empty-title">{responseMode === 'single' ? 'Single Mode' : `Group Mode (${GROUP_LLMS.length} LLMs)`}</div>
               <div className="empty-desc">
-                {responseMode === 'single'
-                  ? `${LLM_CONFIG[selectedLLM].name} will respond.`
-                  : `Claude, GPT, Gemini & Grok will respond in parallel, then Claude integrates.`
-                }
-                {imageMode !== 'none' && ` + ${imageMode === 'infographic' ? 'Infographic' : 'Realistic image'} generation.`}
+                {responseMode === 'single' ? `${LLM_CONFIG[selectedLLM].name} will respond.` : `Claude, GPT, Gemini & Grok respond independently, then Claude integrates.`}
+                {imageMode !== 'none' && ` + ${IMAGE_CONFIG[imageMode].label} output.`}
               </div>
             </div>
           ) : (
@@ -930,16 +772,14 @@ Format your response with:
                 <div key={idx} className={`message ${msg.type}`}>
                   {msg.type === 'user' && (
                     <div className="bubble">
-                      <div className="mode-tag">{msg.mode === 'single' ? '👤 Single' : '👥 Group'}</div>
+                      <div className="mode-tag">{msg.mode === 'single' ? '👤' : '👥'}</div>
                       {msg.content}
                     </div>
                   )}
                   {msg.type === 'llm' && (
                     <div className="llm-response">
                       <div className="llm-response-header">
-                        <div className="llm-response-icon" style={{ background: LLM_CONFIG[msg.llm].bgColor, color: LLM_CONFIG[msg.llm].color }}>
-                          {LLMIcons[msg.llm]()}
-                        </div>
+                        <div className="llm-response-icon" style={{ background: LLM_CONFIG[msg.llm].bgColor, color: LLM_CONFIG[msg.llm].color }}>{LLMIcons[msg.llm]()}</div>
                         <div className="llm-response-meta">
                           <div className="name">{LLM_CONFIG[msg.llm].name}</div>
                           {msg.tokens && <div className="tokens">{msg.tokens.inputTokens}/{msg.tokens.outputTokens} tokens • ${msg.tokens.cost.toFixed(6)}</div>}
@@ -958,10 +798,8 @@ Format your response with:
                   {Object.entries(parallelStreams).map(([llmKey, stream]) => (
                     <div key={llmKey} className="stream-card">
                       <div className="stream-card-header">
-                        <div className="stream-card-icon" style={{ background: LLM_CONFIG[llmKey].bgColor, color: LLM_CONFIG[llmKey].color }}>
-                          {LLMIcons[llmKey]()}
-                        </div>
-                        <span className="stream-card-name">{LLM_CONFIG[llmKey].name}</span>
+                        <div className="stream-card-icon" style={{ background: LLM_CONFIG[llmKey].bgColor, color: LLM_CONFIG[llmKey].color }}>{LLMIcons[llmKey]()}</div>
+                        <span className="stream-card-name">{LLM_CONFIG[llmKey].name.split(' ')[0]}</span>
                         <span className={`stream-card-status ${stream.status}`}>
                           {stream.status === 'pending' && '⏳'}
                           {stream.status === 'streaming' && '⚡'}
@@ -969,10 +807,7 @@ Format your response with:
                           {stream.status === 'error' && '✗'}
                         </span>
                       </div>
-                      <div className="stream-card-content">
-                        {stream.content || (stream.status === 'pending' ? 'Waiting...' : '')}
-                        {stream.status === 'streaming' && <span style={{ opacity: 0.5 }}>▌</span>}
-                      </div>
+                      <div className="stream-card-content">{stream.content?.slice(0, 150) || (stream.status === 'pending' ? '...' : '')}</div>
                     </div>
                   ))}
                 </div>
@@ -984,7 +819,7 @@ Format your response with:
                     <div className="integration-icon">{LLMIcons.claude()}</div>
                     <div>
                       <div className="integration-title">Claude Integration</div>
-                      <div className="integration-subtitle">Synthesized from {GROUP_LLMS.length} LLMs</div>
+                      <div className="integration-subtitle">Synthesized from {GROUP_LLMS.length} LLMs {integrationResult.tokens && `• ${integrationResult.tokens.inputTokens}/${integrationResult.tokens.outputTokens} tokens • $${integrationResult.tokens.cost.toFixed(6)}`}</div>
                     </div>
                     {integrationResult.streaming && <div className="spinner" style={{ marginLeft: 'auto' }}></div>}
                   </div>
@@ -995,9 +830,10 @@ Format your response with:
               {imageResult?.images?.length > 0 && (
                 <div className={`image-box ${imageResult.mode}`}>
                   <div className="image-header">
-                    <div className={`image-icon ${imageResult.mode}`}>{imageResult.mode === 'infographic' ? '📊' : '🖼️'}</div>
-                    <div className={`image-title ${imageResult.mode}`}>
-                      {imageResult.mode === 'infographic' ? 'Infographic' : 'Realistic Image'}
+                    <div className="image-icon" style={{ background: IMAGE_CONFIG[imageResult.mode].color, color: '#fff' }}>{IMAGE_CONFIG[imageResult.mode].label.split(' ')[0]}</div>
+                    <div>
+                      <div className="image-title" style={{ color: IMAGE_CONFIG[imageResult.mode].color }}>{IMAGE_CONFIG[imageResult.mode].label.split(' ')[1]}</div>
+                      <div className="image-meta">Cost: ${imageResult.cost?.toFixed(4) || '0.00'}</div>
                     </div>
                   </div>
                   <div className="image-images">
@@ -1014,9 +850,11 @@ Format your response with:
               {isProcessing && currentPhase === 'image' && (
                 <div className="processing">
                   <div className="spinner"></div>
-                  <span>Generating {imageMode === 'infographic' ? 'infographic' : 'realistic image'}...</span>
+                  <span>Generating {IMAGE_CONFIG[imageMode].label}...</span>
                 </div>
               )}
+
+              {hasContent && <ControlsSection />}
             </>
           )}
           <div ref={messagesEndRef} />
@@ -1024,7 +862,6 @@ Format your response with:
 
         <footer className="footer">
           <span>Powered by <a href="https://pixan.ai" className="footer-link">pixan.ai</a></span>
-          <span>Conversation continues automatically</span>
         </footer>
       </div>
     </>
