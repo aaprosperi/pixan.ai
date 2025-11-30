@@ -53,6 +53,9 @@ const LLM_CONFIG = {
   }
 };
 
+// Session storage key for auth
+const AUTH_KEY = 'pixan_test_auth';
+
 export default function LLMValidationTest() {
   // State
   const [prompt, setPrompt] = useState('');
@@ -63,14 +66,84 @@ export default function LLMValidationTest() {
   const [messages, setMessages] = useState([]);
   const [streamingText, setStreamingText] = useState('');
   const [showLLMSelector, setShowLLMSelector] = useState(null);
+  
+  // Auth state
+  const [isAuthenticated, setIsAuthenticated] = useState(false);
+  const [showAuthModal, setShowAuthModal] = useState(false);
+  const [authPassword, setAuthPassword] = useState('');
+  const [authError, setAuthError] = useState('');
+  const [isAuthenticating, setIsAuthenticating] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
+  const authInputRef = useRef(null);
+
+  // Check for existing session on mount
+  useEffect(() => {
+    const savedAuth = sessionStorage.getItem(AUTH_KEY);
+    if (savedAuth) {
+      setIsAuthenticated(true);
+    } else {
+      setShowAuthModal(true);
+    }
+  }, []);
+
+  // Focus auth input when modal shows
+  useEffect(() => {
+    if (showAuthModal && authInputRef.current) {
+      authInputRef.current.focus();
+    }
+  }, [showAuthModal]);
 
   // Scroll to bottom when messages change
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingText]);
+
+  // Handle authentication
+  const handleAuth = async (e) => {
+    e?.preventDefault();
+    if (!authPassword.trim() || isAuthenticating) return;
+
+    setIsAuthenticating(true);
+    setAuthError('');
+
+    try {
+      // Test the password with a minimal API call
+      const response = await fetch('/api/chat', {
+        method: 'POST',
+        headers: { 
+          'Content-Type': 'application/json',
+          'x-auth-password': authPassword
+        },
+        body: JSON.stringify({
+          model: 'anthropic/claude-sonnet-4.5',
+          messages: [{ role: 'user', content: 'test' }]
+        })
+      });
+
+      if (response.status === 401) {
+        setAuthError('Contraseña incorrecta');
+        setAuthPassword('');
+        return;
+      }
+
+      // Auth successful - save to session
+      sessionStorage.setItem(AUTH_KEY, authPassword);
+      setIsAuthenticated(true);
+      setShowAuthModal(false);
+      inputRef.current?.focus();
+    } catch (error) {
+      setAuthError('Error de conexión');
+    } finally {
+      setIsAuthenticating(false);
+    }
+  };
+
+  // Get stored password
+  const getAuthPassword = () => {
+    return sessionStorage.getItem(AUTH_KEY) || '';
+  };
 
   // Call LLM API via AI Gateway with streaming
   const callLLM = async (llmKey, message, onStream) => {
@@ -78,12 +151,23 @@ export default function LLMValidationTest() {
     
     const response = await fetch('/api/chat', {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-auth-password': getAuthPassword()
+      },
       body: JSON.stringify({
         model: modelId,
         messages: [{ role: 'user', content: message }]
       })
     });
+
+    if (response.status === 401) {
+      // Auth expired or invalid
+      sessionStorage.removeItem(AUTH_KEY);
+      setIsAuthenticated(false);
+      setShowAuthModal(true);
+      throw new Error('Sesión expirada. Por favor autentícate nuevamente.');
+    }
 
     if (!response.ok) {
       const error = await response.json();
@@ -126,7 +210,7 @@ export default function LLMValidationTest() {
   // Handle form submission
   const handleSubmit = async (e) => {
     e?.preventDefault();
-    if (!prompt.trim() || isProcessing) return;
+    if (!prompt.trim() || isProcessing || !isAuthenticated) return;
 
     const userMessage = prompt;
     setPrompt('');
@@ -212,6 +296,14 @@ Responde de forma estructurada con:
     setMessages([]);
   };
 
+  // Logout
+  const handleLogout = () => {
+    sessionStorage.removeItem(AUTH_KEY);
+    setIsAuthenticated(false);
+    setShowAuthModal(true);
+    setMessages([]);
+  };
+
   // LLM Selector dropdown component
   const LLMSelector = ({ selected, onSelect, exclude }) => {
     const llms = Object.entries(LLM_CONFIG).filter(([key]) => key !== exclude);
@@ -271,6 +363,102 @@ Responde de forma estructurada con:
           flex-direction: column;
         }
 
+        /* Auth Modal */
+        .auth-overlay {
+          position: fixed;
+          top: 0;
+          left: 0;
+          right: 0;
+          bottom: 0;
+          background: rgba(0, 0, 0, 0.8);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          z-index: 1000;
+          backdrop-filter: blur(8px);
+        }
+
+        .auth-modal {
+          background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+          border: 1px solid rgba(255, 255, 255, 0.1);
+          border-radius: 24px;
+          padding: 40px;
+          max-width: 400px;
+          width: 90%;
+          text-align: center;
+          box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+        }
+
+        .auth-logo {
+          font-size: 48px;
+          margin-bottom: 16px;
+        }
+
+        .auth-title {
+          font-size: 24px;
+          font-weight: 700;
+          margin-bottom: 8px;
+          background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+          -webkit-background-clip: text;
+          -webkit-text-fill-color: transparent;
+        }
+
+        .auth-subtitle {
+          color: rgba(255, 255, 255, 0.6);
+          margin-bottom: 24px;
+          font-size: 14px;
+        }
+
+        .auth-input {
+          width: 100%;
+          padding: 16px 20px;
+          background: rgba(255, 255, 255, 0.08);
+          border: 2px solid rgba(255, 255, 255, 0.1);
+          border-radius: 12px;
+          color: #fff;
+          font-size: 16px;
+          outline: none;
+          transition: all 0.2s;
+          margin-bottom: 16px;
+        }
+
+        .auth-input:focus {
+          border-color: #8b5cf6;
+          background: rgba(255, 255, 255, 0.1);
+        }
+
+        .auth-button {
+          width: 100%;
+          padding: 16px 32px;
+          background: linear-gradient(135deg, #8b5cf6, #06b6d4);
+          border: none;
+          border-radius: 12px;
+          color: #fff;
+          font-weight: 600;
+          font-size: 16px;
+          cursor: pointer;
+          transition: all 0.2s;
+        }
+
+        .auth-button:hover:not(:disabled) {
+          transform: translateY(-2px);
+          box-shadow: 0 10px 30px rgba(139, 92, 246, 0.4);
+        }
+
+        .auth-button:disabled {
+          opacity: 0.5;
+          cursor: not-allowed;
+        }
+
+        .auth-error {
+          color: #ef4444;
+          font-size: 14px;
+          margin-bottom: 16px;
+          padding: 12px;
+          background: rgba(239, 68, 68, 0.1);
+          border-radius: 8px;
+        }
+
         .header {
           display: flex;
           justify-content: space-between;
@@ -315,12 +503,30 @@ Responde de forma estructurada con:
           color: rgba(255, 255, 255, 0.6);
         }
 
+        .header-right {
+          display: flex;
+          align-items: center;
+          gap: 16px;
+        }
+
         .powered-by {
           font-size: 12px;
           color: rgba(255, 255, 255, 0.4);
-          display: flex;
-          align-items: center;
-          gap: 8px;
+        }
+
+        .logout-button {
+          background: rgba(239, 68, 68, 0.2);
+          border: 1px solid rgba(239, 68, 68, 0.3);
+          color: #fca5a5;
+          padding: 8px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 12px;
+          transition: all 0.2s;
+        }
+
+        .logout-button:hover {
+          background: rgba(239, 68, 68, 0.3);
         }
 
         .llm-selection-bar {
@@ -737,8 +943,45 @@ Responde de forma estructurada con:
           .flow-connection {
             flex-direction: column;
           }
+
+          .header-right {
+            flex-direction: column;
+            gap: 8px;
+          }
         }
       `}</style>
+
+      {/* Auth Modal */}
+      {showAuthModal && (
+        <div className="auth-overlay">
+          <div className="auth-modal">
+            <div className="auth-logo">🔐</div>
+            <div className="auth-title">LLM Validation Test</div>
+            <div className="auth-subtitle">Ingresa la contraseña para continuar</div>
+            
+            {authError && <div className="auth-error">{authError}</div>}
+            
+            <form onSubmit={handleAuth}>
+              <input
+                ref={authInputRef}
+                type="password"
+                className="auth-input"
+                value={authPassword}
+                onChange={(e) => setAuthPassword(e.target.value)}
+                placeholder="Contraseña"
+                disabled={isAuthenticating}
+              />
+              <button
+                type="submit"
+                className="auth-button"
+                disabled={!authPassword.trim() || isAuthenticating}
+              >
+                {isAuthenticating ? '⏳ Verificando...' : '🚀 Entrar'}
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
 
       <div className="container">
         {/* Header */}
@@ -750,8 +993,15 @@ Responde de forma estructurada con:
               <div className="subtitle">Response validation with AI collaboration</div>
             </div>
           </div>
-          <div className="powered-by">
-            Powered by Vercel AI Gateway
+          <div className="header-right">
+            <div className="powered-by">
+              Powered by Vercel AI Gateway
+            </div>
+            {isAuthenticated && (
+              <button className="logout-button" onClick={handleLogout}>
+                🚪 Salir
+              </button>
+            )}
           </div>
         </div>
 
@@ -922,8 +1172,8 @@ Responde de forma estructurada con:
                     handleSubmit();
                   }
                 }}
-                placeholder="Ask anything... Press Enter to send, Shift+Enter for new line"
-                disabled={isProcessing}
+                placeholder={isAuthenticated ? "Ask anything... Press Enter to send, Shift+Enter for new line" : "Autentícate para continuar..."}
+                disabled={isProcessing || !isAuthenticated}
                 rows={1}
               />
             </div>
@@ -940,7 +1190,7 @@ Responde de forma estructurada con:
             <button
               type="submit"
               className="send-button"
-              disabled={!prompt.trim() || isProcessing}
+              disabled={!prompt.trim() || isProcessing || !isAuthenticated}
             >
               {isProcessing ? (
                 <>⏳ Processing...</>
