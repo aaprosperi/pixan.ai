@@ -66,6 +66,7 @@ export default function LLMValidationTest() {
   const [messages, setMessages] = useState([]);
   const [streamingText, setStreamingText] = useState('');
   const [showLLMSelector, setShowLLMSelector] = useState(null);
+  const [generateInfographic, setGenerateInfographic] = useState(true);
   
   // Auth state
   const [isAuthenticated, setIsAuthenticated] = useState(false);
@@ -109,7 +110,6 @@ export default function LLMValidationTest() {
     setAuthError('');
 
     try {
-      // Test the password with a minimal API call
       const response = await fetch('/api/chat', {
         method: 'POST',
         headers: { 
@@ -128,7 +128,6 @@ export default function LLMValidationTest() {
         return;
       }
 
-      // Auth successful - save to session
       sessionStorage.setItem(AUTH_KEY, authPassword);
       setIsAuthenticated(true);
       setShowAuthModal(false);
@@ -140,7 +139,6 @@ export default function LLMValidationTest() {
     }
   };
 
-  // Get stored password
   const getAuthPassword = () => {
     return sessionStorage.getItem(AUTH_KEY) || '';
   };
@@ -162,7 +160,6 @@ export default function LLMValidationTest() {
     });
 
     if (response.status === 401) {
-      // Auth expired or invalid
       sessionStorage.removeItem(AUTH_KEY);
       setIsAuthenticated(false);
       setShowAuthModal(true);
@@ -174,7 +171,6 @@ export default function LLMValidationTest() {
       throw new Error(error.error || `${LLM_CONFIG[llmKey].name} API Error`);
     }
 
-    // Process streaming response
     const reader = response.body.getReader();
     const decoder = new TextDecoder();
     let fullContent = '';
@@ -207,6 +203,50 @@ export default function LLMValidationTest() {
     return fullContent;
   };
 
+  // Generate infographic using Nano Banana Pro
+  const generateInfographicImage = async (content, question) => {
+    const response = await fetch('/api/generate-infographic', {
+      method: 'POST',
+      headers: { 
+        'Content-Type': 'application/json',
+        'x-auth-password': getAuthPassword()
+      },
+      body: JSON.stringify({
+        prompt: content,
+        context: { question }
+      })
+    });
+
+    if (!response.ok) {
+      const error = await response.json();
+      throw new Error(error.error || 'Error generating infographic');
+    }
+
+    const data = await response.json();
+    return data;
+  };
+
+  // Extract final response section from validator output
+  const extractFinalResponse = (validatorOutput) => {
+    // Try to find the "RESPUESTA FINAL MEJORADA" section
+    const patterns = [
+      /🎯\s*RESPUESTA FINAL MEJORADA[:\s]*([\s\S]*?)(?=$|✅|⚠️|📝)/i,
+      /RESPUESTA FINAL[:\s]*([\s\S]*?)(?=$|✅|⚠️|📝)/i,
+      /FINAL RESPONSE[:\s]*([\s\S]*?)(?=$|✅|⚠️|📝)/i,
+    ];
+
+    for (const pattern of patterns) {
+      const match = validatorOutput.match(pattern);
+      if (match && match[1]?.trim()) {
+        return match[1].trim();
+      }
+    }
+
+    // If no specific section found, use the last substantial paragraph
+    const paragraphs = validatorOutput.split('\n\n').filter(p => p.trim().length > 50);
+    return paragraphs[paragraphs.length - 1] || validatorOutput;
+  };
+
   // Handle form submission
   const handleSubmit = async (e) => {
     e?.preventDefault();
@@ -230,7 +270,6 @@ export default function LLMValidationTest() {
 
       const primaryResult = await callLLM(primaryLLM, userMessage, setStreamingText);
 
-      // Add primary response to messages
       setMessages(prev => [...prev, {
         type: 'llm',
         llm: primaryLLM,
@@ -261,11 +300,10 @@ Responde de forma estructurada con:
 - ✅ VALIDACIÓN: (qué está correcto)
 - ⚠️ CORRECCIONES: (si hay errores)
 - 📝 COMPLEMENTO: (información adicional)
-- 🎯 RESPUESTA FINAL MEJORADA: (síntesis completa)`;
+- 🎯 RESPUESTA FINAL MEJORADA: (síntesis completa y mejorada - esta es la sección más importante)`;
 
       const validatorResult = await callLLM(validatorLLM, validationPrompt, setStreamingText);
 
-      // Add validator response to messages
       setMessages(prev => [...prev, {
         type: 'llm',
         llm: validatorLLM,
@@ -273,6 +311,39 @@ Responde de forma estructurada con:
         phase: 'validator',
         timestamp: new Date()
       }]);
+
+      // Phase 3: Generate infographic with Nano Banana Pro
+      if (generateInfographic) {
+        setCurrentPhase('infographic');
+        setStreamingText('Generando infografía con Nano Banana Pro...');
+
+        try {
+          const finalContent = extractFinalResponse(validatorResult);
+          const infographicResult = await generateInfographicImage(finalContent, userMessage);
+
+          if (infographicResult.images && infographicResult.images.length > 0) {
+            setMessages(prev => [...prev, {
+              type: 'infographic',
+              content: infographicResult.text || 'Infografía generada exitosamente',
+              images: infographicResult.images,
+              timestamp: new Date()
+            }]);
+          } else {
+            setMessages(prev => [...prev, {
+              type: 'error',
+              content: 'No se pudo generar la infografía. Nano Banana Pro no devolvió imágenes.',
+              timestamp: new Date()
+            }]);
+          }
+        } catch (infographicError) {
+          console.error('Infographic error:', infographicError);
+          setMessages(prev => [...prev, {
+            type: 'error',
+            content: `Error al generar infografía: ${infographicError.message}`,
+            timestamp: new Date()
+          }]);
+        }
+      }
 
       setCurrentPhase('complete');
 
@@ -291,17 +362,25 @@ Responde de forma estructurada con:
     }
   };
 
-  // Clear chat
   const clearChat = () => {
     setMessages([]);
   };
 
-  // Logout
   const handleLogout = () => {
     sessionStorage.removeItem(AUTH_KEY);
     setIsAuthenticated(false);
     setShowAuthModal(true);
     setMessages([]);
+  };
+
+  // Download infographic image
+  const downloadImage = (imageUrl, index) => {
+    const link = document.createElement('a');
+    link.href = imageUrl;
+    link.download = `infographic-${Date.now()}-${index}.png`;
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
   };
 
   // LLM Selector dropdown component
@@ -336,7 +415,7 @@ Responde de forma estructurada con:
     <>
       <Head>
         <title>LLM Validation Test | Pixan.ai</title>
-        <meta name="description" content="Test LLM responses with validation from another AI" />
+        <meta name="description" content="Test LLM responses with validation and infographic generation" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
@@ -639,6 +718,55 @@ Responde de forma estructurada con:
           color: rgba(255, 255, 255, 0.4);
         }
 
+        /* Infographic toggle */
+        .infographic-toggle {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 12px 16px;
+          background: rgba(255, 255, 255, 0.05);
+          border-radius: 12px;
+          margin-left: auto;
+        }
+
+        .toggle-label {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.7);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
+        .toggle-switch {
+          position: relative;
+          width: 48px;
+          height: 24px;
+          background: rgba(255, 255, 255, 0.2);
+          border-radius: 12px;
+          cursor: pointer;
+          transition: all 0.3s;
+        }
+
+        .toggle-switch.active {
+          background: linear-gradient(135deg, #f59e0b, #eab308);
+        }
+
+        .toggle-switch::after {
+          content: '';
+          position: absolute;
+          top: 2px;
+          left: 2px;
+          width: 20px;
+          height: 20px;
+          background: white;
+          border-radius: 50%;
+          transition: all 0.3s;
+        }
+
+        .toggle-switch.active::after {
+          left: 26px;
+        }
+
         .chat-area {
           flex: 1;
           overflow-y: auto;
@@ -647,7 +775,7 @@ Responde de forma estructurada con:
           flex-direction: column;
           gap: 24px;
           min-height: 400px;
-          max-height: calc(100vh - 380px);
+          max-height: calc(100vh - 420px);
         }
 
         .message {
@@ -669,6 +797,12 @@ Responde de forma estructurada con:
 
         .message.llm {
           align-self: flex-start;
+        }
+
+        .message.infographic {
+          align-self: center;
+          max-width: 95%;
+          width: 100%;
         }
 
         .llm-message-container {
@@ -722,6 +856,86 @@ Responde de forma estructurada con:
           line-height: 1.6;
         }
 
+        /* Infographic styles */
+        .infographic-container {
+          background: linear-gradient(135deg, rgba(245, 158, 11, 0.1), rgba(234, 179, 8, 0.05));
+          border: 2px solid rgba(245, 158, 11, 0.3);
+          border-radius: 20px;
+          padding: 24px;
+        }
+
+        .infographic-header {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          margin-bottom: 16px;
+        }
+
+        .infographic-avatar {
+          width: 48px;
+          height: 48px;
+          border-radius: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 24px;
+          background: rgba(245, 158, 11, 0.2);
+          border: 2px solid #f59e0b;
+        }
+
+        .infographic-meta .name {
+          font-weight: 600;
+          font-size: 16px;
+          color: #f59e0b;
+        }
+
+        .infographic-meta .phase {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.5);
+        }
+
+        .infographic-images {
+          display: flex;
+          flex-direction: column;
+          gap: 16px;
+          margin-top: 16px;
+        }
+
+        .infographic-image-wrapper {
+          position: relative;
+          border-radius: 12px;
+          overflow: hidden;
+          background: #000;
+        }
+
+        .infographic-image {
+          width: 100%;
+          height: auto;
+          display: block;
+          border-radius: 12px;
+        }
+
+        .download-button {
+          position: absolute;
+          top: 12px;
+          right: 12px;
+          background: rgba(0, 0, 0, 0.7);
+          border: none;
+          color: #fff;
+          padding: 8px 16px;
+          border-radius: 8px;
+          cursor: pointer;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          transition: all 0.2s;
+        }
+
+        .download-button:hover {
+          background: rgba(0, 0, 0, 0.9);
+        }
+
         .message.error {
           background: rgba(239, 68, 68, 0.2);
           border: 1px solid #ef4444;
@@ -741,7 +955,9 @@ Responde de forma estructurada con:
         .flow-visualization {
           display: flex;
           align-items: center;
-          gap: 20px;
+          gap: 16px;
+          flex-wrap: wrap;
+          justify-content: center;
         }
 
         .flow-node {
@@ -784,8 +1000,6 @@ Responde de forma estructurada con:
 
         .flow-dot:nth-child(2) { animation-delay: 0.2s; }
         .flow-dot:nth-child(3) { animation-delay: 0.4s; }
-        .flow-dot:nth-child(4) { animation-delay: 0.6s; }
-        .flow-dot:nth-child(5) { animation-delay: 0.8s; }
 
         @keyframes flowPulse {
           0%, 100% { opacity: 0.3; transform: scale(1); }
@@ -915,7 +1129,7 @@ Responde de forma estructurada con:
         .empty-description {
           font-size: 14px;
           color: rgba(255, 255, 255, 0.6);
-          max-width: 400px;
+          max-width: 500px;
           line-height: 1.6;
         }
 
@@ -928,8 +1142,14 @@ Responde de forma estructurada con:
             transform: rotate(90deg);
           }
 
+          .infographic-toggle {
+            margin-left: 0;
+            width: 100%;
+            justify-content: center;
+          }
+
           .chat-area {
-            max-height: calc(100vh - 500px);
+            max-height: calc(100vh - 550px);
           }
 
           .message {
@@ -990,12 +1210,12 @@ Responde de forma estructurada con:
             <a href="/" className="back-button">← Back</a>
             <div>
               <div className="logo">LLM Validation Test</div>
-              <div className="subtitle">Response validation with AI collaboration</div>
+              <div className="subtitle">Response validation with AI collaboration + Infographics</div>
             </div>
           </div>
           <div className="header-right">
             <div className="powered-by">
-              Powered by Vercel AI Gateway
+              Powered by Vercel AI Gateway + Nano Banana Pro
             </div>
             {isAuthenticated && (
               <button className="logout-button" onClick={handleLogout}>
@@ -1009,7 +1229,7 @@ Responde de forma estructurada con:
         <div className="llm-selection-bar">
           {/* Primary LLM Selector */}
           <div className="llm-selector-container">
-            <div className="llm-selector-label">Primary LLM (Responds First)</div>
+            <div className="llm-selector-label">1️⃣ Primary LLM</div>
             <button
               className="llm-selector-button"
               style={{ '--llm-color': LLM_CONFIG[primaryLLM].color }}
@@ -1035,7 +1255,7 @@ Responde de forma estructurada con:
 
           {/* Validator LLM Selector */}
           <div className="llm-selector-container">
-            <div className="llm-selector-label">Validator LLM (Analyzes & Completes)</div>
+            <div className="llm-selector-label">2️⃣ Validator LLM</div>
             <button
               className="llm-selector-button"
               style={{ '--llm-color': LLM_CONFIG[validatorLLM].color }}
@@ -1056,18 +1276,33 @@ Responde de forma estructurada con:
               />
             )}
           </div>
+
+          <div className="flow-arrow">→</div>
+
+          {/* Infographic Toggle */}
+          <div className="infographic-toggle">
+            <div className="toggle-label">
+              🍌 Nano Banana Pro
+              <div 
+                className={`toggle-switch ${generateInfographic ? 'active' : ''}`}
+                onClick={() => setGenerateInfographic(!generateInfographic)}
+              />
+            </div>
+          </div>
         </div>
 
         {/* Chat Area */}
         <div className="chat-area">
           {messages.length === 0 && !isProcessing ? (
             <div className="empty-state">
-              <div className="empty-icon">🧠⚡🔍</div>
-              <div className="empty-title">LLM Validation Chain</div>
+              <div className="empty-icon">🧠→✅→🍌</div>
+              <div className="empty-title">LLM Validation Chain + Infographics</div>
               <div className="empty-description">
-                Write a prompt and watch how {LLM_CONFIG[primaryLLM].name} responds first,
+                Write a prompt and watch the magic: {LLM_CONFIG[primaryLLM].name} responds first,
                 then {LLM_CONFIG[validatorLLM].name} validates and enhances the response.
-                Perfect for getting verified, comprehensive answers.
+                {generateInfographic && (
+                  <> Finally, <strong>Nano Banana Pro</strong> creates a beautiful infographic of the final answer!</>
+                )}
               </div>
             </div>
           ) : (
@@ -1090,11 +1325,40 @@ Responde de forma estructurada con:
                         <div className="llm-meta">
                           <span className="name">{LLM_CONFIG[msg.llm].name}</span>
                           <span className="phase">
-                            {msg.phase === 'primary' ? 'Primary Response' : 'Validation & Enhancement'}
+                            {msg.phase === 'primary' ? '1️⃣ Primary Response' : '2️⃣ Validation & Enhancement'}
                           </span>
                         </div>
                       </div>
                       <div className="llm-content">{msg.content}</div>
+                    </div>
+                  )}
+                  {msg.type === 'infographic' && (
+                    <div className="infographic-container">
+                      <div className="infographic-header">
+                        <div className="infographic-avatar">🍌</div>
+                        <div className="infographic-meta">
+                          <span className="name">Nano Banana Pro</span>
+                          <span className="phase">3️⃣ Infographic Generation</span>
+                        </div>
+                      </div>
+                      {msg.content && <p style={{ marginBottom: '16px', opacity: 0.8 }}>{msg.content}</p>}
+                      <div className="infographic-images">
+                        {msg.images.map((img, imgIdx) => (
+                          <div key={imgIdx} className="infographic-image-wrapper">
+                            <img 
+                              src={img.url} 
+                              alt={`Infographic ${imgIdx + 1}`}
+                              className="infographic-image"
+                            />
+                            <button 
+                              className="download-button"
+                              onClick={() => downloadImage(img.url, imgIdx)}
+                            >
+                              ⬇️ Download
+                            </button>
+                          </div>
+                        ))}
+                      </div>
                     </div>
                   )}
                   {msg.type === 'error' && (
@@ -1111,41 +1375,62 @@ Responde de forma estructurada con:
                       className={`flow-node ${currentPhase === 'primary' ? 'active' : ''}`}
                       style={{
                         '--node-color': LLM_CONFIG[primaryLLM].color,
-                        background: LLM_CONFIG[primaryLLM].bgColor,
-                        border: `2px solid ${LLM_CONFIG[primaryLLM].color}`
+                        background: currentPhase === 'primary' ? LLM_CONFIG[primaryLLM].bgColor : 'rgba(255,255,255,0.05)',
+                        border: `2px solid ${currentPhase === 'primary' ? LLM_CONFIG[primaryLLM].color : 'rgba(255,255,255,0.2)'}`
                       }}
                     >
                       <span className="icon">{LLM_CONFIG[primaryLLM].icon}</span>
-                      <span className="label">{LLM_CONFIG[primaryLLM].name}</span>
+                      <span className="label">Primary</span>
                     </div>
 
                     <div className="flow-connection">
-                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
-                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
-                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
-                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
-                      <div className="flow-dot" style={{ background: currentPhase === 'validating' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' || currentPhase === 'infographic' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' || currentPhase === 'infographic' ? '#10b981' : undefined }}></div>
+                      <div className="flow-dot" style={{ background: currentPhase === 'validating' || currentPhase === 'infographic' ? '#10b981' : undefined }}></div>
                     </div>
 
                     <div
                       className={`flow-node ${currentPhase === 'validating' ? 'active' : ''}`}
                       style={{
                         '--node-color': LLM_CONFIG[validatorLLM].color,
-                        background: LLM_CONFIG[validatorLLM].bgColor,
-                        border: `2px solid ${LLM_CONFIG[validatorLLM].color}`
+                        background: currentPhase === 'validating' ? LLM_CONFIG[validatorLLM].bgColor : 'rgba(255,255,255,0.05)',
+                        border: `2px solid ${currentPhase === 'validating' ? LLM_CONFIG[validatorLLM].color : 'rgba(255,255,255,0.2)'}`
                       }}
                     >
                       <span className="icon">{LLM_CONFIG[validatorLLM].icon}</span>
-                      <span className="label">{LLM_CONFIG[validatorLLM].name}</span>
+                      <span className="label">Validator</span>
                     </div>
+
+                    {generateInfographic && (
+                      <>
+                        <div className="flow-connection">
+                          <div className="flow-dot" style={{ background: currentPhase === 'infographic' ? '#f59e0b' : undefined }}></div>
+                          <div className="flow-dot" style={{ background: currentPhase === 'infographic' ? '#f59e0b' : undefined }}></div>
+                          <div className="flow-dot" style={{ background: currentPhase === 'infographic' ? '#f59e0b' : undefined }}></div>
+                        </div>
+
+                        <div
+                          className={`flow-node ${currentPhase === 'infographic' ? 'active' : ''}`}
+                          style={{
+                            '--node-color': '#f59e0b',
+                            background: currentPhase === 'infographic' ? 'rgba(245, 158, 11, 0.2)' : 'rgba(255,255,255,0.05)',
+                            border: `2px solid ${currentPhase === 'infographic' ? '#f59e0b' : 'rgba(255,255,255,0.2)'}`
+                          }}
+                        >
+                          <span className="icon">🍌</span>
+                          <span className="label">Infographic</span>
+                        </div>
+                      </>
+                    )}
                   </div>
 
                   <div className="processing-status">
                     {currentPhase === 'primary' && `${LLM_CONFIG[primaryLLM].icon} ${LLM_CONFIG[primaryLLM].name} is generating response...`}
                     {currentPhase === 'validating' && `${LLM_CONFIG[validatorLLM].icon} ${LLM_CONFIG[validatorLLM].name} is validating and enhancing...`}
+                    {currentPhase === 'infographic' && `🍌 Nano Banana Pro is creating your infographic...`}
                   </div>
 
-                  {streamingText && (
+                  {streamingText && currentPhase !== 'infographic' && (
                     <div className="streaming-preview">
                       {streamingText}
                     </div>
