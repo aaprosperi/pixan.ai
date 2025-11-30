@@ -1,109 +1,218 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
 
-// LLM configurations with Vercel AI Gateway model IDs and pricing
+// SVG Icons for LLMs
+const LLMIcons = {
+  claude: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M4.709 15.955l4.397-2.469.074-.215-.074-.119h-.237l-.736-.045-2.512-.067-2.18-.091-2.111-.113-.533-.113-.355-.27.05-.328.449-.3.638.056 1.415.097 2.122.147 1.539.09 2.281.238h.363l.05-.147-.124-.091-.096-.09-2.197-1.49-2.377-1.572-1.244-.906-.673-.459-.341-.43-.146-.939.61-.673.82.056.21.056.832.64 1.777 1.376 2.32 1.708.34.283.136-.095.017-.069-.153-.254-1.262-2.281-1.346-2.322-.6-.962-.159-.577a2.805 2.805 0 01-.095-.679l.696-.945.924-.237.928.125.391.34.577 1.318.933 2.076 1.449 2.825.424.837.227.776.084.238h.147v-.136l.119-1.59.22-1.953.216-2.514.073-.707.35-.848.697-.459.543.261.447.64-.063.412-.266 1.726-.519 2.707-.341 1.81h.199l.226-.225.918-1.217 1.539-1.924.679-.765.792-.843.509-.402h.962l.708 1.053-.317 1.087-.991 1.256-.82 1.064-1.177 1.585-.735 1.268.067.101.175-.017 2.661-.565 1.436-.261 1.715-.295.776.362.084.369-.306.752-1.833.453-2.15.43-3.203.758-.039.028.045.056 1.443.893 1.845 1.206 1.118.867.526.67.175.68-.379.792-.906.17-.214-.186-.821-.536-1.705-1.087-1.806-1.206-.13-.045-.023.068.377.793 1.232 2.299 1.068 2.123.458.985.163.543.011.555-.401.85-.906.328-.78-.215-.608-.566-.798-1.56-1.068-1.885-.815-1.596-.146-.102-.017.08-.073 1.624-.11 1.976-.136 1.863-.367.73-.634.474-.57-.226-.306-.412.067-.486.316-.73.642-1.263.855-1.556.498-.975.119-.136-.073-.068-.538.067-1.334.192-1.624.186-.9.102-.696-.056-.508-.317-.277-.463.357-.696.628-.605.815-.373.889-.237 1.245-.084 2.287-.045.305.017.045-.136-.271-.237-1.334-.887-.85-.611-.498-.423-.17-.486.05-.657.628-.497.657.033.754.373.703.509.855.67 1.117.792.294.305.158-.033.05-.17-.248-1.038-.458-1.658-.396-1.738-.09-.696.118-.474.339-.34.491-.079.536.226.373.418.17.577.32 1.295.713 2.213.538 1.545h.118l.096-.17.407-1.307.57-1.556.554-1.511.367-.588.475-.328.564.079.395.395.028.463-.107.418-.497 1.227-.713 1.613-.271.696-.062.395.107.05.243-.112 1.006-.486.963-.418 1.068-.395.696.017.373.271.214.373-.084.565-.463.474-.746.35-.815.305-.833.282-1.089.192h-.418l-.068.146.186.17.766.679.815.737.747.73.175.588-.09.611-.396.497-.599.068-.44-.226-.778-.696-.815-.764-.186-.102-.118.09v.225l.09.951.052 1.124-.045.963-.248.588-.435.35-.508-.045-.389-.293-.068-.536.158-.566.175-.781.084-.975-.039-.462-.101-.068-.186.112-.747.85-.929.929-.855.793-.622.39-.69.08-.553-.367-.192-.588.214-.622.412-.406.566-.384.894-.566.781-.525.107-.169-.068-.102-.361.023-1.312.124-1.255.067-.951-.033-.588-.192-.475-.35-.113-.497.192-.53.534-.339z"/>
+    </svg>
+  ),
+  gpt: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M22.282 9.821a5.985 5.985 0 0 0-.516-4.91 6.046 6.046 0 0 0-6.51-2.9A6.065 6.065 0 0 0 4.981 4.18a5.985 5.985 0 0 0-3.998 2.9 6.046 6.046 0 0 0 .743 7.097 5.98 5.98 0 0 0 .51 4.911 6.051 6.051 0 0 0 6.515 2.9A5.985 5.985 0 0 0 13.26 24a6.056 6.056 0 0 0 5.772-4.206 5.99 5.99 0 0 0 3.997-2.9 6.056 6.056 0 0 0-.747-7.073zM13.26 22.43a4.476 4.476 0 0 1-2.876-1.04l.141-.081 4.779-2.758a.795.795 0 0 0 .392-.681v-6.737l2.02 1.168a.071.071 0 0 1 .038.052v5.583a4.504 4.504 0 0 1-4.494 4.494zM3.6 18.304a4.47 4.47 0 0 1-.535-3.014l.142.085 4.783 2.759a.771.771 0 0 0 .78 0l5.843-3.369v2.332a.08.08 0 0 1-.033.062L9.74 19.95a4.5 4.5 0 0 1-6.14-1.646zM2.34 7.896a4.485 4.485 0 0 1 2.366-1.973V11.6a.766.766 0 0 0 .388.676l5.815 3.355-2.02 1.168a.076.076 0 0 1-.071 0l-4.83-2.786A4.504 4.504 0 0 1 2.34 7.872zm16.597 3.855l-5.833-3.387L15.119 7.2a.076.076 0 0 1 .071 0l4.83 2.791a4.494 4.494 0 0 1-.676 8.105v-5.678a.79.79 0 0 0-.407-.667zm2.01-3.023l-.141-.085-4.774-2.782a.776.776 0 0 0-.785 0L9.409 9.23V6.897a.066.066 0 0 1 .028-.061l4.83-2.787a4.5 4.5 0 0 1 6.68 4.66zm-12.64 4.135l-2.02-1.164a.08.08 0 0 1-.038-.057V6.075a4.5 4.5 0 0 1 7.375-3.453l-.142.08L8.704 5.46a.795.795 0 0 0-.393.681zm1.097-2.365l2.602-1.5 2.607 1.5v2.999l-2.597 1.5-2.607-1.5z"/>
+    </svg>
+  ),
+  gemini: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M12 0C5.352 0 0 5.352 0 12s5.352 12 12 12 12-5.352 12-12S18.648 0 12 0zm0 2.4c5.28 0 9.6 4.32 9.6 9.6s-4.32 9.6-9.6 9.6S2.4 17.28 2.4 12 6.72 2.4 12 2.4zm0 1.92a7.68 7.68 0 100 15.36 7.68 7.68 0 000-15.36zm0 2.88a1.44 1.44 0 110 2.88 1.44 1.44 0 010-2.88zm-3.84 2.88a1.44 1.44 0 110 2.88 1.44 1.44 0 010-2.88zm7.68 0a1.44 1.44 0 110 2.88 1.44 1.44 0 010-2.88zm-3.84 2.88a1.44 1.44 0 110 2.88 1.44 1.44 0 010-2.88z"/>
+    </svg>
+  ),
+  perplexity: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M12 0L1.5 6v12L12 24l10.5-6V6L12 0zm0 2.25l8.25 4.688v9.124L12 20.75l-8.25-4.688V6.938L12 2.25zm0 3a6.75 6.75 0 100 13.5 6.75 6.75 0 000-13.5zm0 2.25a4.5 4.5 0 110 9 4.5 4.5 0 010-9z"/>
+    </svg>
+  ),
+  deepseek: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 17.93c-3.95-.49-7-3.85-7-7.93 0-.62.08-1.21.21-1.79L9 15v1c0 1.1.9 2 2 2v1.93zm6.9-2.54c-.26-.81-1-1.39-1.9-1.39h-1v-3c0-.55-.45-1-1-1H8v-2h2c.55 0 1-.45 1-1V7h2c1.1 0 2-.9 2-2v-.41c2.93 1.19 5 4.06 5 7.41 0 2.08-.8 3.97-2.1 5.39z"/>
+    </svg>
+  ),
+  grok: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M12 2L2 7l10 5 10-5-10-5zM2 17l10 5 10-5M2 12l10 5 10-5"/>
+    </svg>
+  ),
+  kimi: () => (
+    <svg viewBox="0 0 24 24" fill="currentColor" style={{ width: '100%', height: '100%' }}>
+      <path d="M12 2a10 10 0 1010 10A10 10 0 0012 2zm0 18a8 8 0 118-8 8 8 0 01-8 8zm0-14a1 1 0 00-1 1v4.59l-2.29-2.3a1 1 0 00-1.42 1.42l4 4a1 1 0 001.42 0l4-4a1 1 0 00-1.42-1.42L13 11.59V7a1 1 0 00-1-1z"/>
+    </svg>
+  )
+};
+
+// LLM configurations
 const LLM_CONFIG = {
   claude: {
     name: 'Claude Sonnet 4.5',
     modelId: 'anthropic/claude-sonnet-4.5',
-    color: '#7c3aed',
-    icon: '🧠',
+    color: '#D4A574',
+    bgColor: '#FDF6E3',
     context: '200K',
     inputPrice: 0.003,
-    outputPrice: 0.015
+    outputPrice: 0.015,
+    inGroup: true
   },
   gpt: {
     name: 'GPT-5.1 Think',
     modelId: 'openai/gpt-5.1-thinking',
-    color: '#059669',
-    icon: '🤖',
+    color: '#10A37F',
+    bgColor: '#E6F7F1',
     context: '400K',
     inputPrice: 0.00125,
-    outputPrice: 0.010
+    outputPrice: 0.010,
+    inGroup: true
   },
   gemini: {
     name: 'Gemini 3 Pro',
     modelId: 'google/gemini-3-pro-preview',
-    color: '#2563eb',
-    icon: '✨',
+    color: '#4285F4',
+    bgColor: '#E8F0FE',
     context: '1M',
     inputPrice: 0.002,
-    outputPrice: 0.012
+    outputPrice: 0.012,
+    inGroup: true
   },
   perplexity: {
     name: 'Sonar Pro',
     modelId: 'perplexity/sonar-pro',
-    color: '#d97706',
-    icon: '🔍',
+    color: '#20B2AA',
+    bgColor: '#E6F7F6',
     context: '200K',
     inputPrice: 0.003,
-    outputPrice: 0.015
+    outputPrice: 0.015,
+    inGroup: false
   },
   deepseek: {
     name: 'DeepSeek v3.2',
     modelId: 'deepseek/deepseek-v3.2-exp-thinking',
-    color: '#0891b2',
-    icon: '🌊',
+    color: '#4F46E5',
+    bgColor: '#EEF2FF',
     context: '164K',
     inputPrice: 0.00028,
-    outputPrice: 0.00042
+    outputPrice: 0.00042,
+    inGroup: false
   },
   grok: {
     name: 'Grok 4.1',
     modelId: 'xai/grok-4.1-fast-reasoning',
-    color: '#dc2626',
-    icon: '⚡',
+    color: '#000000',
+    bgColor: '#F5F5F5',
     context: '2M',
     inputPrice: 0.0002,
-    outputPrice: 0.0005
+    outputPrice: 0.0005,
+    inGroup: true
   },
   kimi: {
     name: 'Kimi K2',
     modelId: 'moonshotai/kimi-k2-thinking',
-    color: '#9333ea',
-    icon: '🌙',
+    color: '#7C3AED',
+    bgColor: '#F3E8FF',
     context: '262K',
     inputPrice: 0.0006,
-    outputPrice: 0.0025
+    outputPrice: 0.0025,
+    inGroup: false
   }
 };
 
+// Get LLMs for group mode (only 4)
+const GROUP_LLMS = Object.keys(LLM_CONFIG).filter(k => LLM_CONFIG[k].inGroup);
+
 const AUTH_KEY = 'pixan_genai_auth';
+
+// Simple markdown renderer for headers and basic formatting
+const renderMarkdown = (text) => {
+  if (!text) return '';
+  
+  const lines = text.split('\n');
+  const elements = [];
+  let inCodeBlock = false;
+  let codeContent = '';
+  let codeLanguage = '';
+  
+  lines.forEach((line, i) => {
+    // Code blocks
+    if (line.startsWith('```')) {
+      if (!inCodeBlock) {
+        inCodeBlock = true;
+        codeLanguage = line.slice(3).trim();
+        codeContent = '';
+      } else {
+        elements.push(
+          <pre key={i} className="code-block">
+            <code>{codeContent}</code>
+          </pre>
+        );
+        inCodeBlock = false;
+      }
+      return;
+    }
+    
+    if (inCodeBlock) {
+      codeContent += (codeContent ? '\n' : '') + line;
+      return;
+    }
+    
+    // Headers
+    if (line.startsWith('### ')) {
+      elements.push(<h4 key={i} className="md-h3">{line.slice(4)}</h4>);
+    } else if (line.startsWith('## ')) {
+      elements.push(<h3 key={i} className="md-h2">{line.slice(3)}</h3>);
+    } else if (line.startsWith('# ')) {
+      elements.push(<h2 key={i} className="md-h1">{line.slice(2)}</h2>);
+    } else if (line.startsWith('**') && line.endsWith('**')) {
+      elements.push(<p key={i} className="md-bold">{line.slice(2, -2)}</p>);
+    } else if (line.startsWith('- ') || line.startsWith('* ')) {
+      elements.push(<li key={i} className="md-li">{line.slice(2)}</li>);
+    } else if (line.match(/^\d+\. /)) {
+      elements.push(<li key={i} className="md-li-num">{line.replace(/^\d+\. /, '')}</li>);
+    } else if (line.startsWith('> ')) {
+      elements.push(<blockquote key={i} className="md-quote">{line.slice(2)}</blockquote>);
+    } else if (line.trim() === '---') {
+      elements.push(<hr key={i} className="md-hr" />);
+    } else if (line.trim()) {
+      // Process inline formatting
+      let processed = line
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        .replace(/`(.+?)`/g, '<code class="inline-code">$1</code>');
+      elements.push(<p key={i} className="md-p" dangerouslySetInnerHTML={{ __html: processed }} />);
+    } else {
+      elements.push(<br key={i} />);
+    }
+  });
+  
+  return elements;
+};
 
 export default function GenAI() {
   const [prompt, setPrompt] = useState('');
   const [selectedLLM, setSelectedLLM] = useState('claude');
   const [responseMode, setResponseMode] = useState('single');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [generateInfographic, setGenerateInfographic] = useState(false);
+  const [imageMode, setImageMode] = useState('none'); // 'none', 'infographic', 'realistic'
   
-  // Conversation history for continuity
   const [conversationHistory, setConversationHistory] = useState([]);
   const [messages, setMessages] = useState([]);
-  
-  // Parallel streaming for group mode
   const [parallelStreams, setParallelStreams] = useState({});
   const [integrationResult, setIntegrationResult] = useState(null);
-  const [infographicResult, setInfographicResult] = useState(null);
+  const [imageResult, setImageResult] = useState(null);
   const [currentPhase, setCurrentPhase] = useState(null);
   
-  // Token & credits tracking
   const [sessionTokens, setSessionTokens] = useState({ input: 0, output: 0 });
   const [sessionCost, setSessionCost] = useState(0);
   const [gatewayBalance, setGatewayBalance] = useState(null);
   
-  // Auth
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
   const [authPassword, setAuthPassword] = useState('');
   const [authError, setAuthError] = useState('');
   const [isAuthenticating, setIsAuthenticating] = useState(false);
+  const [showLLMDropdown, setShowLLMDropdown] = useState(false);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
   const authInputRef = useRef(null);
 
-  // Fetch gateway balance
   const fetchBalance = async () => {
     try {
       const response = await fetch('/api/credits');
@@ -135,6 +244,17 @@ export default function GenAI() {
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, parallelStreams, integrationResult]);
+
+  // Close dropdown when clicking outside
+  useEffect(() => {
+    const handleClick = (e) => {
+      if (!e.target.closest('.llm-select')) {
+        setShowLLMDropdown(false);
+      }
+    };
+    document.addEventListener('click', handleClick);
+    return () => document.removeEventListener('click', handleClick);
+  }, []);
 
   const estimateTokens = (text) => Math.ceil((text || '').length / 4);
 
@@ -184,32 +304,32 @@ export default function GenAI() {
 
   const getAuthPassword = () => sessionStorage.getItem(AUTH_KEY) || '';
 
-  const buildSystemPrompt = (llmKey, isGroupMode, willGenerateInfographic, history) => {
+  const buildSystemPrompt = (llmKey, isGroupMode, imgMode, history) => {
     const parts = [`You are ${LLM_CONFIG[llmKey].name}, an expert AI assistant.`];
     
     if (isGroupMode) {
-      parts.push('CONTEXT: This is a SUPERVISED GROUP query where multiple LLMs respond to the same prompt. Your response will be integrated with others by Claude. Focus on your unique perspective and strengths.');
+      parts.push('CONTEXT: This is a SUPERVISED GROUP query where 4 LLMs (Claude, GPT, Gemini, Grok) respond to the same prompt. Your response will be integrated with others by Claude. Focus on your unique perspective and strengths. Be concise but insightful.');
     }
     
-    if (willGenerateInfographic) {
-      parts.push('NOTE: The final response will be converted to a visual INFOGRAPHIC. Structure your response with clear key points that can be easily visualized.');
+    if (imgMode === 'infographic') {
+      parts.push('NOTE: The final response will be converted to a visual INFOGRAPHIC. Structure your response with clear key points, bullet points, and sections that can be easily visualized.');
+    } else if (imgMode === 'realistic') {
+      parts.push('NOTE: The user wants a REALISTIC IMAGE generated from your response. Describe visual elements clearly and provide details that can be used to generate a photorealistic image.');
     }
     
     if (history.length > 0) {
-      parts.push('CONVERSATION CONTEXT: Continue the conversation naturally based on the previous exchanges.');
+      parts.push('Continue the conversation naturally based on the previous exchanges.');
     }
     
     return parts.join('\n\n');
   };
 
-  // Stream a single LLM response
   const streamLLM = async (llmKey, message, systemPrompt, onChunk) => {
     const modelId = LLM_CONFIG[llmKey].modelId;
     
     const msgs = [];
     if (systemPrompt) msgs.push({ role: 'system', content: systemPrompt });
     
-    // Add conversation history for continuity
     conversationHistory.forEach(h => {
       msgs.push({ role: 'user', content: h.user });
       if (h.assistant) msgs.push({ role: 'assistant', content: h.assistant });
@@ -267,17 +387,24 @@ export default function GenAI() {
     return fullContent;
   };
 
-  const generateInfographicImage = async (content, question) => {
+  const generateImage = async (content, question, mode) => {
+    const promptPrefix = mode === 'infographic' 
+      ? 'Create a professional, clean infographic that visualizes the following information. Use icons, sections, and clear typography. Style: modern, minimalist, business-professional.'
+      : 'Create a photorealistic, high-quality image that represents the following concept. Style: ultra-realistic, 4K quality, professional photography.';
+    
     const response = await fetch('/api/generate-infographic', {
       method: 'POST',
       headers: { 
         'Content-Type': 'application/json',
         'x-auth-password': getAuthPassword()
       },
-      body: JSON.stringify({ prompt: content, context: { question } })
+      body: JSON.stringify({ 
+        prompt: `${promptPrefix}\n\nContent:\n${content}`,
+        context: { question, mode } 
+      })
     });
 
-    if (!response.ok) throw new Error('Infographic generation failed');
+    if (!response.ok) throw new Error('Image generation failed');
     return await response.json();
   };
 
@@ -295,9 +422,8 @@ export default function GenAI() {
     return { inputTokens, outputTokens, cost };
   };
 
-  // Single mode handler
   const handleSingleMode = async (userMessage) => {
-    const systemPrompt = buildSystemPrompt(selectedLLM, false, generateInfographic, conversationHistory);
+    const systemPrompt = buildSystemPrompt(selectedLLM, false, imageMode, conversationHistory);
     
     let streamContent = '';
     setMessages(prev => [...prev, { type: 'llm', llm: selectedLLM, content: '', streaming: true }]);
@@ -319,24 +445,21 @@ export default function GenAI() {
       return updated;
     });
 
-    // Update conversation history
     setConversationHistory(prev => [...prev, { user: userMessage, assistant: result }]);
     
     return result;
   };
 
-  // Group mode handler - parallel streaming
   const handleGroupMode = async (userMessage) => {
-    const llmKeys = Object.keys(LLM_CONFIG);
+    // Use only 4 LLMs for group mode
+    const llmKeys = GROUP_LLMS;
     
-    // Initialize parallel streams
     setParallelStreams(
       llmKeys.reduce((acc, key) => ({ ...acc, [key]: { content: '', status: 'pending' } }), {})
     );
     setIntegrationResult(null);
     setCurrentPhase('collecting');
 
-    // Start all LLMs in parallel
     const promises = llmKeys.map(async (llmKey) => {
       try {
         setParallelStreams(prev => ({
@@ -344,7 +467,7 @@ export default function GenAI() {
           [llmKey]: { ...prev[llmKey], status: 'streaming' }
         }));
 
-        const systemPrompt = buildSystemPrompt(llmKey, true, generateInfographic, conversationHistory);
+        const systemPrompt = buildSystemPrompt(llmKey, true, imageMode, conversationHistory);
         
         const result = await streamLLM(llmKey, userMessage, systemPrompt, (content) => {
           setParallelStreams(prev => ({
@@ -373,10 +496,9 @@ export default function GenAI() {
     const results = await Promise.all(promises);
     const responses = results.reduce((acc, { llmKey, result }) => ({ ...acc, [llmKey]: result }), {});
 
-    // Integration phase
     setCurrentPhase('integrating');
 
-    const integrationPrompt = `You are Claude, the supervisor of this group query. Multiple LLMs have responded to the user's prompt. Your task is to INTEGRATE and SYNTHESIZE all responses into a coherent, comprehensive final response.
+    const integrationPrompt = `You are Claude, the supervisor of this group query. 4 LLMs have responded to the user's prompt. Your task is to INTEGRATE and SYNTHESIZE all responses into a coherent, comprehensive final response.
 
 USER'S ORIGINAL QUESTION:
 "${userMessage}"
@@ -384,23 +506,27 @@ USER'S ORIGINAL QUESTION:
 LLM RESPONSES:
 
 ${Object.entries(responses).map(([key, response]) => `
-### ${LLM_CONFIG[key].name} (${LLM_CONFIG[key].icon}):
+## ${LLM_CONFIG[key].name}
 ${response}
 `).join('\n---\n')}
 
 YOUR TASK:
-1. Identify key points where ALL agree
+1. Identify key points where ALL agree (consensus)
 2. Highlight valuable unique perspectives from each LLM
 3. Resolve any contradictions between responses
 4. Synthesize everything into a FINAL integrated response
 
-${generateInfographic ? 'NOTE: Your response will be converted to a visual infographic, so structure it with clear, visualizable points.' : ''}
+${imageMode !== 'none' ? `NOTE: Your response will be converted to a ${imageMode === 'infographic' ? 'visual infographic' : 'realistic image'}, so structure it with clear, visualizable points.` : ''}
 
-Respond with:
-- 🔄 CONSENSUS: (common points)
-- 💡 UNIQUE INSIGHTS: (valuable contributions from each)
-- ⚖️ RESOLUTION: (if there were contradictions)
-- 🎯 FINAL INTEGRATED RESPONSE: (complete synthesis)`;
+Format your response with:
+## 🔄 Consensus
+(common points all LLMs agree on)
+
+## 💡 Unique Insights
+(valuable contributions from each)
+
+## 🎯 Final Integrated Response
+(complete synthesis)`;
 
     let integrationContent = '';
     
@@ -412,7 +538,6 @@ Respond with:
     trackTokens(integrationPrompt, integration, 'claude');
     setIntegrationResult({ content: integration, streaming: false });
 
-    // Update conversation history with the integrated response
     setConversationHistory(prev => [...prev, { user: userMessage, assistant: integration }]);
 
     return integration;
@@ -425,7 +550,7 @@ Respond with:
     const userMessage = prompt;
     setPrompt('');
     setIsProcessing(true);
-    setInfographicResult(null);
+    setImageResult(null);
 
     setMessages(prev => [...prev, { type: 'user', content: userMessage, mode: responseMode }]);
 
@@ -438,15 +563,15 @@ Respond with:
         finalResult = await handleGroupMode(userMessage);
       }
 
-      if (generateInfographic && finalResult) {
-        setCurrentPhase('infographic');
+      if (imageMode !== 'none' && finalResult) {
+        setCurrentPhase('image');
         try {
-          const infographic = await generateInfographicImage(finalResult, userMessage);
-          if (infographic.images?.length > 0) {
-            setInfographicResult(infographic);
+          const imageData = await generateImage(finalResult, userMessage, imageMode);
+          if (imageData.images?.length > 0) {
+            setImageResult({ ...imageData, mode: imageMode });
           }
         } catch (error) {
-          console.error('Infographic error:', error);
+          console.error('Image error:', error);
         }
       }
 
@@ -467,7 +592,7 @@ Respond with:
     setMessages([]);
     setParallelStreams({});
     setIntegrationResult(null);
-    setInfographicResult(null);
+    setImageResult(null);
     setConversationHistory([]);
     setSessionTokens({ input: 0, output: 0 });
     setSessionCost(0);
@@ -483,15 +608,14 @@ Respond with:
   const downloadImage = (imageUrl, index) => {
     const link = document.createElement('a');
     link.href = imageUrl;
-    link.download = `pixan-infographic-${Date.now()}-${index}.png`;
+    link.download = `pixan-${imageMode}-${Date.now()}-${index}.png`;
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
   };
 
-  // Logo component
   const PixanLogo = () => (
-    <svg width="120" height="35" viewBox="0 0 163 47" fill="none" xmlns="http://www.w3.org/2000/svg">
+    <svg width="100" height="28" viewBox="0 0 163 47" fill="none" xmlns="http://www.w3.org/2000/svg">
       <path d="M0 12H3.49722V37.18H0V12Z" fill="#28106A"/>
       <path d="M14.9681 12H18.6612V30.3045H14.9681V12Z" fill="#D34C54"/>
       <path d="M7.27422 12H10.9673V30.3045H7.27422V12Z" fill="#28106A"/>
@@ -508,173 +632,180 @@ Respond with:
     <>
       <Head>
         <title>Pixan genAI | Collaborative AI Intelligence</title>
-        <meta name="description" content="Collaborative genAI - Single or supervised group responses from multiple LLMs" />
+        <meta name="description" content="Single or supervised group responses from multiple LLMs" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
       <style jsx global>{`
         * { margin: 0; padding: 0; box-sizing: border-box; }
-        body { font-family: 'Inter', -apple-system, sans-serif; background: #ffffff; color: #1a1a1a; }
+        body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #1a1a1a; }
         
-        .container { max-width: 1200px; margin: 0 auto; padding: 24px; min-height: 100vh; display: flex; flex-direction: column; }
+        .container { max-width: 1100px; margin: 0 auto; padding: 20px; min-height: 100vh; display: flex; flex-direction: column; }
         
         /* Auth Modal */
         .auth-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.4); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .auth-modal { background: #fff; border: 1px solid #e5e5e5; border-radius: 12px; padding: 40px; max-width: 380px; width: 90%; }
+        .auth-modal { background: #fff; border: 1px solid #e5e5e5; border-radius: 16px; padding: 40px; max-width: 360px; width: 90%; }
         .auth-logo { margin-bottom: 24px; display: flex; justify-content: center; }
-        .auth-title { font-size: 20px; font-weight: 600; text-align: center; margin-bottom: 8px; color: #1a1a1a; }
-        .auth-subtitle { color: #666; text-align: center; margin-bottom: 24px; font-size: 14px; }
-        .auth-input { width: 100%; padding: 12px 16px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 15px; outline: none; transition: all 0.2s; margin-bottom: 16px; }
-        .auth-input:focus { border-color: #28106A; background: #fff; }
-        .auth-button { width: 100%; padding: 12px; background: #28106A; border: none; border-radius: 8px; color: #fff; font-weight: 500; font-size: 15px; cursor: pointer; transition: all 0.2s; }
+        .auth-title { font-size: 18px; font-weight: 600; text-align: center; margin-bottom: 8px; }
+        .auth-subtitle { color: #666; text-align: center; margin-bottom: 24px; font-size: 13px; }
+        .auth-input { width: 100%; padding: 12px 16px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 14px; outline: none; margin-bottom: 12px; }
+        .auth-input:focus { border-color: #28106A; }
+        .auth-button { width: 100%; padding: 12px; background: #28106A; border: none; border-radius: 8px; color: #fff; font-weight: 500; font-size: 14px; cursor: pointer; }
         .auth-button:hover:not(:disabled) { background: #3d1a8f; }
-        .auth-button:disabled { opacity: 0.5; cursor: not-allowed; }
-        .auth-error { color: #dc2626; font-size: 14px; margin-bottom: 16px; padding: 10px; background: #fef2f2; border-radius: 6px; text-align: center; }
+        .auth-button:disabled { opacity: 0.5; }
+        .auth-error { color: #dc2626; font-size: 13px; margin-bottom: 12px; padding: 10px; background: #fef2f2; border-radius: 6px; text-align: center; }
         
         /* Header */
-        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 20px; border-bottom: 1px solid #f0f0f0; margin-bottom: 24px; }
-        .header-left { display: flex; align-items: center; gap: 24px; }
-        .header-title { font-size: 13px; color: #666; font-weight: 500; }
+        .header { display: flex; justify-content: space-between; align-items: center; padding-bottom: 16px; border-bottom: 1px solid #f0f0f0; margin-bottom: 20px; }
+        .header-left { display: flex; align-items: center; gap: 16px; }
+        .header-title { font-size: 12px; color: #666; font-weight: 500; background: #f5f5f5; padding: 4px 10px; border-radius: 4px; }
         
         /* Stats */
-        .stats-box { display: flex; align-items: center; gap: 20px; font-size: 13px; color: #666; }
+        .stats-box { display: flex; align-items: center; gap: 16px; font-size: 12px; }
         .stat { display: flex; flex-direction: column; align-items: flex-end; }
-        .stat-label { font-size: 10px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
+        .stat-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; }
         .stat-value { font-weight: 600; color: #1a1a1a; }
         .stat-value.green { color: #059669; }
-        .logout-btn { padding: 6px 12px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 12px; color: #666; cursor: pointer; transition: all 0.2s; }
-        .logout-btn:hover { background: #f0f0f0; border-color: #d5d5d5; }
+        .logout-btn { padding: 6px 10px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 6px; font-size: 11px; color: #666; cursor: pointer; }
+        .logout-btn:hover { background: #f0f0f0; }
         
         /* Controls */
-        .controls { display: flex; gap: 16px; margin-bottom: 20px; flex-wrap: wrap; align-items: flex-start; }
+        .controls { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
         
-        .mode-toggle { display: flex; background: #f5f5f5; border-radius: 8px; padding: 4px; }
-        .mode-btn { padding: 8px 16px; border: none; background: transparent; font-size: 13px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; transition: all 0.2s; display: flex; align-items: center; gap: 6px; }
+        .mode-toggle { display: flex; background: #f5f5f5; border-radius: 8px; padding: 3px; }
+        .mode-btn { padding: 8px 14px; border: none; background: transparent; font-size: 12px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
         .mode-btn.active { background: #fff; color: #1a1a1a; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
         
         .llm-select { position: relative; }
-        .llm-select-btn { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 13px; cursor: pointer; transition: all 0.2s; min-width: 200px; }
-        .llm-select-btn:hover { border-color: #d5d5d5; }
-        .llm-select-btn .icon { font-size: 16px; }
+        .llm-select-btn { display: flex; align-items: center; gap: 8px; padding: 8px 12px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 12px; cursor: pointer; min-width: 180px; }
+        .llm-select-btn:hover { border-color: #ccc; }
+        .llm-icon-wrapper { width: 24px; height: 24px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 4px; }
         .llm-select-btn .info { flex: 1; text-align: left; }
-        .llm-select-btn .name { font-weight: 500; display: block; }
-        .llm-select-btn .meta { font-size: 11px; color: #999; }
+        .llm-select-btn .name { font-weight: 500; display: block; font-size: 13px; }
+        .llm-select-btn .meta { font-size: 10px; color: #999; }
         
-        .llm-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; margin-top: 4px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); overflow: hidden; }
-        .llm-option { display: flex; align-items: center; gap: 10px; padding: 10px 14px; cursor: pointer; transition: all 0.15s; border-bottom: 1px solid #f5f5f5; }
+        .llm-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e5e5e5; border-radius: 10px; margin-top: 4px; z-index: 100; box-shadow: 0 4px 20px rgba(0,0,0,0.12); overflow: hidden; min-width: 260px; }
+        .llm-option { display: flex; align-items: center; gap: 10px; padding: 10px 12px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
         .llm-option:last-child { border-bottom: none; }
         .llm-option:hover { background: #fafafa; }
         .llm-option.selected { background: #f0f0ff; }
-        .llm-option .icon { font-size: 18px; }
         .llm-option .info { flex: 1; }
         .llm-option .name { font-weight: 500; font-size: 13px; }
-        .llm-option .meta { font-size: 11px; color: #999; }
+        .llm-option .meta { font-size: 10px; color: #999; }
         
-        .toggle-group { display: flex; align-items: center; gap: 8px; padding: 8px 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; }
-        .toggle-label { font-size: 13px; color: #666; display: flex; align-items: center; gap: 6px; }
-        .toggle { width: 36px; height: 20px; background: #e5e5e5; border-radius: 10px; cursor: pointer; position: relative; transition: all 0.2s; }
-        .toggle.active { background: #f59e0b; }
-        .toggle::after { content: ''; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; background: #fff; border-radius: 50%; transition: all 0.2s; box-shadow: 0 1px 2px rgba(0,0,0,0.1); }
-        .toggle.active::after { left: 18px; }
+        /* Image mode toggle */
+        .image-toggle { display: flex; background: #f5f5f5; border-radius: 8px; padding: 3px; }
+        .image-btn { padding: 8px 12px; border: none; background: transparent; font-size: 11px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; display: flex; align-items: center; gap: 4px; }
+        .image-btn.active { background: #fff; box-shadow: 0 1px 3px rgba(0,0,0,0.1); }
+        .image-btn.active.infographic { color: #f59e0b; }
+        .image-btn.active.realistic { color: #8b5cf6; }
         
-        /* Input Area - immediately after controls */
-        .input-section { margin-bottom: 24px; }
-        .input-wrapper { display: flex; gap: 12px; }
-        .prompt-input { flex: 1; padding: 14px 18px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 15px; font-family: inherit; resize: none; outline: none; transition: all 0.2s; min-height: 52px; }
-        .prompt-input:focus { border-color: #28106A; background: #fff; box-shadow: 0 0 0 3px rgba(40,16,106,0.1); }
-        .prompt-input::placeholder { color: #999; }
-        .send-btn { padding: 14px 24px; background: #28106A; border: none; border-radius: 10px; color: #fff; font-weight: 500; font-size: 14px; cursor: pointer; transition: all 0.2s; display: flex; align-items: center; gap: 8px; }
+        /* Input */
+        .input-section { margin-bottom: 20px; }
+        .input-wrapper { display: flex; gap: 10px; }
+        .prompt-input { flex: 1; padding: 14px 16px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; font-size: 14px; font-family: inherit; resize: none; outline: none; min-height: 50px; }
+        .prompt-input:focus { border-color: #28106A; background: #fff; }
+        .send-btn { padding: 14px 20px; background: #28106A; border: none; border-radius: 10px; color: #fff; font-weight: 500; font-size: 13px; cursor: pointer; display: flex; align-items: center; gap: 6px; }
         .send-btn:hover:not(:disabled) { background: #3d1a8f; }
-        .send-btn:disabled { opacity: 0.5; cursor: not-allowed; }
-        .clear-btn { padding: 14px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; cursor: pointer; transition: all 0.2s; font-size: 16px; }
+        .send-btn:disabled { opacity: 0.5; }
+        .clear-btn { padding: 14px; background: #fafafa; border: 1px solid #e5e5e5; border-radius: 10px; cursor: pointer; font-size: 14px; }
         .clear-btn:hover { background: #f0f0f0; }
         
-        /* Chat Area */
+        /* Chat */
         .chat-area { flex: 1; overflow-y: auto; }
         
-        .message { margin-bottom: 20px; animation: fadeIn 0.3s ease; }
+        .message { margin-bottom: 16px; animation: fadeIn 0.3s ease; }
         @keyframes fadeIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: translateY(0); } }
         
         .message.user { display: flex; justify-content: flex-end; }
-        .message.user .bubble { background: #28106A; color: #fff; padding: 12px 18px; border-radius: 16px 16px 4px 16px; max-width: 70%; }
-        .message.user .mode-tag { font-size: 10px; opacity: 0.7; margin-bottom: 4px; }
+        .message.user .bubble { background: #28106A; color: #fff; padding: 12px 16px; border-radius: 16px 16px 4px 16px; max-width: 70%; }
+        .message.user .mode-tag { font-size: 9px; opacity: 0.7; margin-bottom: 4px; }
         
-        .message.error .bubble { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px 18px; border-radius: 12px; }
+        .message.error .bubble { background: #fef2f2; border: 1px solid #fecaca; color: #dc2626; padding: 12px 16px; border-radius: 10px; }
         
-        /* Single LLM response */
+        /* LLM Response with Markdown */
         .llm-response { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 12px; padding: 16px; }
-        .llm-response-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
-        .llm-response-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
-        .llm-response-meta .name { font-weight: 600; font-size: 14px; }
-        .llm-response-meta .tokens { font-size: 11px; color: #999; }
-        .llm-response-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #333; }
+        .llm-response-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+        .llm-response-icon { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 5px; }
+        .llm-response-meta .name { font-weight: 600; font-size: 13px; }
+        .llm-response-meta .tokens { font-size: 10px; color: #999; }
+        .llm-response-content { font-size: 14px; line-height: 1.7; color: #333; }
         
-        /* Parallel streams grid */
-        .parallel-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 12px; margin-bottom: 20px; }
-        .stream-card { background: #1a1a1a; border-radius: 8px; padding: 12px; font-family: 'SF Mono', 'Monaco', monospace; font-size: 11px; color: #a0a0a0; max-height: 180px; overflow-y: auto; }
-        .stream-card-header { display: flex; align-items: center; gap: 8px; margin-bottom: 8px; padding-bottom: 8px; border-bottom: 1px solid #333; }
-        .stream-card-icon { font-size: 14px; }
-        .stream-card-name { color: #fff; font-weight: 500; font-family: 'Inter', sans-serif; }
-        .stream-card-status { margin-left: auto; font-size: 10px; padding: 2px 6px; border-radius: 4px; }
+        /* Markdown styles */
+        .llm-response-content .md-h1 { font-size: 20px; font-weight: 700; margin: 16px 0 8px 0; color: #1a1a1a; }
+        .llm-response-content .md-h2 { font-size: 17px; font-weight: 600; margin: 14px 0 6px 0; color: #1a1a1a; }
+        .llm-response-content .md-h3 { font-size: 15px; font-weight: 600; margin: 12px 0 4px 0; color: #333; }
+        .llm-response-content .md-p { margin: 8px 0; }
+        .llm-response-content .md-bold { font-weight: 600; margin: 8px 0; }
+        .llm-response-content .md-li { margin-left: 20px; margin-bottom: 4px; list-style-type: disc; }
+        .llm-response-content .md-li-num { margin-left: 20px; margin-bottom: 4px; list-style-type: decimal; }
+        .llm-response-content .md-quote { border-left: 3px solid #28106A; padding-left: 12px; color: #555; font-style: italic; margin: 8px 0; }
+        .llm-response-content .md-hr { border: none; border-top: 1px solid #eee; margin: 16px 0; }
+        .llm-response-content .inline-code { background: #f0f0f0; padding: 2px 6px; border-radius: 4px; font-family: monospace; font-size: 13px; }
+        .llm-response-content .code-block { background: #1a1a1a; color: #e5e5e5; padding: 12px; border-radius: 8px; overflow-x: auto; font-family: monospace; font-size: 12px; margin: 8px 0; }
+        .llm-response-content strong { font-weight: 600; }
+        .llm-response-content em { font-style: italic; }
+        
+        /* Parallel streams */
+        .parallel-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; margin-bottom: 16px; }
+        .stream-card { background: #1a1a1a; border-radius: 8px; padding: 10px; font-family: 'SF Mono', monospace; font-size: 10px; color: #a0a0a0; max-height: 140px; overflow-y: auto; }
+        .stream-card-header { display: flex; align-items: center; gap: 6px; margin-bottom: 6px; padding-bottom: 6px; border-bottom: 1px solid #333; }
+        .stream-card-icon { width: 18px; height: 18px; border-radius: 4px; padding: 3px; }
+        .stream-card-name { color: #fff; font-weight: 500; font-family: 'Inter', sans-serif; font-size: 11px; }
+        .stream-card-status { margin-left: auto; font-size: 9px; padding: 2px 6px; border-radius: 4px; }
         .stream-card-status.pending { background: #333; color: #666; }
         .stream-card-status.streaming { background: #28106A; color: #fff; }
         .stream-card-status.complete { background: #059669; color: #fff; }
         .stream-card-status.error { background: #dc2626; color: #fff; }
-        .stream-card-content { line-height: 1.5; word-break: break-word; }
-        .stream-card::-webkit-scrollbar { width: 4px; }
-        .stream-card::-webkit-scrollbar-track { background: #333; }
-        .stream-card::-webkit-scrollbar-thumb { background: #555; border-radius: 2px; }
+        .stream-card-content { line-height: 1.4; word-break: break-word; }
         
-        /* Integration result */
-        .integration-box { background: linear-gradient(135deg, #f8f7ff 0%, #f0f0ff 100%); border: 1px solid #e0e0ff; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .integration-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-        .integration-icon { width: 40px; height: 40px; background: #28106A; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .integration-title { font-weight: 600; font-size: 16px; color: #28106A; }
-        .integration-subtitle { font-size: 12px; color: #666; }
-        .integration-content { font-size: 14px; line-height: 1.7; white-space: pre-wrap; color: #333; }
+        /* Integration */
+        .integration-box { background: #fafafa; border: 1px solid #e5e5e5; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .integration-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; padding-bottom: 12px; border-bottom: 1px solid #eee; }
+        .integration-icon { width: 32px; height: 32px; background: #28106A; border-radius: 8px; display: flex; align-items: center; justify-content: center; padding: 6px; color: #fff; }
+        .integration-title { font-weight: 600; font-size: 14px; }
+        .integration-subtitle { font-size: 11px; color: #666; }
+        .integration-content { font-size: 14px; line-height: 1.7; color: #333; }
         
-        /* Infographic */
-        .infographic-box { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; border-radius: 12px; padding: 20px; margin-bottom: 20px; }
-        .infographic-header { display: flex; align-items: center; gap: 10px; margin-bottom: 16px; }
-        .infographic-icon { width: 40px; height: 40px; background: #f59e0b; border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
-        .infographic-title { font-weight: 600; font-size: 16px; color: #92400e; }
-        .infographic-images { display: flex; flex-direction: column; gap: 12px; }
-        .infographic-img-wrapper { position: relative; border-radius: 8px; overflow: hidden; }
-        .infographic-img { width: 100%; height: auto; display: block; }
-        .download-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border: none; color: #fff; padding: 6px 12px; border-radius: 6px; font-size: 12px; cursor: pointer; display: flex; align-items: center; gap: 4px; }
+        /* Image result */
+        .image-box { background: linear-gradient(135deg, #fffbeb 0%, #fef3c7 100%); border: 1px solid #fde68a; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
+        .image-box.realistic { background: linear-gradient(135deg, #f3e8ff 0%, #e9d5ff 100%); border-color: #d8b4fe; }
+        .image-header { display: flex; align-items: center; gap: 10px; margin-bottom: 12px; }
+        .image-icon { width: 32px; height: 32px; border-radius: 8px; display: flex; align-items: center; justify-content: center; font-size: 18px; }
+        .image-icon.infographic { background: #f59e0b; }
+        .image-icon.realistic { background: #8b5cf6; }
+        .image-title { font-weight: 600; font-size: 14px; }
+        .image-title.infographic { color: #92400e; }
+        .image-title.realistic { color: #6b21a8; }
+        .image-images { display: flex; flex-direction: column; gap: 10px; }
+        .image-img-wrapper { position: relative; border-radius: 8px; overflow: hidden; }
+        .image-img { width: 100%; height: auto; display: block; }
+        .download-btn { position: absolute; top: 8px; right: 8px; background: rgba(0,0,0,0.7); border: none; color: #fff; padding: 6px 10px; border-radius: 6px; font-size: 11px; cursor: pointer; }
         .download-btn:hover { background: rgba(0,0,0,0.85); }
         
-        /* Processing indicator */
-        .processing { display: flex; align-items: center; gap: 10px; padding: 16px; background: #fafafa; border-radius: 10px; font-size: 14px; color: #666; margin-bottom: 16px; }
-        .spinner { width: 18px; height: 18px; border: 2px solid #e5e5e5; border-top-color: #28106A; border-radius: 50%; animation: spin 0.8s linear infinite; }
+        /* Processing */
+        .processing { display: flex; align-items: center; gap: 8px; padding: 12px; background: #fafafa; border-radius: 8px; font-size: 13px; color: #666; margin-bottom: 12px; }
+        .spinner { width: 16px; height: 16px; border: 2px solid #e5e5e5; border-top-color: #28106A; border-radius: 50%; animation: spin 0.8s linear infinite; }
         @keyframes spin { to { transform: rotate(360deg); } }
         
         /* Empty state */
-        .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 60px 20px; color: #666; }
-        .empty-icon { font-size: 48px; margin-bottom: 16px; opacity: 0.5; }
-        .empty-title { font-size: 18px; font-weight: 600; color: #1a1a1a; margin-bottom: 8px; }
-        .empty-desc { font-size: 14px; max-width: 400px; line-height: 1.6; }
+        .empty-state { flex: 1; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 40px 20px; color: #666; }
+        .empty-icon { font-size: 40px; margin-bottom: 12px; opacity: 0.5; }
+        .empty-title { font-size: 16px; font-weight: 600; color: #1a1a1a; margin-bottom: 6px; }
+        .empty-desc { font-size: 13px; max-width: 400px; line-height: 1.5; }
         
         /* Footer */
-        .footer { padding-top: 20px; border-top: 1px solid #f0f0f0; margin-top: auto; display: flex; justify-content: space-between; align-items: center; }
-        .footer-text { font-size: 12px; color: #999; }
+        .footer { padding-top: 16px; border-top: 1px solid #f0f0f0; margin-top: auto; display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: #999; }
         .footer-link { color: #28106A; text-decoration: none; font-weight: 500; }
-        .footer-link:hover { text-decoration: underline; }
         
         @media (max-width: 768px) {
-          .container { padding: 16px; }
-          .header { flex-direction: column; gap: 16px; align-items: flex-start; }
-          .stats-box { width: 100%; justify-content: space-between; }
-          .controls { flex-direction: column; }
-          .mode-toggle, .llm-select, .toggle-group { width: 100%; }
-          .llm-select-btn { width: 100%; }
+          .controls { flex-direction: column; align-items: stretch; }
           .parallel-grid { grid-template-columns: 1fr; }
           .input-wrapper { flex-direction: column; }
           .send-btn, .clear-btn { width: 100%; justify-content: center; }
         }
       `}</style>
 
-      {/* Auth Modal */}
       {showAuthModal && (
         <div className="auth-overlay">
           <div className="auth-modal">
@@ -683,15 +814,7 @@ Respond with:
             <div className="auth-subtitle">Enter password to continue</div>
             {authError && <div className="auth-error">{authError}</div>}
             <form onSubmit={handleAuth}>
-              <input
-                ref={authInputRef}
-                type="password"
-                className="auth-input"
-                value={authPassword}
-                onChange={(e) => setAuthPassword(e.target.value)}
-                placeholder="Password"
-                disabled={isAuthenticating}
-              />
+              <input ref={authInputRef} type="password" className="auth-input" value={authPassword} onChange={(e) => setAuthPassword(e.target.value)} placeholder="Password" disabled={isAuthenticating} />
               <button type="submit" className="auth-button" disabled={!authPassword.trim() || isAuthenticating}>
                 {isAuthenticating ? 'Verifying...' : 'Enter'}
               </button>
@@ -701,7 +824,6 @@ Respond with:
       )}
 
       <div className="container">
-        {/* Header */}
         <header className="header">
           <div className="header-left">
             <a href="/" style={{ display: 'flex' }}><PixanLogo /></a>
@@ -710,7 +832,7 @@ Respond with:
           
           <div className="stats-box">
             <div className="stat">
-              <span className="stat-label">Gateway Balance</span>
+              <span className="stat-label">Balance</span>
               <span className="stat-value green">${gatewayBalance !== null ? gatewayBalance.toFixed(2) : '—'}</span>
             </div>
             <div className="stat">
@@ -719,99 +841,87 @@ Respond with:
             </div>
             <div className="stat">
               <span className="stat-label">Tokens</span>
-              <span className="stat-value">{sessionTokens.input.toLocaleString()} / {sessionTokens.output.toLocaleString()}</span>
+              <span className="stat-value">{sessionTokens.input.toLocaleString()}/{sessionTokens.output.toLocaleString()}</span>
             </div>
             {isAuthenticated && <button className="logout-btn" onClick={handleLogout}>Logout</button>}
           </div>
         </header>
 
-        {/* Controls */}
         <div className="controls">
           <div className="mode-toggle">
             <button className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`} onClick={() => setResponseMode('single')} disabled={isProcessing}>
               👤 Single
             </button>
             <button className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`} onClick={() => setResponseMode('group')} disabled={isProcessing}>
-              👥 Group
+              👥 Group ({GROUP_LLMS.length})
             </button>
           </div>
 
           {responseMode === 'single' && (
             <div className="llm-select">
-              <button className="llm-select-btn" onClick={() => document.getElementById('llm-dropdown').style.display = document.getElementById('llm-dropdown').style.display === 'none' ? 'block' : 'none'}>
-                <span className="icon">{LLM_CONFIG[selectedLLM].icon}</span>
+              <button className="llm-select-btn" onClick={() => setShowLLMDropdown(!showLLMDropdown)}>
+                <div className="llm-icon-wrapper" style={{ background: LLM_CONFIG[selectedLLM].bgColor, color: LLM_CONFIG[selectedLLM].color }}>
+                  {LLMIcons[selectedLLM]()}
+                </div>
                 <span className="info">
                   <span className="name">{LLM_CONFIG[selectedLLM].name}</span>
                   <span className="meta">{LLM_CONFIG[selectedLLM].context} • ${LLM_CONFIG[selectedLLM].inputPrice}/${LLM_CONFIG[selectedLLM].outputPrice}</span>
                 </span>
                 <span>▾</span>
               </button>
-              <div id="llm-dropdown" className="llm-dropdown" style={{ display: 'none' }}>
-                {Object.entries(LLM_CONFIG).map(([key, config]) => (
-                  <div
-                    key={key}
-                    className={`llm-option ${selectedLLM === key ? 'selected' : ''}`}
-                    onClick={() => {
-                      setSelectedLLM(key);
-                      document.getElementById('llm-dropdown').style.display = 'none';
-                    }}
-                  >
-                    <span className="icon">{config.icon}</span>
-                    <span className="info">
-                      <span className="name">{config.name}</span>
-                      <span className="meta">{config.context} • ${config.inputPrice}/${config.outputPrice} per 1K</span>
-                    </span>
-                    {selectedLLM === key && <span>✓</span>}
-                  </div>
-                ))}
-              </div>
+              {showLLMDropdown && (
+                <div className="llm-dropdown">
+                  {Object.entries(LLM_CONFIG).map(([key, config]) => (
+                    <div key={key} className={`llm-option ${selectedLLM === key ? 'selected' : ''}`} onClick={() => { setSelectedLLM(key); setShowLLMDropdown(false); }}>
+                      <div className="llm-icon-wrapper" style={{ background: config.bgColor, color: config.color, width: 28, height: 28 }}>
+                        {LLMIcons[key]()}
+                      </div>
+                      <span className="info">
+                        <span className="name">{config.name}</span>
+                        <span className="meta">{config.context} • ${config.inputPrice}/${config.outputPrice} per 1K</span>
+                      </span>
+                      {selectedLLM === key && <span>✓</span>}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
           )}
 
-          {responseMode === 'group' && (
-            <span style={{ fontSize: '13px', color: '#666', padding: '8px 14px' }}>
-              All {Object.keys(LLM_CONFIG).length} LLMs will respond → Claude integrates
-            </span>
-          )}
-
-          <div className="toggle-group">
-            <span className="toggle-label">🍌 Infographic</span>
-            <div className={`toggle ${generateInfographic ? 'active' : ''}`} onClick={() => setGenerateInfographic(!generateInfographic)} />
+          <div className="image-toggle">
+            <button className={`image-btn ${imageMode === 'none' ? 'active' : ''}`} onClick={() => setImageMode('none')}>
+              ✕ None
+            </button>
+            <button className={`image-btn infographic ${imageMode === 'infographic' ? 'active' : ''}`} onClick={() => setImageMode('infographic')}>
+              📊 Infographic
+            </button>
+            <button className={`image-btn realistic ${imageMode === 'realistic' ? 'active' : ''}`} onClick={() => setImageMode('realistic')}>
+              🖼️ Realistic
+            </button>
           </div>
         </div>
 
-        {/* Input Section - immediately after controls */}
         <div className="input-section">
           <form onSubmit={handleSubmit} className="input-wrapper">
-            <textarea
-              ref={inputRef}
-              className="prompt-input"
-              value={prompt}
-              onChange={(e) => setPrompt(e.target.value)}
-              onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-              placeholder={isAuthenticated ? `Ask anything... (${responseMode === 'single' ? LLM_CONFIG[selectedLLM].name : 'Group mode'})` : 'Authenticate to continue...'}
-              disabled={isProcessing || !isAuthenticated}
-              rows={1}
-            />
-            {messages.length > 0 && <button type="button" className="clear-btn" onClick={clearChat} title="Clear chat">🗑️</button>}
+            <textarea ref={inputRef} className="prompt-input" value={prompt} onChange={(e) => setPrompt(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }} placeholder={`Ask anything... (${responseMode === 'single' ? LLM_CONFIG[selectedLLM].name : 'Group: ' + GROUP_LLMS.length + ' LLMs'})`} disabled={isProcessing || !isAuthenticated} rows={1} />
+            {messages.length > 0 && <button type="button" className="clear-btn" onClick={clearChat}>🗑️</button>}
             <button type="submit" className="send-btn" disabled={!prompt.trim() || isProcessing || !isAuthenticated}>
-              {isProcessing ? <><div className="spinner"></div> Processing</> : <>Send →</>}
+              {isProcessing ? <><div className="spinner"></div></> : 'Send →'}
             </button>
           </form>
         </div>
 
-        {/* Chat Area */}
         <div className="chat-area">
           {messages.length === 0 && Object.keys(parallelStreams).length === 0 ? (
             <div className="empty-state">
               <div className="empty-icon">{responseMode === 'single' ? '👤' : '👥'}</div>
-              <div className="empty-title">{responseMode === 'single' ? 'Single Mode' : 'Supervised Group Mode'}</div>
+              <div className="empty-title">{responseMode === 'single' ? 'Single Mode' : `Group Mode (${GROUP_LLMS.length} LLMs)`}</div>
               <div className="empty-desc">
                 {responseMode === 'single'
-                  ? `${LLM_CONFIG[selectedLLM].name} will respond to your question.`
-                  : `All ${Object.keys(LLM_CONFIG).length} LLMs will respond simultaneously, then Claude will integrate all perspectives.`
+                  ? `${LLM_CONFIG[selectedLLM].name} will respond.`
+                  : `Claude, GPT, Gemini & Grok will respond in parallel, then Claude integrates.`
                 }
-                {generateInfographic && ' The final response will be converted to a visual infographic.'}
+                {imageMode !== 'none' && ` + ${imageMode === 'infographic' ? 'Infographic' : 'Realistic image'} generation.`}
               </div>
             </div>
           ) : (
@@ -827,37 +937,40 @@ Respond with:
                   {msg.type === 'llm' && (
                     <div className="llm-response">
                       <div className="llm-response-header">
-                        <div className="llm-response-icon" style={{ background: LLM_CONFIG[msg.llm].color }}>{LLM_CONFIG[msg.llm].icon}</div>
+                        <div className="llm-response-icon" style={{ background: LLM_CONFIG[msg.llm].bgColor, color: LLM_CONFIG[msg.llm].color }}>
+                          {LLMIcons[msg.llm]()}
+                        </div>
                         <div className="llm-response-meta">
                           <div className="name">{LLM_CONFIG[msg.llm].name}</div>
                           {msg.tokens && <div className="tokens">{msg.tokens.inputTokens}/{msg.tokens.outputTokens} tokens • ${msg.tokens.cost.toFixed(6)}</div>}
                         </div>
                         {msg.streaming && <div className="spinner" style={{ marginLeft: 'auto' }}></div>}
                       </div>
-                      <div className="llm-response-content">{msg.content}</div>
+                      <div className="llm-response-content">{renderMarkdown(msg.content)}</div>
                     </div>
                   )}
                   {msg.type === 'error' && <div className="bubble">{msg.content}</div>}
                 </div>
               ))}
 
-              {/* Parallel streams for group mode */}
               {Object.keys(parallelStreams).length > 0 && (
                 <div className="parallel-grid">
                   {Object.entries(parallelStreams).map(([llmKey, stream]) => (
                     <div key={llmKey} className="stream-card">
                       <div className="stream-card-header">
-                        <span className="stream-card-icon">{LLM_CONFIG[llmKey].icon}</span>
+                        <div className="stream-card-icon" style={{ background: LLM_CONFIG[llmKey].bgColor, color: LLM_CONFIG[llmKey].color }}>
+                          {LLMIcons[llmKey]()}
+                        </div>
                         <span className="stream-card-name">{LLM_CONFIG[llmKey].name}</span>
                         <span className={`stream-card-status ${stream.status}`}>
-                          {stream.status === 'pending' && 'Waiting'}
-                          {stream.status === 'streaming' && 'Streaming'}
-                          {stream.status === 'complete' && 'Done'}
-                          {stream.status === 'error' && 'Error'}
+                          {stream.status === 'pending' && '⏳'}
+                          {stream.status === 'streaming' && '⚡'}
+                          {stream.status === 'complete' && '✓'}
+                          {stream.status === 'error' && '✗'}
                         </span>
                       </div>
                       <div className="stream-card-content">
-                        {stream.content || (stream.status === 'pending' ? 'Waiting to start...' : '')}
+                        {stream.content || (stream.status === 'pending' ? 'Waiting...' : '')}
                         {stream.status === 'streaming' && <span style={{ opacity: 0.5 }}>▌</span>}
                       </div>
                     </div>
@@ -865,32 +978,32 @@ Respond with:
                 </div>
               )}
 
-              {/* Integration result */}
               {integrationResult && (
                 <div className="integration-box">
                   <div className="integration-header">
-                    <div className="integration-icon">🧠</div>
+                    <div className="integration-icon">{LLMIcons.claude()}</div>
                     <div>
                       <div className="integration-title">Claude Integration</div>
-                      <div className="integration-subtitle">Synthesized from all LLM responses</div>
+                      <div className="integration-subtitle">Synthesized from {GROUP_LLMS.length} LLMs</div>
                     </div>
                     {integrationResult.streaming && <div className="spinner" style={{ marginLeft: 'auto' }}></div>}
                   </div>
-                  <div className="integration-content">{integrationResult.content}</div>
+                  <div className="integration-content">{renderMarkdown(integrationResult.content)}</div>
                 </div>
               )}
 
-              {/* Infographic */}
-              {infographicResult?.images?.length > 0 && (
-                <div className="infographic-box">
-                  <div className="infographic-header">
-                    <div className="infographic-icon">🍌</div>
-                    <div className="infographic-title">Nano Banana Pro Infographic</div>
+              {imageResult?.images?.length > 0 && (
+                <div className={`image-box ${imageResult.mode}`}>
+                  <div className="image-header">
+                    <div className={`image-icon ${imageResult.mode}`}>{imageResult.mode === 'infographic' ? '📊' : '🖼️'}</div>
+                    <div className={`image-title ${imageResult.mode}`}>
+                      {imageResult.mode === 'infographic' ? 'Infographic' : 'Realistic Image'}
+                    </div>
                   </div>
-                  <div className="infographic-images">
-                    {infographicResult.images.map((img, i) => (
-                      <div key={i} className="infographic-img-wrapper">
-                        <img src={img.url} alt={`Infographic ${i + 1}`} className="infographic-img" />
+                  <div className="image-images">
+                    {imageResult.images.map((img, i) => (
+                      <div key={i} className="image-img-wrapper">
+                        <img src={img.url} alt={`Generated ${i + 1}`} className="image-img" />
                         <button className="download-btn" onClick={() => downloadImage(img.url, i)}>⬇ Download</button>
                       </div>
                     ))}
@@ -898,11 +1011,10 @@ Respond with:
                 </div>
               )}
 
-              {/* Processing indicator */}
-              {isProcessing && currentPhase === 'infographic' && (
+              {isProcessing && currentPhase === 'image' && (
                 <div className="processing">
                   <div className="spinner"></div>
-                  <span>Generating infographic with Nano Banana Pro...</span>
+                  <span>Generating {imageMode === 'infographic' ? 'infographic' : 'realistic image'}...</span>
                 </div>
               )}
             </>
@@ -910,10 +1022,9 @@ Respond with:
           <div ref={messagesEndRef} />
         </div>
 
-        {/* Footer */}
         <footer className="footer">
-          <span className="footer-text">Powered by <a href="https://pixan.ai" className="footer-link">pixan.ai</a> • Vercel AI Gateway</span>
-          <span className="footer-text">Conversation continues automatically</span>
+          <span>Powered by <a href="https://pixan.ai" className="footer-link">pixan.ai</a></span>
+          <span>Conversation continues automatically</span>
         </footer>
       </div>
     </>
