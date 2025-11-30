@@ -1,10 +1,11 @@
 import { compare } from 'bcryptjs';
 import jwt from 'jsonwebtoken';
+import { withRateLimit, authLimiter } from '../../../lib/rate-limiter';
 
 const ADMIN_PASSWORD_HASH = '$2a$10$Xm8Z5J9kXm8Z5J9kXm8Z5O.FgD3HYJ5p3vKqXm8Z5J9kXm8Z5J9k'; // Hash de "Pixan01."
 const JWT_SECRET = process.env.JWT_SECRET || 'pixan-admin-secret-2024';
 
-export default async function handler(req, res) {
+async function authHandler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -37,3 +38,6 @@ export default async function handler(req, res) {
     return res.status(500).json({ error: 'Internal server error' });
   }
 }
+
+// Apply strict rate limiting for auth endpoints
+export default withRateLimit(authHandler, authLimiter);

@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import Head from 'next/head';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
+import { secureGetItem } from '../lib/secure-storage';
 
 export default function LLMColaborativa() {
   const { t } = useLanguage();
@@ -170,22 +171,23 @@ export default function LLMColaborativa() {
     return Object.keys(newErrors).length === 0;
   };
 
-  // Función para obtener API keys del localStorage
-  const getApiKeys = () => {
+  // Función para obtener API keys del localStorage con encriptación segura
+  const getApiKeys = async () => {
     const keys = {};
     const providers = ['claude', 'openai', 'gemini', 'perplexity', 'deepseek', 'mistral'];
-    
-    providers.forEach(provider => {
-      const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
-      if (encryptedKey) {
-        try {
-          keys[provider] = decodeURIComponent(atob(encryptedKey));
-        } catch (e) {
-          console.error(`Error decoding ${provider} key:`, e);
+    const encryptionPassword = password || 'pixan-default-key';
+
+    for (const provider of providers) {
+      try {
+        const key = await secureGetItem(`pixan_api_${provider}`, encryptionPassword);
+        if (key) {
+          keys[provider] = key;
         }
+      } catch (e) {
+        console.error(`Error decrypting ${provider} key:`, e);
       }
-    });
-    
+    }
+
     return keys;
   };
 
@@ -200,9 +202,9 @@ export default function LLMColaborativa() {
     setMetrics(null);
 
     const startTime = Date.now();
-    
-    // Obtener API keys del localStorage
-    const apiKeys = getApiKeys();
+
+    // Obtener API keys del localStorage con encriptación segura
+    const apiKeys = await getApiKeys();
 
     try {
       // Paso 1: Inicialización

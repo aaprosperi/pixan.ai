@@ -6,6 +6,7 @@ import { BiBot } from 'react-icons/bi';
 import { toast, Toaster } from 'react-hot-toast';
 import { useLanguage } from '../contexts/LanguageContext';
 import LanguageSelector from '../components/LanguageSelector';
+import { secureSetItem, secureGetItem, secureRemoveItem, isCryptoAvailable } from '../lib/secure-storage';
 // Eliminamos confetti por ahora para evitar errores de SSR
 
 const API_PROVIDERS = [
@@ -22,6 +23,7 @@ export default function APIAdmin() {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [password, setPassword] = useState('');
   const [apiKeys, setApiKeys] = useState({});
+  const [editingKeys, setEditingKeys] = useState({}); // Nuevo estado para edición
   const [showKeys, setShowKeys] = useState({});
   const [loading, setLoading] = useState({});
   const [balances, setBalances] = useState({});
@@ -33,19 +35,9 @@ export default function APIAdmin() {
     }
   }, [isAuthenticated]);
 
-  // Función para encriptar en el cliente
-  const encryptClient = (text) => {
-    // Simple encriptación para localStorage (NO es seguridad real, solo ofuscación)
-    return btoa(encodeURIComponent(text));
-  };
-
-  // Función para desencriptar en el cliente
-  const decryptClient = (text) => {
-    try {
-      return decodeURIComponent(atob(text));
-    } catch {
-      return '';
-    }
+  // Password para encriptación (en producción debería derivarse del auth password)
+  const getEncryptionPassword = () => {
+    return password || 'pixan-default-key'; // Usar el password de autenticación
   };
 
   const handleLogin = async (e) => {
@@ -85,20 +77,35 @@ export default function APIAdmin() {
 
   const loadAPIKeys = async () => {
     try {
+      // Verificar que Web Crypto API esté disponible
+      if (!isCryptoAvailable()) {
+        console.warn('Web Crypto API not available, using basic storage');
+      }
+
       // Cargar desde localStorage
       const storedKeys = {};
-      API_PROVIDERS.forEach(provider => {
-        const encryptedKey = localStorage.getItem(`pixan_api_${provider.id}`);
-        if (encryptedKey) {
-          const decryptedKey = decryptClient(encryptedKey);
+      const editing = {};
+
+      for (const provider of API_PROVIDERS) {
+        try {
+          const decryptedKey = await secureGetItem(
+            `pixan_api_${provider.id}`,
+            getEncryptionPassword()
+          );
+
           if (decryptedKey) {
             // Mostrar solo los primeros y últimos caracteres
             const masked = decryptedKey.substring(0, 8) + '...' + decryptedKey.substring(decryptedKey.length - 4);
             storedKeys[provider.id] = masked;
+            editing[provider.id] = false; // Inicialmente no está editando
           }
+        } catch (error) {
+          console.error(`Error loading key for ${provider.id}:`, error);
         }
-      });
+      }
+
       setApiKeys(storedKeys);
+      setEditingKeys(editing);
     } catch (error) {
       console.error('Error loading keys:', error);
       toast.error(t('apiAdmin.errors.saveError'));
@@ -107,7 +114,7 @@ export default function APIAdmin() {
 
   const saveAPIKey = async (provider, key) => {
     setLoading({ ...loading, [provider]: true });
-    
+
     try {
       // Validar la API key primero
       const response = await fetch('/api/admin/save-key', {
@@ -117,10 +124,13 @@ export default function APIAdmin() {
       });
 
       if (response.ok) {
-        // Guardar en localStorage encriptada
-        const encryptedKey = encryptClient(key);
-        localStorage.setItem(`pixan_api_${provider}`, encryptedKey);
-        
+        // Guardar en localStorage con encriptación real
+        await secureSetItem(
+          `pixan_api_${provider}`,
+          key,
+          getEncryptionPassword()
+        );
+
         toast.success(`${t('apiAdmin.success.keySaved')} - ${provider}`, {
           icon: '✅',
           style: {
@@ -129,12 +139,16 @@ export default function APIAdmin() {
             color: '#fff',
           },
         });
+
+        // Resetear estado de edición
+        setEditingKeys(prev => ({ ...prev, [provider]: false }));
         await loadAPIKeys();
       } else {
         const data = await response.json();
         toast.error(`Error: ${data.error}`);
       }
     } catch (error) {
+      console.error('Error saving API key:', error);
       toast.error('Error al guardar');
     } finally {
       setLoading({ ...loading, [provider]: false });
@@ -143,17 +157,19 @@ export default function APIAdmin() {
 
   const testConnection = async (provider) => {
     setConnectionStatus({ ...connectionStatus, [provider]: 'testing' });
-    
+
     try {
-      // Obtener la API key de localStorage
-      const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
-      if (!encryptedKey) {
+      // Obtener la API key de localStorage con desencriptación segura
+      const apiKey = await secureGetItem(
+        `pixan_api_${provider}`,
+        getEncryptionPassword()
+      );
+
+      if (!apiKey) {
         toast.error(t('apiAdmin.errors.invalidKey'));
         setConnectionStatus({ ...connectionStatus, [provider]: 'error' });
         return;
       }
-      
-      const apiKey = decryptClient(encryptedKey);
       
       const response = await fetch('/api/admin/test-connection', {
         method: 'POST',
@@ -217,19 +233,24 @@ export default function APIAdmin() {
 
   const deleteAPIKey = (provider) => {
     try {
-      // Remove from localStorage
-      localStorage.removeItem(`pixan_api_${provider}`);
-      
+      // Remove from localStorage usando secure storage
+      secureRemoveItem(`pixan_api_${provider}`);
+
       // Update state to remove the masked key
       const updatedKeys = { ...apiKeys };
       delete updatedKeys[provider];
       setApiKeys(updatedKeys);
-      
+
+      // Clear editing state
+      const updatedEditing = { ...editingKeys };
+      delete updatedEditing[provider];
+      setEditingKeys(updatedEditing);
+
       // Clear connection status for this provider
       const updatedStatus = { ...connectionStatus };
       delete updatedStatus[provider];
       setConnectionStatus(updatedStatus);
-      
+
       toast.success(`${API_PROVIDERS.find(p => p.id === provider)?.name} ${t('apiAdmin.success.keyDeleted')}`, {
         icon: '🗑️',
         style: {
@@ -239,6 +260,7 @@ export default function APIAdmin() {
         },
       });
     } catch (error) {
+      console.error('Error deleting key:', error);
       toast.error(t('apiAdmin.errors.saveError'));
     }
   };
@@ -401,13 +423,35 @@ export default function APIAdmin() {
                       <input
                         type={showKeys[provider.id] ? 'text' : 'password'}
                         value={apiKeys[provider.id] || ''}
-                        onChange={(e) => setApiKeys({ ...apiKeys, [provider.id]: e.target.value })}
-                        onFocus={(e) => {
-                          // Al hacer focus, cargar la key real si existe
-                          const encryptedKey = localStorage.getItem(`pixan_api_${provider.id}`);
-                          if (encryptedKey && apiKeys[provider.id]?.includes('...')) {
-                            const decryptedKey = decryptClient(encryptedKey);
-                            setApiKeys({ ...apiKeys, [provider.id]: decryptedKey });
+                        onChange={(e) => {
+                          const newValue = e.target.value;
+                          setApiKeys(prev => ({ ...prev, [provider.id]: newValue }));
+                          if (!editingKeys[provider.id]) {
+                            setEditingKeys(prev => ({ ...prev, [provider.id]: true }));
+                          }
+                        }}
+                        onFocus={async () => {
+                          // Solo cargar la key real si no está editando y existe encriptada
+                          if (!editingKeys[provider.id] && apiKeys[provider.id]?.includes('...')) {
+                            try {
+                              const decryptedKey = await secureGetItem(
+                                `pixan_api_${provider.id}`,
+                                getEncryptionPassword()
+                              );
+                              if (decryptedKey) {
+                                setApiKeys(prev => ({ ...prev, [provider.id]: decryptedKey }));
+                                setEditingKeys(prev => ({ ...prev, [provider.id]: true }));
+                              }
+                            } catch (error) {
+                              console.error('Error loading key on focus:', error);
+                            }
+                          }
+                        }}
+                        onBlur={() => {
+                          // Al perder el focus, si no hay cambios, volver a la vista enmascarada
+                          if (editingKeys[provider.id] && !apiKeys[provider.id]) {
+                            setEditingKeys(prev => ({ ...prev, [provider.id]: false }));
+                            loadAPIKeys();
                           }
                         }}
                         placeholder="API Key"
