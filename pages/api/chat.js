@@ -1,4 +1,6 @@
-export default async function handler(req, res) {
+import authMiddleware from './auth-middleware';
+
+async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
@@ -7,6 +9,11 @@ export default async function handler(req, res) {
 
   if (!messages || !model) {
     return res.status(400).json({ error: 'Missing messages or model' });
+  }
+
+  // Validate message size (max 10KB)
+  if (JSON.stringify(messages).length > 10000) {
+    return res.status(400).json({ error: 'Message too long (max 10KB)' });
   }
 
   const apiKey = process.env.AI_GATEWAY_API_KEY;
@@ -109,3 +116,6 @@ export default async function handler(req, res) {
     }
   }
 }
+
+// Export with authentication middleware
+export default authMiddleware(handler);
