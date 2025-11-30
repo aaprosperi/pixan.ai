@@ -55,7 +55,7 @@ const IMAGE_CONFIG = {
   none: { label: '✕ None', price: 0 },
   schema: { label: '📐 Schema', price: 0.02, color: '#374151', bgColor: '#F3F4F6' },
   infographic: { label: '📊 Infographic', price: 0.03, color: '#f59e0b', bgColor: '#fffbeb' },
-  ultrarealistic: { label: '🖼️ Ultra Realistic', price: 0.04, color: '#8b5cf6', bgColor: '#f3e8ff' }
+  ultrarealistic: { label: '🖼️ Realistic', price: 0.04, color: '#8b5cf6', bgColor: '#f3e8ff' }
 };
 
 const GROUP_LLMS = Object.keys(LLM_CONFIG).filter(k => LLM_CONFIG[k].inGroup);
@@ -741,6 +741,9 @@ Format:
           .input-wrapper { flex-wrap: wrap; }
           .post-image-buttons { flex-direction: column; }
           .post-image-btn { width: 100%; }
+          .header-left { flex-direction: column; align-items: flex-start; gap: 8px; }
+          .stats-box { flex-wrap: wrap; gap: 8px; font-size: 10px; }
+          .stat { align-items: flex-start; }
         }
       `}</style>
 
