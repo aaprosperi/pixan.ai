@@ -115,6 +115,10 @@ export default function HomePage() {
 
 
           <div className="service-buttons">
+            <a href="/genAI" className="service-button primary">
+              <div className="service-title">Collaborative genAI</div>
+              <div className="service-description">Single or supervised group responses from 7 LLMs. Claude integrates all perspectives. Infographic generation.</div>
+            </a>
             <a href="https://braincolab.com/multiAI" className="service-button">
               <div className="service-title">{t('landing.services.brainColab.title')}</div>
               <div className="service-description">{t('landing.services.brainColab.description')}</div>
@@ -122,10 +126,6 @@ export default function HomePage() {
             <a href="https://www.pixan.ai/llmC" className="service-button">
               <div className="service-title">{t('landing.services.chatMultiGenAI.title')}</div>
               <div className="service-description">{t('landing.services.chatMultiGenAI.description')}</div>
-            </a>
-            <a href="/test" className="service-button primary">
-              <div className="service-title">LLM Validation Test</div>
-              <div className="service-description">One LLM responds, another validates and enhances. Visual AI collaboration with image generation.</div>
             </a>
           </div>
         </main>
@@ -290,15 +290,15 @@ export default function HomePage() {
         }
 
         .service-button.primary {
-          background: #000000;
+          background: #28106A;
           color: #ffffff;
-          border-color: #000000;
+          border-color: #28106A;
         }
 
         .service-button.primary:hover {
-          background: #333333;
+          background: #3d1a8f;
           transform: translateY(-2px);
-          box-shadow: 0 10px 30px rgba(0, 0, 0, 0.3);
+          box-shadow: 0 10px 30px rgba(40, 16, 106, 0.3);
         }
 
         .service-title {
