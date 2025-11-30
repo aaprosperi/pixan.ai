@@ -1,71 +1,68 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
-import { useLanguage } from '../contexts/LanguageContext';
-import LanguageSelector from '../components/LanguageSelector';
 
-// LLM configurations with colors and icons
+// LLM configurations with Vercel AI Gateway model IDs
 const LLM_CONFIG = {
   claude: {
-    name: 'Claude',
+    name: 'Claude Sonnet 4.5',
+    modelId: 'anthropic/claude-sonnet-4.5',
     color: '#8b5cf6',
     bgColor: 'rgba(139, 92, 246, 0.1)',
     icon: '🧠',
     description: 'Anthropic - Reasoning & Analysis'
   },
-  openai: {
-    name: 'GPT-4',
+  gpt: {
+    name: 'GPT-5.1',
+    modelId: 'openai/gpt-5.1-thinking',
     color: '#10b981',
     bgColor: 'rgba(16, 185, 129, 0.1)',
     icon: '🤖',
-    description: 'OpenAI - General Intelligence',
-    canGenerateImages: true
+    description: 'OpenAI - General Intelligence'
   },
   gemini: {
-    name: 'Gemini',
+    name: 'Gemini 3 Pro',
+    modelId: 'google/gemini-3-pro-preview',
     color: '#3b82f6',
     bgColor: 'rgba(59, 130, 246, 0.1)',
     icon: '✨',
     description: 'Google - Creative & Multimodal'
   },
   perplexity: {
-    name: 'Perplexity',
+    name: 'Sonar Pro',
+    modelId: 'perplexity/sonar-pro',
     color: '#f59e0b',
     bgColor: 'rgba(245, 158, 11, 0.1)',
     icon: '🔍',
     description: 'Real-time Search & Facts'
   },
   deepseek: {
-    name: 'DeepSeek',
+    name: 'DeepSeek v3.2',
+    modelId: 'deepseek/deepseek-v3.2-exp-thinking',
     color: '#06b6d4',
     bgColor: 'rgba(6, 182, 212, 0.1)',
     icon: '🌊',
     description: 'Deep Analysis & Reasoning'
   },
-  mistral: {
-    name: 'Mistral',
+  grok: {
+    name: 'Grok 4.1',
+    modelId: 'xai/grok-4.1-fast-reasoning',
     color: '#ef4444',
     bgColor: 'rgba(239, 68, 68, 0.1)',
-    icon: '🌀',
-    description: 'Fast & Efficient'
+    icon: '⚡',
+    description: 'xAI - Fast Reasoning'
   }
 };
 
 export default function LLMValidationTest() {
-  const { t } = useLanguage();
-
   // State
   const [prompt, setPrompt] = useState('');
   const [primaryLLM, setPrimaryLLM] = useState('claude');
-  const [validatorLLM, setValidatorLLM] = useState('openai');
+  const [validatorLLM, setValidatorLLM] = useState('gpt');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [currentPhase, setCurrentPhase] = useState(null); // 'primary' | 'validating' | 'complete'
+  const [currentPhase, setCurrentPhase] = useState(null);
   const [messages, setMessages] = useState([]);
-  const [primaryResponse, setPrimaryResponse] = useState('');
-  const [validatorResponse, setValidatorResponse] = useState('');
   const [streamingText, setStreamingText] = useState('');
-  const [showLLMSelector, setShowLLMSelector] = useState(null); // 'primary' | 'validator'
-  const [generateImage, setGenerateImage] = useState(false);
-  const [generatedImage, setGeneratedImage] = useState(null);
+  const [showLLMSelector, setShowLLMSelector] = useState(null);
 
   const messagesEndRef = useRef(null);
   const inputRef = useRef(null);
@@ -75,97 +72,55 @@ export default function LLMValidationTest() {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, [messages, streamingText]);
 
-  // Get API keys from localStorage
-  const getApiKeys = () => {
-    const keys = {};
-    const providers = ['claude', 'openai', 'gemini', 'perplexity', 'deepseek', 'mistral'];
-
-    providers.forEach(provider => {
-      const encryptedKey = localStorage.getItem(`pixan_api_${provider}`);
-      if (encryptedKey) {
-        try {
-          keys[provider] = decodeURIComponent(atob(encryptedKey));
-        } catch (e) {
-          console.error(`Error decoding ${provider} key:`, e);
-        }
-      }
-    });
-
-    return keys;
-  };
-
-  // Call LLM API
-  const callLLM = async (llmName, message, context = '') => {
-    const endpoints = {
-      claude: '/api/claude-chat',
-      openai: '/api/openai-chat',
-      gemini: '/api/gemini-chat',
-      perplexity: '/api/perplexity-chat',
-      deepseek: '/api/deepseek-chat',
-      mistral: '/api/mistral-chat'
-    };
-
-    const apiKeys = getApiKeys();
-
-    const body = llmName === 'claude'
-      ? { message: context ? `${context}\n\n${message}` : message, context: 'general_query', apiKey: apiKeys[llmName] }
-      : llmName === 'gemini'
-      ? { prompt: context ? `${context}\n\n${message}` : message, parameters: { temperature: 0.7 }, apiKey: apiKeys[llmName] }
-      : { message: context ? `${context}\n\n${message}` : message, conversation: [], apiKey: apiKeys[llmName] };
-
-    const response = await fetch(endpoints[llmName], {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(body)
-    });
-
-    if (!response.ok) {
-      const error = await response.json();
-      throw new Error(error.error || `${llmName} API Error`);
-    }
-
-    const data = await response.json();
-    return data.content || data.response || data.text;
-  };
-
-  // Generate image with DALL-E
-  const generateImageWithDALLE = async (imagePrompt) => {
-    const apiKeys = getApiKeys();
-
-    const response = await fetch('/api/openai-chat', {
+  // Call LLM API via AI Gateway with streaming
+  const callLLM = async (llmKey, message, onStream) => {
+    const modelId = LLM_CONFIG[llmKey].modelId;
+    
+    const response = await fetch('/api/chat', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        message: imagePrompt,
-        generateImage: true,
-        apiKey: apiKeys.openai
+        model: modelId,
+        messages: [{ role: 'user', content: message }]
       })
     });
 
     if (!response.ok) {
-      throw new Error('Failed to generate image');
+      const error = await response.json();
+      throw new Error(error.error || `${LLM_CONFIG[llmKey].name} API Error`);
     }
 
-    const data = await response.json();
-    return data.imageUrl;
-  };
+    // Process streaming response
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let fullContent = '';
 
-  // Simulate streaming text effect
-  const simulateStreaming = (text, callback) => {
-    return new Promise((resolve) => {
-      let index = 0;
-      const words = text.split(' ');
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) break;
 
-      const interval = setInterval(() => {
-        if (index < words.length) {
-          callback(words.slice(0, index + 1).join(' '));
-          index++;
-        } else {
-          clearInterval(interval);
-          resolve();
+      const chunk = decoder.decode(value, { stream: true });
+      const lines = chunk.split('\n').filter(line => line.trim() !== '');
+
+      for (const line of lines) {
+        if (line.startsWith('data: ')) {
+          const data = line.slice(6);
+          if (data === '[DONE]') break;
+
+          try {
+            const parsed = JSON.parse(data);
+            if (parsed.content) {
+              fullContent += parsed.content;
+              if (onStream) onStream(fullContent);
+            }
+          } catch (e) {
+            // Ignore parsing errors
+          }
         }
-      }, 30);
-    });
+      }
+    }
+
+    return fullContent;
   };
 
   // Handle form submission
@@ -176,7 +131,6 @@ export default function LLMValidationTest() {
     const userMessage = prompt;
     setPrompt('');
     setIsProcessing(true);
-    setGeneratedImage(null);
 
     // Add user message to chat
     setMessages(prev => [...prev, {
@@ -190,11 +144,7 @@ export default function LLMValidationTest() {
       setCurrentPhase('primary');
       setStreamingText('');
 
-      const primaryResult = await callLLM(primaryLLM, userMessage);
-      setPrimaryResponse(primaryResult);
-
-      // Simulate streaming for primary response
-      await simulateStreaming(primaryResult, setStreamingText);
+      const primaryResult = await callLLM(primaryLLM, userMessage, setStreamingText);
 
       // Add primary response to messages
       setMessages(prev => [...prev, {
@@ -229,11 +179,7 @@ Responde de forma estructurada con:
 - 📝 COMPLEMENTO: (información adicional)
 - 🎯 RESPUESTA FINAL MEJORADA: (síntesis completa)`;
 
-      const validatorResult = await callLLM(validatorLLM, validationPrompt);
-      setValidatorResponse(validatorResult);
-
-      // Simulate streaming for validator response
-      await simulateStreaming(validatorResult, setStreamingText);
+      const validatorResult = await callLLM(validatorLLM, validationPrompt, setStreamingText);
 
       // Add validator response to messages
       setMessages(prev => [...prev, {
@@ -243,22 +189,6 @@ Responde de forma estructurada con:
         phase: 'validator',
         timestamp: new Date()
       }]);
-
-      // Generate image if requested and OpenAI is involved
-      if (generateImage && (primaryLLM === 'openai' || validatorLLM === 'openai')) {
-        setCurrentPhase('generating_image');
-        try {
-          const imageUrl = await generateImageWithDALLE(userMessage);
-          setGeneratedImage(imageUrl);
-          setMessages(prev => [...prev, {
-            type: 'image',
-            url: imageUrl,
-            timestamp: new Date()
-          }]);
-        } catch (imgError) {
-          console.error('Image generation failed:', imgError);
-        }
-      }
 
       setCurrentPhase('complete');
 
@@ -280,13 +210,10 @@ Responde de forma estructurada con:
   // Clear chat
   const clearChat = () => {
     setMessages([]);
-    setPrimaryResponse('');
-    setValidatorResponse('');
-    setGeneratedImage(null);
   };
 
   // LLM Selector dropdown component
-  const LLMSelector = ({ type, selected, onSelect, exclude }) => {
+  const LLMSelector = ({ selected, onSelect, exclude }) => {
     const llms = Object.entries(LLM_CONFIG).filter(([key]) => key !== exclude);
 
     return (
@@ -316,7 +243,7 @@ Responde de forma estructurada con:
   return (
     <>
       <Head>
-        <title>LLM Validation Test | BrainColab</title>
+        <title>LLM Validation Test | Pixan.ai</title>
         <meta name="description" content="Test LLM responses with validation from another AI" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
@@ -344,7 +271,6 @@ Responde de forma estructurada con:
           flex-direction: column;
         }
 
-        /* Header */
         .header {
           display: flex;
           justify-content: space-between;
@@ -369,6 +295,7 @@ Responde de forma estructurada con:
           cursor: pointer;
           font-size: 14px;
           transition: all 0.2s;
+          text-decoration: none;
         }
 
         .back-button:hover {
@@ -388,7 +315,14 @@ Responde de forma estructurada con:
           color: rgba(255, 255, 255, 0.6);
         }
 
-        /* LLM Selection Bar */
+        .powered-by {
+          font-size: 12px;
+          color: rgba(255, 255, 255, 0.4);
+          display: flex;
+          align-items: center;
+          gap: 8px;
+        }
+
         .llm-selection-bar {
           display: flex;
           align-items: center;
@@ -417,6 +351,7 @@ Responde de forma estructurada con:
           cursor: pointer;
           width: 100%;
           transition: all 0.2s;
+          color: #fff;
         }
 
         .llm-selector-button:hover {
@@ -498,28 +433,6 @@ Responde de forma estructurada con:
           color: rgba(255, 255, 255, 0.4);
         }
 
-        /* Image generation toggle */
-        .image-toggle {
-          display: flex;
-          align-items: center;
-          gap: 8px;
-          padding: 8px 16px;
-          background: rgba(255, 255, 255, 0.08);
-          border-radius: 8px;
-          cursor: pointer;
-          transition: all 0.2s;
-        }
-
-        .image-toggle.active {
-          background: rgba(16, 185, 129, 0.2);
-          border: 1px solid #10b981;
-        }
-
-        .image-toggle input {
-          display: none;
-        }
-
-        /* Chat Area */
         .chat-area {
           flex: 1;
           overflow-y: auto;
@@ -611,17 +524,6 @@ Responde de forma estructurada con:
           color: #fca5a5;
         }
 
-        .message.image {
-          align-self: center;
-        }
-
-        .generated-image {
-          max-width: 400px;
-          border-radius: 16px;
-          box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
-        }
-
-        /* Processing Animation */
         .processing-indicator {
           display: flex;
           flex-direction: column;
@@ -690,7 +592,6 @@ Responde de forma estructurada con:
           text-align: center;
         }
 
-        /* Streaming response preview */
         .streaming-preview {
           background: rgba(255, 255, 255, 0.03);
           border: 1px solid rgba(255, 255, 255, 0.1);
@@ -704,7 +605,6 @@ Responde de forma estructurada con:
           white-space: pre-wrap;
         }
 
-        /* Input Area */
         .input-area {
           padding: 20px;
           background: rgba(255, 255, 255, 0.05);
@@ -785,7 +685,6 @@ Responde de forma estructurada con:
           background: rgba(239, 68, 68, 0.3);
         }
 
-        /* Empty state */
         .empty-state {
           flex: 1;
           display: flex;
@@ -814,7 +713,6 @@ Responde de forma estructurada con:
           line-height: 1.6;
         }
 
-        /* Responsive */
         @media (max-width: 768px) {
           .llm-selection-bar {
             flex-direction: column;
@@ -852,7 +750,9 @@ Responde de forma estructurada con:
               <div className="subtitle">Response validation with AI collaboration</div>
             </div>
           </div>
-          <LanguageSelector />
+          <div className="powered-by">
+            Powered by Vercel AI Gateway
+          </div>
         </div>
 
         {/* LLM Selection Bar */}
@@ -874,7 +774,6 @@ Responde de forma estructurada con:
             </button>
             {showLLMSelector === 'primary' && (
               <LLMSelector
-                type="primary"
                 selected={primaryLLM}
                 onSelect={setPrimaryLLM}
                 exclude={validatorLLM}
@@ -901,24 +800,12 @@ Responde de forma estructurada con:
             </button>
             {showLLMSelector === 'validator' && (
               <LLMSelector
-                type="validator"
                 selected={validatorLLM}
                 onSelect={setValidatorLLM}
                 exclude={primaryLLM}
               />
             )}
           </div>
-
-          {/* Image Generation Toggle */}
-          <label className={`image-toggle ${generateImage ? 'active' : ''}`}>
-            <input
-              type="checkbox"
-              checked={generateImage}
-              onChange={(e) => setGenerateImage(e.target.checked)}
-            />
-            <span>🎨</span>
-            <span>Generate Image</span>
-          </label>
         </div>
 
         {/* Chat Area */}
@@ -959,9 +846,6 @@ Responde de forma estructurada con:
                       </div>
                       <div className="llm-content">{msg.content}</div>
                     </div>
-                  )}
-                  {msg.type === 'image' && (
-                    <img src={msg.url} alt="Generated" className="generated-image" />
                   )}
                   {msg.type === 'error' && (
                     <div>{msg.content}</div>
@@ -1009,7 +893,6 @@ Responde de forma estructurada con:
                   <div className="processing-status">
                     {currentPhase === 'primary' && `${LLM_CONFIG[primaryLLM].icon} ${LLM_CONFIG[primaryLLM].name} is generating response...`}
                     {currentPhase === 'validating' && `${LLM_CONFIG[validatorLLM].icon} ${LLM_CONFIG[validatorLLM].name} is validating and enhancing...`}
-                    {currentPhase === 'generating_image' && '🎨 Generating image with DALL-E...'}
                   </div>
 
                   {streamingText && (
