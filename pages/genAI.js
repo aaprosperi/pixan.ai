@@ -492,12 +492,16 @@ Format:
     <div className="controls-section">
       <div className="controls-row">
         <div className="mode-toggle">
-          <button className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`} onClick={() => setResponseMode('single')} disabled={isProcessing}>👤 Single</button>
-          <button className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`} onClick={() => setResponseMode('group')} disabled={isProcessing}>👥 Group ({GROUP_LLMS.length})</button>
+          <div className="control-hint">Choose response mode</div>
+          <div>
+            <button className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`} onClick={() => setResponseMode('single')} disabled={isProcessing}>👤 Single</button>
+            <button className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`} onClick={() => setResponseMode('group')} disabled={isProcessing}>👥 Group ({GROUP_LLMS.length})</button>
+          </div>
         </div>
 
         {responseMode === 'single' && (
           <div className="llm-select">
+            <div className="control-hint">Select AI model</div>
             <button className="llm-select-btn" onClick={() => setShowLLMDropdown(!showLLMDropdown)}>
               <div className="llm-icon-wrapper" style={{ background: LLM_CONFIG[selectedLLM].bgColor, color: LLM_CONFIG[selectedLLM].color }}>{LLMIcons[selectedLLM]()}</div>
               <span className="info">
@@ -610,11 +614,13 @@ Format:
         
         .controls-section { background: #fafafa; border: 1px solid #f0f0f0; border-radius: 12px; padding: 16px; margin-bottom: 16px; }
         .controls-row { display: flex; gap: 10px; flex-wrap: wrap; align-items: center; margin-bottom: 12px; }
-        .mode-toggle { display: flex; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 2px; }
+        .control-hint { font-size: 10px; color: #9880d4; margin-bottom: 6px; font-weight: 500; letter-spacing: 0.3px; }
+        .mode-toggle { display: flex; flex-direction: column; }
+        .mode-toggle > div:last-child { display: flex; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 2px; }
         .mode-btn { padding: 6px 12px; border: none; background: transparent; font-size: 11px; font-weight: 500; color: #666; cursor: pointer; border-radius: 6px; }
         .mode-btn.active { background: #28106A; color: #fff; }
         
-        .llm-select { position: relative; }
+        .llm-select { position: relative; display: flex; flex-direction: column; }
         .llm-select-btn { display: flex; align-items: center; gap: 6px; padding: 6px 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 11px; cursor: pointer; }
         .llm-icon-wrapper { width: 20px; height: 20px; border-radius: 4px; display: flex; align-items: center; justify-content: center; padding: 3px; }
         .llm-select-btn .info { flex: 1; text-align: left; }
@@ -645,8 +651,9 @@ Format:
         .input-wrapper { display: flex; gap: 8px; align-items: center; }
         .attach-btn { padding: 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 14px; cursor: pointer; }
         .attach-btn:hover { background: #f5f5f5; }
-        .prompt-input { flex: 1; padding: 10px 14px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; height: 42px; }
-        .prompt-input:focus { border-color: #28106A; }
+        .prompt-input { flex: 1; padding: 10px 14px; background: linear-gradient(135deg, #f8f5ff 0%, #f0ebff 100%); border: 1.5px solid #d4c5f9; border-radius: 8px; font-size: 13px; font-family: inherit; outline: none; height: 42px; box-shadow: 0 2px 4px rgba(40, 16, 106, 0.08); }
+        .prompt-input:focus { border-color: #28106A; background: linear-gradient(135deg, #faf8ff 0%, #f5f0ff 100%); box-shadow: 0 4px 8px rgba(40, 16, 106, 0.12); }
+        .prompt-input::placeholder { color: #9880d4; }
         .send-btn { padding: 10px 16px; background: #28106A; border: none; border-radius: 8px; color: #fff; font-weight: 500; font-size: 12px; cursor: pointer; white-space: nowrap; }
         .send-btn:hover:not(:disabled) { background: #3d1a8f; }
         .send-btn:disabled { opacity: 0.5; }
