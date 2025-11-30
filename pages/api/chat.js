@@ -11,9 +11,10 @@ async function handler(req, res) {
     return res.status(400).json({ error: 'Missing messages or model' });
   }
 
-  // Validate message size (max 10KB)
-  if (JSON.stringify(messages).length > 10000) {
-    return res.status(400).json({ error: 'Message too long (max 10KB)' });
+  // Validate message size (max 500KB for group mode with integration)
+  const messageSize = JSON.stringify(messages).length;
+  if (messageSize > 500000) {
+    return res.status(400).json({ error: `Message too long (${Math.round(messageSize/1000)}KB, max 500KB)` });
   }
 
   const apiKey = process.env.AI_GATEWAY_API_KEY;
@@ -25,6 +26,10 @@ async function handler(req, res) {
   }
 
   try {
+    // Determine max tokens based on model and context
+    // For integration prompts, we need more output tokens
+    const maxTokens = messageSize > 50000 ? 4000 : 2000;
+    
     // Call Vercel AI Gateway with streaming enabled
     const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
       method: 'POST',
@@ -38,7 +43,7 @@ async function handler(req, res) {
           role: m.role,
           content: m.content
         })),
-        max_tokens: 2000,
+        max_tokens: maxTokens,
         temperature: 0.7,
         stream: true,
       }),
