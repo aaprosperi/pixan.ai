@@ -192,7 +192,7 @@ export default function GenAI() {
     if (isGroupMode) parts.push('CONTEXT: This is a SUPERVISED GROUP query where 4 LLMs (Claude, GPT, Gemini, Grok) respond INDEPENDENTLY to the same prompt. Each LLM provides its own unique analysis. Your response will be integrated with others by Claude. Focus on your unique perspective. Be concise but insightful.');
     if (imgMode === 'schema') parts.push('NOTE: A TECHNICAL SCHEMA diagram will be generated. Structure your response with clear technical components, relationships, and hierarchies that can be visualized as a 2D/3D technical diagram with lines and geometric shapes.');
     else if (imgMode === 'infographic') parts.push('NOTE: An INFOGRAPHIC will be generated. Structure your response with clear key points and sections that can be easily visualized.');
-    else if (imgMode === 'ultrarealistic') parts.push('NOTE: An ULTRA REALISTIC IMAGE will be generated. Describe visual elements clearly for ultra-photorealistic 8K rendering with extreme detail.');
+    else if (imgMode === 'ultrarealistic') parts.push('NOTE: A PHOTOREALISTIC IMAGE or HYPERREALISTIC ILLUSTRATION will be generated (NOT an infographic). Describe visual elements, scenes, objects, or concepts that can be rendered as an ultra-realistic photograph or artistic illustration with extreme detail. The image should look like real photography or hyperrealistic art.');
     if (history.length > 0) parts.push('Continue the conversation naturally.');
     return parts.join('\n\n');
   };
@@ -259,7 +259,7 @@ export default function GenAI() {
     const prompts = {
       schema: 'Create a technical SCHEMA diagram with clean lines, geometric shapes, and maximum 3 colors (black, gray, one accent). Show components, connections, and hierarchy. Style: technical blueprint, 2D or isometric 3D, functional over aesthetic. No decorative elements.',
       infographic: 'Create a professional infographic with icons, sections, and clear typography. Style: modern, minimalist, business-professional.',
-      ultrarealistic: 'Create an ULTRA REALISTIC, hyper-detailed, photorealistic image. Style: 8K resolution, extreme detail, cinematic lighting, professional photography quality, lifelike textures, natural colors, sharp focus, depth of field. The image should be indistinguishable from a real photograph.'
+      ultrarealistic: 'Create an ULTRA REALISTIC, photorealistic image or hyperrealistic illustration. This must be a PHOTOGRAPH or ultra-detailed artistic illustration, NOT an infographic. Style: 8K resolution, extreme photographic detail, cinematic lighting, professional photography or hyperrealistic art quality, lifelike textures, natural colors, sharp focus, depth of field. You may include minimal text overlays if needed for context. The image should look like a real photograph or hyperrealistic painting, indistinguishable from reality.'
     };
     
     const response = await fetch('/api/generate-infographic', {
@@ -354,7 +354,7 @@ YOUR TASK:
 3. Resolve contradictions
 4. Synthesize into a FINAL integrated response
 
-${imageMode !== 'none' ? `NOTE: Output will become a ${imageMode === 'schema' ? 'technical schema' : imageMode === 'infographic' ? 'infographic' : 'ultra realistic image'}.` : ''}
+${imageMode !== 'none' ? `NOTE: Output will become a ${imageMode === 'schema' ? 'technical schema' : imageMode === 'infographic' ? 'infographic' : 'photorealistic image/illustration'}.` : ''}
 
 Format:
 ## 🔄 Consensus
@@ -485,7 +485,8 @@ Format:
   };
 
   const hasContent = messages.length > 0 || Object.keys(parallelStreams).length > 0;
-  const showPostImageOptions = lastResponseContent && !imageResult && !isProcessing && !generatingPostImage;
+  // Solo mostrar opciones de imagen post-respuesta si NO seleccionó modo de imagen desde el inicio
+  const showPostImageOptions = lastResponseContent && !imageResult && !isProcessing && !generatingPostImage && imageMode === 'none';
 
   // Render controls inline - NOT as a separate component to prevent re-mounting
   const renderControls = () => (
