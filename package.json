@@ -1,6 +1,7 @@
 {
-  "name": "pixan-ai",
+  "name": "pixan-ai-v2",
   "version": "2.0.0",
+  "description": "Pixan.ai GenAI Platform with latest LLM models (December 2025)",
   "private": true,
   "scripts": {
     "dev": "next dev",

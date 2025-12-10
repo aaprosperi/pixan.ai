@@ -1,5 +1,5 @@
 import authMiddleware from './auth-middleware';
-import { API_KEYS } from '../../lib/api-config';
+import { API_KEYS, PRICING } from '../../lib/api-config';
 import { updateTokenUsage, hasBalance } from '../../lib/token-tracker';
 
 async function handler(req, res) {
@@ -37,7 +37,7 @@ async function handler(req, res) {
         'Authorization': `Bearer ${apiKey}`
       },
       body: JSON.stringify({
-        model: 'deepseek-chat',
+        model: PRICING.deepseek.model,
         messages: messages,
         temperature: 0.7,
         max_tokens: 2000,
@@ -62,10 +62,10 @@ async function handler(req, res) {
     // Actualizar uso de tokens
     const tokenStats = updateTokenUsage('deepseek', message, content);
 
-    return res.status(200).json({ 
+    return res.status(200).json({
       content,
       usage: tokenStats,
-      model: 'deepseek-chat'
+      model: PRICING.deepseek.model
     });
 
   } catch (error) {

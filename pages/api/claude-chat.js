@@ -1,5 +1,5 @@
 import authMiddleware from './auth-middleware';
-import { API_KEYS } from '../../lib/api-config';
+import { API_KEYS, PRICING } from '../../lib/api-config';
 import { updateTokenUsage, hasBalance } from '../../lib/token-tracker';
 
 async function handler(req, res) {
@@ -33,7 +33,7 @@ async function handler(req, res) {
         'anthropic-version': '2023-06-01'
       },
       body: JSON.stringify({
-        model: 'claude-3-5-sonnet-20241022',
+        model: PRICING.claude.model,
         max_tokens: 1000,
         messages: [
           {
@@ -68,10 +68,10 @@ async function handler(req, res) {
       // Actualizar uso de tokens
       const tokenStats = updateTokenUsage('claude', message, content);
       
-      return res.status(200).json({ 
+      return res.status(200).json({
         content,
         usage: tokenStats,
-        model: 'claude-3-5-sonnet-20241022'
+        model: PRICING.claude.model
       });
     } else {
       return res.status(500).json({ error: 'Unexpected response format from Claude' });

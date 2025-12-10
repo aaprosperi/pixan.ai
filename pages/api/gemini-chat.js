@@ -1,5 +1,5 @@
 import authMiddleware from './auth-middleware';
-import { API_KEYS } from '../../lib/api-config';
+import { API_KEYS, PRICING } from '../../lib/api-config';
 import { updateTokenUsage, hasBalance } from '../../lib/token-tracker';
 
 async function handler(req, res) {
@@ -33,7 +33,7 @@ async function handler(req, res) {
     Provide clear, specific optimizations that enhance clarity, effectiveness, and alignment with the target LLM's capabilities.`;
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent?key=${apiKey}`,
+      `https://generativelanguage.googleapis.com/v1/models/${PRICING.gemini.model}:generateContent?key=${apiKey}`,
       {
         method: 'POST',
         headers: {
@@ -86,7 +86,7 @@ async function handler(req, res) {
       console.error('Gemini API HTTP Error:', response.status, data);
       
       if (response.status === 400) {
-        return res.status(400).json({ error: 'Invalid request or API key for Gemini 2.5 Flash' });
+        return res.status(400).json({ error: `Invalid request or API key for ${PRICING.gemini.model}` });
       } else if (response.status === 429) {
         return res.status(429).json({ error: 'Rate limit exceeded - please try again' });
       } else if (response.status === 403) {
@@ -128,10 +128,10 @@ async function handler(req, res) {
     // Actualizar uso de tokens
     const tokenStats = updateTokenUsage('gemini', prompt, content);
     
-    res.status(200).json({ 
+    res.status(200).json({
       content,
       usage: tokenStats,
-      model: 'gemini-2.5-flash'
+      model: PRICING.gemini.model
     });
     
   } catch (error) {
