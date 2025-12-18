@@ -1,5 +1,6 @@
 import { useState, useEffect, useRef } from 'react';
 import Head from 'next/head';
+import AppPreview from '../components/AppPreview';
 
 // SVG Icons for LLMs
 const LLMIcons = {
@@ -126,6 +127,11 @@ export default function GenAI() {
   const [sessionTokens, setSessionTokens] = useState({ input: 0, output: 0 });
   const [sessionCost, setSessionCost] = useState(0);
   const [gatewayBalance, setGatewayBalance] = useState(null);
+
+  // App Preview states
+  const [showAppPreview, setShowAppPreview] = useState(false);
+  const [previewCode, setPreviewCode] = useState('');
+  const [previewFramework, setPreviewFramework] = useState('html');
   
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [showAuthModal, setShowAuthModal] = useState(false);
@@ -278,6 +284,72 @@ export default function GenAI() {
     setSessionTokens(prev => ({ input: prev.input + inputTokens, output: prev.output + outputTokens }));
     setSessionCost(prev => prev + cost);
     return { inputTokens, outputTokens, cost };
+  };
+
+  const copyToClipboard = (text) => {
+    navigator.clipboard.writeText(text).then(() => {
+      // Mostrar feedback visual temporal
+      const btn = event.target;
+      const originalText = btn.textContent;
+      btn.textContent = '✓';
+      btn.style.background = '#4caf50';
+      setTimeout(() => {
+        btn.textContent = originalText;
+        btn.style.background = '';
+      }, 1500);
+    }).catch(err => {
+      console.error('Error copying:', err);
+      alert('Error al copiar el texto');
+    });
+  };
+
+  // Detectar si el contenido tiene código web
+  const detectWebCode = (content) => {
+    const patterns = {
+      html: /```html|<!DOCTYPE|<html|<body|<div/i,
+      react: /```jsx|```react|import React|from ['"]react['"]/i,
+      vue: /```vue|createApp|Vue\.|new Vue/i,
+      javascript: /```javascript|```js|function |const |let |var /i,
+      css: /```css|@media|\.class|#id|\{[^}]*:[^}]*\}/
+    };
+
+    for (const [framework, pattern] of Object.entries(patterns)) {
+      if (pattern.test(content)) {
+        return framework;
+      }
+    }
+    return null;
+  };
+
+  // Extraer código de bloques markdown
+  const extractCode = (content, framework) => {
+    const codeBlockRegex = /```(?:html|jsx|react|vue|javascript|js|css)?\n?([\s\S]*?)```/gi;
+    const matches = [...content.matchAll(codeBlockRegex)];
+
+    if (matches.length > 0) {
+      // Si hay múltiples bloques, concatenar (útil para CSS separado)
+      return matches.map(m => m[1].trim()).join('\n\n');
+    }
+
+    // Si no hay bloques de código, intentar detectar código sin formato
+    if (content.includes('<html') || content.includes('<!DOCTYPE')) {
+      return content;
+    }
+
+    return null;
+  };
+
+  // Abrir preview de aplicación
+  const openAppPreview = (content) => {
+    const framework = detectWebCode(content);
+    if (framework) {
+      const code = extractCode(content, framework);
+      if (code) {
+        setPreviewCode(code);
+        setPreviewFramework(framework);
+        setShowAppPreview(true);
+      }
+    }
   };
 
   const handleStop = () => {
@@ -677,6 +749,14 @@ Format:
         .llm-response-meta .name { font-weight: 600; font-size: 12px; }
         .llm-response-meta .tokens { font-size: 9px; color: #999; }
         .llm-response-content { font-size: 13px; line-height: 1.6; color: #333; }
+
+        .copy-btn { background: transparent; border: 1px solid #ddd; border-radius: 5px; padding: 4px 8px; cursor: pointer; font-size: 14px; transition: all 0.2s; display: flex; align-items: center; justify-content: center; }
+        .copy-btn:hover { background: #f0f0f0; border-color: #bbb; transform: scale(1.05); }
+        .copy-btn:active { transform: scale(0.95); }
+
+        .preview-app-btn { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); border: none; border-radius: 6px; padding: 6px 12px; cursor: pointer; color: white; font-size: 12px; font-weight: 600; transition: all 0.2s; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
+        .preview-app-btn:hover { transform: translateY(-1px); box-shadow: 0 4px 8px rgba(0,0,0,0.15); }
+        .preview-app-btn:active { transform: translateY(0); }
         
         .llm-response-content .md-h1 { font-size: 18px; font-weight: 700; margin: 14px 0 6px 0; color: #1a1a1a; }
         .llm-response-content .md-h2 { font-size: 15px; font-weight: 600; margin: 12px 0 4px 0; color: #1a1a1a; }
@@ -824,6 +904,27 @@ Format:
                           {msg.tokens && <div className="tokens">{msg.tokens.inputTokens}/{msg.tokens.outputTokens} tokens • ${msg.tokens.cost.toFixed(6)}</div>}
                         </div>
                         {msg.streaming && <div className="spinner" style={{ marginLeft: 'auto' }}></div>}
+                        {!msg.streaming && (
+                          <>
+                            {detectWebCode(msg.content) && (
+                              <button
+                                className="preview-app-btn"
+                                onClick={() => openAppPreview(msg.content)}
+                                title="Vista previa de la aplicación"
+                              >
+                                🚀 Preview
+                              </button>
+                            )}
+                            <button
+                              className="copy-btn"
+                              onClick={() => copyToClipboard(msg.content)}
+                              title="Copiar respuesta"
+                              style={{ marginLeft: detectWebCode(msg.content) || msg.streaming ? '8px' : 'auto' }}
+                            >
+                              📋
+                            </button>
+                          </>
+                        )}
                       </div>
                       <div className="llm-response-content">{renderMarkdown(msg.content)}</div>
                     </div>
@@ -861,6 +962,16 @@ Format:
                       <div className="integration-subtitle">Synthesized from {GROUP_LLMS.length} LLMs {integrationResult.tokens && `• ${integrationResult.tokens.inputTokens}/${integrationResult.tokens.outputTokens} tokens • $${integrationResult.tokens.cost.toFixed(6)}`}</div>
                     </div>
                     {integrationResult.streaming && <div className="spinner" style={{ marginLeft: 'auto' }}></div>}
+                    {!integrationResult.streaming && (
+                      <button
+                        className="copy-btn"
+                        onClick={() => copyToClipboard(integrationResult.content)}
+                        title="Copiar respuesta integrada"
+                        style={{ marginLeft: integrationResult.streaming ? '0' : 'auto' }}
+                      >
+                        📋
+                      </button>
+                    )}
                   </div>
                   <div className="integration-content">{renderMarkdown(integrationResult.content)}</div>
                 </div>
@@ -928,6 +1039,15 @@ Format:
           <span>Powered by <a href="https://pixan.ai" className="footer-link">pixan.ai</a></span>
         </footer>
       </div>
+
+      {/* App Preview Modal */}
+      {showAppPreview && (
+        <AppPreview
+          code={previewCode}
+          framework={previewFramework}
+          onClose={() => setShowAppPreview(false)}
+        />
+      )}
     </>
   );
 }
