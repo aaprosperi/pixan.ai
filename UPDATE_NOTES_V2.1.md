@@ -90,7 +90,11 @@ Actualización urgente de modelos LLM a las versiones más recientes lanzadas en
 
 ## Archivos Modificados
 
+### Backend (API)
 - `lib/api-config.js` - Modelos y precios actualizados
+
+### Frontend
+- `pages/genAI.js` - LLM_CONFIG actualizado con nombres y precios de modelos (GPT-5.2, Claude Opus 4.5, Gemini 3 Flash)
 
 ### Archivos NO Modificados (usan configuración dinámica)
 - `pages/api/claude-chat.js` - Usa `PRICING.claude.model`
@@ -142,11 +146,12 @@ curl -X POST http://localhost:3000/api/gemini-chat \
 ## Changelog
 
 **v2.1 - Diciembre 18, 2025**
-- Actualizado Claude a Opus 4.5
-- Actualizado OpenAI a GPT-5.2
-- Actualizado Gemini a 3 Flash Preview
-- Actualizados todos los precios
-- DeepSeek, Mistral y Perplexity ya estaban en últimas versiones
+- ✅ Actualizado Claude a Opus 4.5 (backend + frontend)
+- ✅ Actualizado OpenAI a GPT-5.2 (backend + frontend)
+- ✅ Actualizado Gemini a 3 Flash Preview (backend + frontend)
+- ✅ Actualizados todos los precios (backend + frontend)
+- ✅ Sincronizados nombres de modelos en combo de LLMs
+- ℹ️ DeepSeek, Mistral y Perplexity ya estaban en últimas versiones
 
 **v2.0 - Diciembre 10, 2025**
 - Primera actualización masiva de modelos
