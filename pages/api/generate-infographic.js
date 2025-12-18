@@ -20,28 +20,11 @@ async function handler(req, res) {
   }
 
   try {
-    // Build infographic generation prompt
-    const infographicPrompt = `Create a professional, visually appealing infographic that represents the following information.
+    // Use the prompt directly from the frontend (already formatted with correct mode)
+    // The frontend sends the appropriate prompt for schema/infographic/ultrarealistic
+    const imagePrompt = prompt;
 
-ORIGINAL QUESTION:
-${context?.question || 'Not provided'}
-
-CONTENT TO VISUALIZE:
-${prompt}
-
-REQUIREMENTS:
-- Create a clear, modern infographic design
-- Use icons, visual elements, and organized sections
-- Include a title that summarizes the main topic
-- Use a professional color scheme (blues, teals, purples work well)
-- Make text readable and well-organized
-- Include key points as visual bullet points or icons
-- The style should be clean, professional, and informative
-- Generate the infographic in Spanish if the content is in Spanish
-
-Generate the infographic image now.`;
-
-    // Call Vercel AI Gateway with Nano Banana Pro
+    // Call Vercel AI Gateway with image generation model
     const response = await fetch('https://ai-gateway.vercel.sh/v1/chat/completions', {
       method: 'POST',
       headers: {
@@ -51,9 +34,9 @@ Generate the infographic image now.`;
       body: JSON.stringify({
         model: 'google/gemini-3-pro-image',
         messages: [
-          { 
-            role: 'user', 
-            content: infographicPrompt 
+          {
+            role: 'user',
+            content: imagePrompt
           }
         ],
         max_tokens: 4096,
@@ -90,10 +73,10 @@ Generate the infographic image now.`;
     });
 
   } catch (error) {
-    console.error('Infographic API error:', error);
-    return res.status(500).json({ 
-      error: 'Failed to generate infographic',
-      details: error.message 
+    console.error('Image generation API error:', error);
+    return res.status(500).json({
+      error: 'Failed to generate image',
+      details: error.message
     });
   }
 }
