@@ -182,7 +182,7 @@ export default function HomePage() {
         .logo-container {
           display: flex;
           align-items: center;
-          gap: 8px;
+          gap: 4px;
         }
 
         .logo svg {
