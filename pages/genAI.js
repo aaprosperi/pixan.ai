@@ -719,6 +719,7 @@ Format:
       </Head>
 
       <style jsx global>{`
+        /* v2.2.1 - Compact controls */
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { font-family: 'Inter', -apple-system, sans-serif; background: #fff; color: #2c2d30; }
         .container { max-width: 768px; margin: 0 auto; padding: 0; min-height: 100vh; display: flex; flex-direction: column; }
