@@ -747,20 +747,20 @@ Format:
         
         .controls-section { background: #fff; padding: 20px; border-top: 1px solid #e5e5e5; }
         .controls-row { display: flex; gap: 12px; flex-direction: column; margin-bottom: 16px; }
-        .control-hint { font-size: 12px; color: #6e6e80; margin-bottom: 8px; font-weight: 600; }
+        .control-hint { font-size: 11px; color: #6e6e80; margin-bottom: 6px; font-weight: 600; }
         .mode-toggle { display: flex; flex-direction: column; width: 100%; }
-        .mode-toggle > div:last-child { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
-        .mode-btn { padding: 12px 16px; border: 1px solid #d1d5db; background: #fff; font-size: 14px; font-weight: 500; color: #2c2d30; cursor: pointer; border-radius: 8px; transition: all 0.2s; }
+        .mode-toggle > div:last-child { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
+        .mode-btn { padding: 7px 10px; border: 1px solid #d1d5db; background: #fff; font-size: 13px; font-weight: 500; color: #2c2d30; cursor: pointer; border-radius: 6px; transition: all 0.2s; }
         .mode-btn.active { background: #28106A; color: #fff; border-color: #28106A; }
         .mode-btn:hover:not(.active) { background: #f9fafb; }
 
         .llm-select { position: relative; display: flex; flex-direction: column; width: 100%; }
-        .llm-select-btn { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; font-size: 14px; cursor: pointer; transition: all 0.2s; width: 100%; }
+        .llm-select-btn { display: flex; align-items: center; gap: 8px; padding: 8px 10px; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; font-size: 13px; cursor: pointer; transition: all 0.2s; width: 100%; }
         .llm-select-btn:hover { background: #f9fafb; border-color: #9b9ba5; }
-        .llm-icon-wrapper { width: 28px; height: 28px; border-radius: 6px; display: flex; align-items: center; justify-content: center; padding: 5px; }
+        .llm-icon-wrapper { width: 22px; height: 22px; border-radius: 5px; display: flex; align-items: center; justify-content: center; padding: 4px; }
         .llm-select-btn .info { flex: 1; text-align: left; }
-        .llm-select-btn .name { font-weight: 600; display: block; font-size: 15px; color: #2c2d30; }
-        .llm-select-btn .meta { font-size: 12px; color: #6e6e80; margin-top: 2px; }
+        .llm-select-btn .name { font-weight: 600; display: block; font-size: 14px; color: #2c2d30; }
+        .llm-select-btn .meta { font-size: 11px; color: #6e6e80; margin-top: 1px; }
         .llm-dropdown { position: absolute; top: 100%; left: 0; right: 0; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; margin-top: 4px; z-index: 100; box-shadow: 0 4px 12px rgba(0,0,0,0.1); }
         .llm-option { display: flex; align-items: center; gap: 8px; padding: 8px 10px; cursor: pointer; border-bottom: 1px solid #f5f5f5; }
         .llm-option:last-child { border-bottom: none; }
@@ -772,8 +772,8 @@ Format:
 
         .image-section { display: flex; flex-direction: column; width: 100%; }
         .image-label { font-size: 9px; color: #999; text-transform: uppercase; letter-spacing: 0.5px; margin-bottom: 6px; }
-        .image-toggle { display: flex; background: #fff; border: 1px solid #d1d5db; border-radius: 8px; padding: 4px; gap: 4px; width: 100%; }
-        .image-btn { flex: 1; padding: 10px 8px; border: none; background: transparent; font-size: 11px; font-weight: 500; color: #2c2d30; cursor: pointer; border-radius: 6px; white-space: nowrap; transition: all 0.2s; text-align: center; }
+        .image-toggle { display: flex; background: #fff; border: 1px solid #d1d5db; border-radius: 6px; padding: 3px; gap: 3px; width: 100%; }
+        .image-btn { flex: 1; padding: 6px 5px; border: none; background: transparent; font-size: 10px; font-weight: 500; color: #2c2d30; cursor: pointer; border-radius: 5px; white-space: nowrap; transition: all 0.2s; text-align: center; }
         .image-btn.active { background: #28106A; color: #fff; }
         .image-btn:hover:not(.active) { background: #f9fafb; }
         .image-cost { font-size: 9px; color: #999; margin-top: 4px; }
