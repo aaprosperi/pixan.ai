@@ -1,20 +1,25 @@
-# Contexto del Proyecto Pixan.ai - Version 2.0
+# Contexto del Proyecto Pixan.ai - Version 2.2
 
-## Trabajo Reciente (Diciembre 2025)
-### Actualización Mayor de Modelos LLM
-- ✅ Auditoría completa de versiones de modelos LLM
-- ✅ Actualización a las últimas versiones disponibles (Diciembre 2025)
-- ✅ Actualización de precios para todos los proveedores
-- ✅ Refactorización para usar configuración dinámica de modelos
-- ✅ Documentación completa de cambios en UPDATE_NOTES_V2.md
+## Trabajo Reciente (Diciembre 22, 2025)
+### Actualización V2.2 - Nuevos Modelos LLM
+- ✅ Añadido **Gemini Flash Thinking** (razonamiento avanzado)
+- ✅ Añadido **Gemini 2.5 Flash** (versión estable)
+- ✅ Añadido **Claude Sonnet 4.5** (alternativa económica)
+- ✅ Actualización completa de documentación
+- ✅ Verificación de compatibilidad con Vercel AI Gateway
+- ✅ Documentación completa de cambios en UPDATE_NOTES_V2.2.md
 
-### Modelos Actualizados
-1. **Claude**: claude-3-5-sonnet-20241022 → claude-sonnet-4-5-20250929
-2. **OpenAI**: gpt-4 → gpt-4.1 (80% reducción de costos)
-3. **Gemini**: gemini-2.5-flash → gemini-2.0-flash (corregido y actualizado)
-4. **DeepSeek**: deepseek-chat V3.1 → deepseek-chat V3.2
-5. **Mistral**: mistral-large-2 → mistral-large-3 (50% reducción de costos)
-6. **Perplexity**: sonar-pro (ya actualizado, ahora con Llama 3.3 70B)
+### Modelos Disponibles (V2.2)
+1. **Claude Opus 4.5**: claude-opus-4-5-20251101 ($5/$25)
+2. **Claude Sonnet 4.5**: claude-sonnet-4-5-20250929 ($3/$15) - NUEVO
+3. **OpenAI GPT-5.2**: gpt-5.2 ($1.75/$14)
+4. **Gemini 3 Flash**: gemini-3-flash-preview ($0.50/$3)
+5. **Gemini Flash Thinking**: gemini-2.0-flash-thinking-exp-1219 ($0.50/$3) - NUEVO
+6. **Gemini 2.5 Flash**: gemini-2.5-flash ($0.50/$3) - NUEVO
+7. **Perplexity Sonar Pro**: sonar-pro ($2/$2)
+8. **DeepSeek V3.2**: deepseek-chat ($0.28/$0.42)
+9. **Grok 4.1**: grok-4.1-fast-reasoning ($0.20/$0.50)
+10. **Kimi K2**: kimi-k2-thinking ($0.60/$2.50)
 
 ## Archivos Modificados en V2
 - lib/api-config.js - Modelos y precios actualizados

@@ -1,7 +1,7 @@
 {
   "name": "pixan-ai-v2",
-  "version": "2.0.0",
-  "description": "Pixan.ai GenAI Platform with latest LLM models (December 2025)",
+  "version": "2.2.0",
+  "description": "Pixan.ai GenAI Platform with latest LLM models (December 2025) - Added Gemini Flash Thinking",
   "private": true,
   "scripts": {
     "dev": "next dev",
