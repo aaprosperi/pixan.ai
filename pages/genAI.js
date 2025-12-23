@@ -714,6 +714,7 @@ Format:
       <Head>
         <title>Pixan genAI | Collaborative AI Intelligence</title>
         <meta name="description" content="Single or supervised group responses from multiple LLMs" />
+        <meta name="version" content="2.2.1" />
         <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
       </Head>
 
