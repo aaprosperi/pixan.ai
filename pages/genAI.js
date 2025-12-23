@@ -131,6 +131,8 @@ export default function GenAI() {
   const [isProcessing, setIsProcessing] = useState(false);
   const [imageMode, setImageMode] = useState('none');
   const [attachments, setAttachments] = useState([]);
+
+  const textareaRef = useRef(null);
   
   const [conversationHistory, setConversationHistory] = useState([]);
   const [messages, setMessages] = useState([]);
@@ -181,6 +183,14 @@ export default function GenAI() {
     document.addEventListener('click', handleClick);
     return () => document.removeEventListener('click', handleClick);
   }, []);
+
+  // Auto-resize textarea
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = 'auto';
+      textareaRef.current.style.height = textareaRef.current.scrollHeight + 'px';
+    }
+  }, [prompt]);
 
   const estimateTokens = (text) => Math.ceil((text || '').length / 4);
   const calculateCost = (inputTokens, outputTokens, llmKey) => {
@@ -536,7 +546,12 @@ Format:
     files.forEach(file => {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setAttachments(prev => [...prev, { name: file.name, type: file.type, data: ev.target.result }]);
+        setAttachments(prev => [...prev, {
+          name: file.name,
+          type: file.type,
+          size: file.size,
+          data: ev.target.result
+        }]);
       };
       reader.readAsDataURL(file);
     });
@@ -636,32 +651,59 @@ Format:
           <div className="attachments">
             {attachments.map((att, i) => (
               <div key={i} className="attachment">
-                {att.type.startsWith('image/') && <img src={att.data} alt={att.name} className="attachment-preview" />}
-                {att.type.startsWith('audio/') && <span className="attachment-audio">🎵 {att.name}</span>}
+                {att.type.startsWith('image/') ? (
+                  <img src={att.data} alt={att.name} className="attachment-preview" />
+                ) : (
+                  <span className="attachment-icon">
+                    {att.type.startsWith('audio/') && '🎵'}
+                    {att.type.startsWith('video/') && '🎬'}
+                    {att.type.includes('pdf') && '📄'}
+                    {att.type.includes('word') && '📝'}
+                    {att.type.includes('excel') && '📊'}
+                    {att.type.includes('powerpoint') && '📽️'}
+                    {att.type.includes('text') && '📃'}
+                    {!att.type.startsWith('audio/') && !att.type.startsWith('video/') && !att.type.includes('pdf') && !att.type.includes('word') && !att.type.includes('excel') && !att.type.includes('powerpoint') && !att.type.includes('text') && '📎'}
+                  </span>
+                )}
+                <div className="attachment-info">
+                  <div className="attachment-name">{att.name}</div>
+                  {att.size && <div className="attachment-size">{(att.size / 1024).toFixed(1)} KB</div>}
+                </div>
                 <button className="attachment-remove" onClick={() => removeAttachment(i)}>×</button>
               </div>
             ))}
           </div>
         )}
         <div className="input-wrapper">
-          <input type="file" ref={fileInputRef} onChange={handleFileSelect} accept="image/*,audio/*" multiple style={{ display: 'none' }} />
-          <button type="button" className="attach-btn" onClick={() => fileInputRef.current?.click()} disabled={isProcessing}>📎</button>
           <input
-            type="text"
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileSelect}
+            accept="image/*,audio/*,video/*,.pdf,.doc,.docx,.xls,.xlsx,.ppt,.pptx,.txt,.csv"
+            multiple
+            style={{ display: 'none' }}
+          />
+          <button type="button" className="attach-btn" onClick={() => fileInputRef.current?.click()} disabled={isProcessing} title="Adjuntar archivos">📎</button>
+          <textarea
+            ref={textareaRef}
             className="prompt-input"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
             onKeyDown={(e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); handleSubmit(); } }}
-            placeholder="Ask anything..."
+            placeholder="Message pixan.ai"
             disabled={isProcessing || !isAuthenticated}
             autoComplete="off"
+            rows={1}
+            style={{ resize: 'none', overflowY: 'auto' }}
           />
-          {messages.length > 0 && <button type="button" className="clear-btn" onClick={clearChat} disabled={isProcessing}>🗑️</button>}
-          {isProcessing ? (
-            <button type="button" className="stop-btn" onClick={handleStop}>⏹ Stop</button>
-          ) : (
-            <button type="button" className="send-btn" onClick={handleSubmit} disabled={!prompt.trim() || !isAuthenticated}>Send →</button>
-          )}
+          <div className="input-actions-right">
+            {messages.length > 0 && <button type="button" className="clear-btn" onClick={clearChat} disabled={isProcessing} title="Clear chat">🗑️</button>}
+            {isProcessing ? (
+              <button type="button" className="stop-btn" onClick={handleStop} title="Stop">⏹</button>
+            ) : (
+              <button type="button" className="send-btn" onClick={handleSubmit} disabled={!prompt.trim() || !isAuthenticated} title="Send message">➤</button>
+            )}
+          </div>
         </div>
       </div>
     </div>
@@ -735,25 +777,37 @@ Format:
         .image-btn.active { background: #f0f0f0; }
         .image-cost { font-size: 9px; color: #999; margin-top: 4px; }
         
-        .input-section { }
-        .attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 8px; }
-        .attachment { position: relative; }
-        .attachment-preview { width: 48px; height: 48px; object-fit: cover; border-radius: 6px; border: 1px solid #e5e5e5; }
-        .attachment-audio { background: #f5f5f5; padding: 12px 16px; border-radius: 6px; font-size: 11px; }
-        .attachment-remove { position: absolute; top: -4px; right: -4px; width: 16px; height: 16px; border-radius: 50%; background: #dc2626; color: #fff; border: none; font-size: 10px; cursor: pointer; display: flex; align-items: center; justify-content: center; }
-        .input-wrapper { display: flex; gap: 8px; align-items: flex-end; position: relative; }
-        .attach-btn { padding: 12px; background: transparent; border: none; border-radius: 8px; font-size: 20px; cursor: pointer; color: #6e6e80; }
-        .attach-btn:hover { background: #f4f4f4; }
-        .prompt-input { flex: 1; padding: 14px 16px; background: #fff; border: 1px solid #d1d5db; border-radius: 12px; font-size: 16px; font-family: inherit; outline: none; min-height: 52px; resize: none; line-height: 1.5; }
-        .prompt-input:focus { border-color: #9b9ba5; box-shadow: 0 0 0 3px rgba(155, 155, 165, 0.1); }
+        .input-section { position: relative; }
+        .attachments { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; padding: 0 4px; }
+        .attachment { position: relative; background: #f4f4f4; border-radius: 12px; padding: 8px 12px; display: flex; align-items: center; gap: 8px; max-width: 100%; }
+        .attachment-preview { width: 40px; height: 40px; object-fit: cover; border-radius: 8px; flex-shrink: 0; }
+        .attachment-info { flex: 1; min-width: 0; }
+        .attachment-name { font-size: 13px; font-weight: 500; color: #2c2d30; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .attachment-size { font-size: 11px; color: #9b9ba5; }
+        .attachment-icon { font-size: 24px; flex-shrink: 0; }
+        .attachment-remove { width: 24px; height: 24px; border-radius: 50%; background: #e5e5e5; color: #6e6e80; border: none; font-size: 14px; cursor: pointer; display: flex; align-items: center; justify-content: center; flex-shrink: 0; transition: all 0.2s; }
+        .attachment-remove:hover { background: #dc2626; color: #fff; }
+
+        .input-wrapper { position: relative; background: #f4f4f4; border: 2px solid transparent; border-radius: 28px; padding: 6px 6px 6px 16px; display: flex; align-items: center; gap: 8px; transition: all 0.2s; }
+        .input-wrapper:focus-within { background: #fff; border-color: #1a73e8; box-shadow: 0 1px 6px rgba(26, 115, 232, 0.3); }
+
+        .input-actions-left { display: flex; align-items: center; gap: 2px; }
+        .attach-btn { width: 40px; height: 40px; background: transparent; border: none; border-radius: 50%; font-size: 22px; cursor: pointer; color: #5f6368; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .attach-btn:hover { background: #e8eaed; }
+
+        .prompt-input { flex: 1; background: transparent; border: none; font-size: 16px; font-family: inherit; outline: none; min-height: 28px; max-height: 200px; resize: none; line-height: 1.5; color: #2c2d30; padding: 6px 0; }
         .prompt-input::placeholder { color: #9b9ba5; }
-        .send-btn { padding: 12px 20px; background: #10a37f; border: none; border-radius: 10px; color: #fff; font-weight: 600; font-size: 15px; cursor: pointer; white-space: nowrap; transition: all 0.2s; }
-        .send-btn:hover:not(:disabled) { background: #0d8968; transform: translateY(-1px); box-shadow: 0 4px 8px rgba(16, 163, 127, 0.2); }
-        .send-btn:disabled { opacity: 0.5; }
-        .stop-btn { padding: 10px 16px; background: #dc2626; border: none; border-radius: 8px; color: #fff; font-weight: 500; font-size: 12px; cursor: pointer; white-space: nowrap; }
-        .stop-btn:hover { background: #b91c1c; }
-        .clear-btn { padding: 10px; background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; cursor: pointer; font-size: 12px; }
-        .clear-btn:hover { background: #f0f0f0; }
+
+        .input-actions-right { display: flex; align-items: center; gap: 4px; }
+        .clear-btn { width: 36px; height: 36px; background: transparent; border: none; border-radius: 50%; cursor: pointer; font-size: 18px; color: #5f6368; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .clear-btn:hover { background: #e8eaed; }
+
+        .send-btn { width: 40px; height: 40px; background: #1a73e8; border: none; border-radius: 50%; color: #fff; font-weight: 600; font-size: 20px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; flex-shrink: 0; }
+        .send-btn:hover:not(:disabled) { background: #1557b0; transform: scale(1.05); }
+        .send-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+        .stop-btn { width: 40px; height: 40px; background: #dc2626; border: none; border-radius: 50%; color: #fff; font-size: 18px; cursor: pointer; display: flex; align-items: center; justify-content: center; transition: all 0.2s; }
+        .stop-btn:hover { background: #b91c1c; transform: scale(1.05); }
         
         .chat-area { flex: 1; overflow-y: auto; padding: 20px; }
         .message { margin-bottom: 24px; animation: fadeIn 0.3s ease; }
