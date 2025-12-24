@@ -598,21 +598,35 @@ Format:
     <div className="controls-section">
       <div className="controls-row">
         <div className="mode-toggle">
-          <div className="control-hint">Choose response mode</div>
-          <div>
-            <button className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`} onClick={() => setResponseMode('single')} disabled={isProcessing}>👤 Single</button>
-            <button className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`} onClick={() => setResponseMode('group')} disabled={isProcessing}>👥 Group ({GROUP_LLMS.length})</button>
+          <div className="control-hint" style={{ fontSize: '11px', marginBottom: '6px' }}>Choose response mode</div>
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '6px' }}>
+            <button
+              className={`mode-btn ${responseMode === 'single' ? 'active' : ''}`}
+              onClick={() => setResponseMode('single')}
+              disabled={isProcessing}
+              style={{ padding: '7px 10px', fontSize: '13px', borderRadius: '6px' }}
+            >👤 Single</button>
+            <button
+              className={`mode-btn ${responseMode === 'group' ? 'active' : ''}`}
+              onClick={() => setResponseMode('group')}
+              disabled={isProcessing}
+              style={{ padding: '7px 10px', fontSize: '13px', borderRadius: '6px' }}
+            >👥 Group ({GROUP_LLMS.length})</button>
           </div>
         </div>
 
         {responseMode === 'single' && (
           <div className="llm-select">
-            <div className="control-hint">Select AI model</div>
-            <button className="llm-select-btn" onClick={() => setShowLLMDropdown(!showLLMDropdown)}>
-              <div className="llm-icon-wrapper" style={{ background: LLM_CONFIG[selectedLLM].bgColor, color: LLM_CONFIG[selectedLLM].color }}>{LLMIcons[selectedLLM]()}</div>
+            <div className="control-hint" style={{ fontSize: '11px', marginBottom: '6px' }}>Select AI model</div>
+            <button
+              className="llm-select-btn"
+              onClick={() => setShowLLMDropdown(!showLLMDropdown)}
+              style={{ padding: '8px 10px', fontSize: '13px', borderRadius: '6px', gap: '8px' }}
+            >
+              <div className="llm-icon-wrapper" style={{ background: LLM_CONFIG[selectedLLM].bgColor, color: LLM_CONFIG[selectedLLM].color, width: '22px', height: '22px', borderRadius: '5px', padding: '4px' }}>{LLMIcons[selectedLLM]()}</div>
               <span className="info">
-                <span className="name">{LLM_CONFIG[selectedLLM].name}</span>
-                <span className="meta">{LLM_CONFIG[selectedLLM].context}</span>
+                <span className="name" style={{ fontSize: '14px' }}>{LLM_CONFIG[selectedLLM].name}</span>
+                <span className="meta" style={{ fontSize: '11px', marginTop: '1px' }}>{LLM_CONFIG[selectedLLM].context}</span>
               </span>
               <span>▾</span>
             </button>
@@ -635,10 +649,20 @@ Format:
       </div>
 
       <div className="image-section">
-        <div className="control-hint">Output as image</div>
-        <div className="image-toggle">
+        <div className="control-hint" style={{ fontSize: '11px', marginBottom: '6px' }}>Output as image</div>
+        <div className="image-toggle" style={{ borderRadius: '6px', padding: '3px', gap: '3px' }}>
           {Object.entries(IMAGE_CONFIG).map(([key, cfg]) => (
-            <button key={key} className={`image-btn ${key} ${imageMode === key ? 'active' : ''}`} onClick={() => setImageMode(key)} style={imageMode === key && key !== 'none' ? { color: cfg.color } : {}}>
+            <button
+              key={key}
+              className={`image-btn ${key} ${imageMode === key ? 'active' : ''}`}
+              onClick={() => setImageMode(key)}
+              style={{
+                padding: '6px 5px',
+                fontSize: '10px',
+                borderRadius: '5px',
+                ...(imageMode === key && key !== 'none' ? { color: cfg.color } : {})
+              }}
+            >
               {cfg.label}
             </button>
           ))}
